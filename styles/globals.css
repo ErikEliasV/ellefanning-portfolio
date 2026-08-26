@@ -129,6 +129,7 @@
 }
 
 @utility frame {
+  width: 100%;
   max-width: var(--container-page);
   margin-inline: auto;
   padding-inline: var(--gutter-page);
@@ -136,6 +137,15 @@
 
 @utility bleed {
   padding-inline: var(--gutter-page);
+}
+
+@utility spotlight-lens {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  clip-path: circle(0 at 50% 50%);
+  will-change: clip-path, opacity;
+  transition: opacity var(--duration-base) var(--ease-out);
 }
 
 @utility grain {
