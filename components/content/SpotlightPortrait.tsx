@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useRef } from "react";
 import type { PointerEvent } from "react";
+import { asset } from "@/lib/asset";
 import { cn } from "@/lib/cn";
 
 type SpotlightPortraitProps = {
@@ -69,7 +70,7 @@ export function SpotlightPortrait({
       className={cn("relative", className)}
     >
       <Image
-        src={src}
+        src={asset(src)}
         alt={alt}
         fill
         sizes={sizes}
@@ -80,7 +81,7 @@ export function SpotlightPortrait({
 
       <div ref={lens} aria-hidden className="spotlight-lens pointer-events-none">
         <Image
-          src={src}
+          src={asset(src)}
           alt=""
           fill
           sizes={sizes}

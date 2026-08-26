@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
+import { asset } from "@/lib/asset";
 import { cn } from "@/lib/cn";
 
 type HoverClipReveal = "contrast" | "color";
@@ -159,7 +160,7 @@ export function HoverClip({
       <div className="absolute inset-0 overflow-hidden bg-ink-700">
         {poster ? (
           <Image
-            src={poster}
+            src={asset(poster)}
             alt={alt}
             fill
             sizes={sizes}
@@ -175,7 +176,7 @@ export function HoverClip({
         {clip && !broken ? (
           <video
             ref={video}
-            src={clip}
+            src={asset(clip)}
             muted
             loop
             playsInline
