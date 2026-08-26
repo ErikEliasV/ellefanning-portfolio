@@ -20,11 +20,11 @@ export function Filmography() {
               index="02"
               eyebrow="Selected work"
               title="Filmography"
-              lead="Two decades of screen work, read left to right — hover a title to see the scene move."
+              lead="Two decades of screen work. Scroll to run the reel — titles are pulled in from the right and read out at the gate."
             />
           </div>
 
-          <FilmStrip films={FILMS} driftX={0.9} riseY={160} />
+          <FilmStrip films={FILMS} />
 
           <div className="bleed flex items-baseline justify-between gap-4 border-t border-line-hairline py-3 font-mono text-label-sm font-bold uppercase tracking-label-wide text-ink-500">
             <span>{FILMS.length} titles</span>
