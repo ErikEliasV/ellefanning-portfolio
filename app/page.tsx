@@ -5,6 +5,7 @@ import { CareerTimeline } from "@/sections/CareerTimeline";
 import { Editorial } from "@/sections/Editorial";
 import { BehindTheScenes } from "@/sections/BehindTheScenes";
 import { CurrentProjects } from "@/sections/CurrentProjects";
+import { SiteFooter } from "@/sections/SiteFooter";
 
 export default function Home() {
   return (
@@ -18,6 +19,7 @@ export default function Home() {
         <BehindTheScenes />
         <CurrentProjects />
       </main>
+      <SiteFooter />
     </>
   );
 }
