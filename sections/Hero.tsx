@@ -29,7 +29,7 @@ export function Hero() {
 
       <div className="relative flex-1 overflow-hidden">
         <div className="absolute inset-0 flex items-center justify-center px-[var(--gutter-page)] pt-[4vh] md:px-0">
-          <div className="relative aspect-[240/248] w-full [container-type:inline-size] md:aspect-[2281/1450] md:h-full md:w-auto md:max-w-full">
+          <div className="relative aspect-[240/248] w-full [container-type:inline-size] md:aspect-[2281/950] md:h-full md:w-auto md:max-w-full">
             <h1 className="pointer-events-none absolute left-0 top-[29.167cqw] z-20 font-display text-[20cqw] uppercase leading-[0.875] tracking-poster text-ink-900 md:top-[15.87cqw] md:z-10 md:text-[14.029cqw]">
               Elle
               <br />
