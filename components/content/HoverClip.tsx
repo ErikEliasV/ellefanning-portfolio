@@ -4,6 +4,8 @@ import Image from "next/image";
 import { useRef, useState } from "react";
 import { cn } from "@/lib/cn";
 
+type HoverClipReveal = "contrast" | "color";
+
 type HoverClipProps = {
   alt: string;
   poster?: string;
@@ -12,7 +14,15 @@ type HoverClipProps = {
   ratio?: string;
   placeholder?: string;
   sizes?: string;
+  reveal?: HoverClipReveal;
+  summary?: string;
+  meta?: string;
   className?: string;
+};
+
+const revealClass: Record<HoverClipReveal, string> = {
+  contrast: "group-hover:[filter:var(--filter-image-hover)]",
+  color: "group-hover:[filter:var(--filter-image-color)]",
 };
 
 export function HoverClip({
@@ -23,9 +33,13 @@ export function HoverClip({
   ratio = "3 / 4",
   placeholder = "STILL",
   sizes = "(min-width: 768px) 30vw, 70vw",
+  reveal = "contrast",
+  summary,
+  meta,
   className,
 }: HoverClipProps) {
   const [live, setLive] = useState(false);
+  const [broken, setBroken] = useState(false);
   const video = useRef<HTMLVideoElement>(null);
 
   function open() {
@@ -57,7 +71,7 @@ export function HoverClip({
           fill
           sizes={sizes}
           draggable={false}
-          className="img-brand object-cover group-hover:[filter:var(--filter-image-hover)]"
+          className={cn("img-brand object-cover", revealClass[reveal])}
         />
       ) : (
         <span className="absolute inset-0 grid place-items-center whitespace-pre-line p-3 text-center font-mono text-label-sm tracking-label text-ink-300">
@@ -65,7 +79,7 @@ export function HoverClip({
         </span>
       )}
 
-      {clip ? (
+      {clip && !broken ? (
         <video
           ref={video}
           src={clip}
@@ -74,6 +88,7 @@ export function HoverClip({
           playsInline
           preload="none"
           aria-hidden
+          onError={() => setBroken(true)}
           className={cn(
             "absolute inset-0 h-full w-full object-cover transition-opacity duration-[220ms] ease-[var(--ease-out)]",
             live ? "opacity-100" : "opacity-0",
@@ -88,6 +103,19 @@ export function HoverClip({
           allow="autoplay; encrypted-media"
           className="pointer-events-none absolute left-1/2 top-1/2 h-[300%] w-[178%] -translate-x-1/2 -translate-y-1/2 border-0"
         />
+      ) : null}
+
+      {summary ? (
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 translate-y-full bg-[var(--scrim-plate)] px-3 py-3 transition-transform duration-[220ms] ease-[var(--ease-out)] group-hover:translate-y-0">
+          {meta ? (
+            <div className="font-mono text-micro font-bold uppercase tracking-label text-yellow-400">
+              {meta}
+            </div>
+          ) : null}
+          <p className="mt-1 font-mono text-micro leading-[1.55] text-paper-100">
+            {summary}
+          </p>
+        </div>
       ) : null}
     </div>
   );

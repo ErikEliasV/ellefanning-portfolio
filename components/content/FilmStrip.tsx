@@ -41,7 +41,7 @@ export function FilmStrip({
   const strip = useRef<HTMLDivElement>(null);
   const meter = useRef<HTMLDivElement>(null);
   const backdrop = useRef<HTMLDivElement>(null);
-  const cards = useRef<(HTMLElement | null)[]>([]);
+  const nodes = useRef<HTMLElement[]>([]);
   const boxes = useRef<{ left: number; width: number }[]>([]);
   const ticket = useRef(0);
   const cursor = useRef(0);
@@ -49,26 +49,24 @@ export function FilmStrip({
   const [active, setActive] = useState(0);
 
   useEffect(() => {
-    const trackEl = track.current;
-    const stageEl = stage.current;
-    const gateEl = gate.current;
-    const stripEl = strip.current;
-    const meterEl = meter.current;
-    const backdropEl = backdrop.current;
-    if (!trackEl || !stageEl || !gateEl || !stripEl) return;
-
     let travel = 0;
     let span = 0;
 
     function paint() {
       ticket.current = 0;
-      if (span <= 0) return;
 
-      const progress = clamp01(-trackEl!.getBoundingClientRect().top / span);
+      const trackEl = track.current;
+      const gateEl = gate.current;
+      const stripEl = strip.current;
+      if (!trackEl || !gateEl || !stripEl || span <= 0) return;
+
+      const meterEl = meter.current;
+      const backdropEl = backdrop.current;
+      const progress = clamp01(-trackEl.getBoundingClientRect().top / span);
       const shift = progress * travel;
-      const width = gateEl!.clientWidth;
+      const width = gateEl.clientWidth;
 
-      stripEl!.style.transform = `translate3d(${-shift}px, 0, 0)`;
+      stripEl.style.transform = `translate3d(${-shift}px, 0, 0)`;
       if (meterEl) meterEl.style.transform = `scaleX(${progress})`;
       if (backdropEl) {
         backdropEl.style.transform = `translate3d(${-progress * width * 0.42}px, 0, 0)`;
@@ -80,8 +78,8 @@ export function FilmStrip({
       let current = films.length - 1;
       let found = false;
 
-      for (let index = 0; index < boxes.current.length; index += 1) {
-        const node = cards.current[index];
+      for (let index = 0; index < nodes.current.length; index += 1) {
+        const node = nodes.current[index];
         const box = boxes.current[index];
         if (!node || !box) continue;
 
@@ -110,15 +108,22 @@ export function FilmStrip({
     }
 
     function measure() {
-      boxes.current = cards.current.map((node) => ({
-        left: node ? node.offsetLeft : 0,
-        width: node ? node.offsetWidth : 0,
+      const trackEl = track.current;
+      const stageEl = stage.current;
+      const gateEl = gate.current;
+      const stripEl = strip.current;
+      if (!trackEl || !stageEl || !gateEl || !stripEl) return;
+
+      nodes.current = Array.from(stripEl.children) as HTMLElement[];
+      boxes.current = nodes.current.map((node) => ({
+        left: node.offsetLeft,
+        width: node.offsetWidth,
       }));
 
       const last = boxes.current[boxes.current.length - 1];
-      travel = last ? Math.max(last.left - gateEl!.clientWidth * 0.38, 0) : 0;
+      travel = last ? Math.max(last.left - gateEl.clientWidth * 0.38, 0) : 0;
       span = travel / pace;
-      trackEl!.style.height = `${stageEl!.offsetHeight + span}px`;
+      trackEl.style.height = `${stageEl.offsetHeight + span}px`;
       paint();
     }
 
@@ -127,14 +132,19 @@ export function FilmStrip({
     }
 
     const observer = new ResizeObserver(measure);
-    observer.observe(stageEl);
+    if (stage.current) observer.observe(stage.current);
+    if (strip.current) observer.observe(strip.current);
 
     measure();
+    const settle = requestAnimationFrame(measure);
     window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", measure);
 
     return () => {
       observer.disconnect();
+      cancelAnimationFrame(settle);
       window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", measure);
       cancelAnimationFrame(ticket.current);
       ticket.current = 0;
     };
@@ -148,9 +158,6 @@ export function FilmStrip({
     return (
       <article
         key={film.id}
-        ref={(node) => {
-          cards.current[index] = node;
-        }}
         style={{ width: lane.width, marginTop: lane.drop }}
         className="group shrink-0 will-change-transform"
       >
@@ -161,6 +168,9 @@ export function FilmStrip({
           youtubeId={film.youtubeId}
           ratio="2 / 3"
           sizes="(min-width: 1024px) 18vw, (min-width: 640px) 32vw, 52vw"
+          reveal="color"
+          summary={film.summary}
+          meta={`Dir. ${film.director}`}
           placeholder={`${film.title.toUpperCase()}\n${film.year}`}
         />
 
@@ -183,9 +193,6 @@ export function FilmStrip({
   const endPlate = (
     <div
       key="end-of-reel"
-      ref={(node) => {
-        cards.current[films.length] = node;
-      }}
       style={{ width: "clamp(196px, 21vw, 340px)" }}
       className="shrink-0 self-center border-2 border-line-rule px-6 py-6 will-change-transform"
     >
@@ -245,9 +252,9 @@ export function FilmStrip({
           </div>
         </div>
 
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-baseline gap-4 border-b border-line-hairline bg-paper-100 px-[var(--gutter-page)] py-3 font-mono text-label-sm font-bold uppercase tracking-label">
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-40 flex items-baseline gap-4 border-b border-line-hairline bg-paper-100 px-[var(--gutter-page)] py-3 font-mono text-label-sm font-bold uppercase tracking-label">
           <span className="shrink-0 text-ink-300">Reel —</span>
-          <span className="truncate text-ink-900">{now.title}</span>
+          <span className="min-w-0 truncate text-ink-900">{now.title}</span>
           <span className="ml-auto hidden shrink-0 text-ink-500 sm:block">
             Dir. {now.director}
           </span>
