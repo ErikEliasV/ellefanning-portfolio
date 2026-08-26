@@ -26,7 +26,7 @@ export function Tag({
     <span
       className={cn(
         "inline-flex items-center gap-1 font-mono text-micro font-bold uppercase leading-none tracking-label",
-        size === "sm" ? "px-1 py-0.5" : "px-2.5 py-1",
+        size === "sm" ? "px-1 py-0.5" : "px-[10px] py-[5px]",
         variantClass[variant],
         className,
       )}

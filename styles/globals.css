@@ -134,6 +134,10 @@
   padding-inline: var(--gutter-page);
 }
 
+@utility bleed {
+  padding-inline: var(--gutter-page);
+}
+
 @utility grain {
   position: relative;
 
