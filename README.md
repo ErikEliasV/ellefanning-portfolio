@@ -1,36 +1,53 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Elle Fanning — Portfolio
 
-## Getting Started
+Portfólio editorial dedicado à atriz e produtora Elle Fanning.
 
-First, run the development server:
+## Stack
+
+Next.js 16 (App Router) · TypeScript · Tailwind CSS 4
+
+## Rodando
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Estrutura
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+app/         paginas e rotas
+components/  componentes reutilizaveis
+sections/    secoes do site
+lib/         funcoes e utilitarios
+public/      imagens, videos e estaticos
+styles/      estilos globais e tokens de design
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Design system
 
-## Learn More
+A identidade visual segue o design system brutalista editorial da marca: paper
+`#F6F3E9`, ink `#131313` e um unico acento amarelo `#FFCC00`. Display em Anton,
+texto de trabalho em Space Mono, prosa longa em Archivo. Sem border-radius, sem
+sombras difusas — apenas hard offsets — e imagens sempre em grayscale de alto
+contraste.
 
-To learn more about Next.js, take a look at the following resources:
+Os tokens vivem em `styles/globals.css` sob `@theme`. A pasta de referencia
+`ellefaning_desingsystem/` e local e nao versionada.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Secoes
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| # | Secao | Rota / ancora |
+| --- | --- | --- |
+| 01 | Apresentacao | `#hero` |
+| 02 | Filmografia | `#filmography` |
+| 03 | Personagens | `#characters` |
+| 04 | Carreira | `#timeline` |
+| 05 | Editorial | `#editorial` |
+| 06 | Bastidores | `#behind-the-scenes` |
+| 07 | Projetos atuais | `#current` |
+| 08 | Final | `#footer` |
 
-## Deploy on Vercel
+## Git Flow
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+`main` estavel · `develop` integracao · `feature/*` uma por etapa.
