@@ -46,20 +46,9 @@ export function FilmStrip({
   const ticket = useRef(0);
   const cursor = useRef(0);
 
-  const [reduced, setReduced] = useState(false);
   const [active, setActive] = useState(0);
 
   useEffect(() => {
-    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const sync = () => setReduced(query.matches);
-    sync();
-    query.addEventListener("change", sync);
-    return () => query.removeEventListener("change", sync);
-  }, []);
-
-  useEffect(() => {
-    if (reduced) return;
-
     const trackEl = track.current;
     const stageEl = stage.current;
     const gateEl = gate.current;
@@ -149,7 +138,7 @@ export function FilmStrip({
       cancelAnimationFrame(ticket.current);
       ticket.current = 0;
     };
-  }, [reduced, pace, pull, rise, films.length]);
+  }, [pace, pull, rise, films.length]);
 
   const now = films[Math.min(active, films.length - 1)];
 
@@ -162,7 +151,7 @@ export function FilmStrip({
         ref={(node) => {
           cards.current[index] = node;
         }}
-        style={{ width: lane.width, marginTop: reduced ? undefined : lane.drop }}
+        style={{ width: lane.width, marginTop: lane.drop }}
         className="group shrink-0 will-change-transform"
       >
         <HoverClip
@@ -211,17 +200,6 @@ export function FilmStrip({
       </div>
     </div>
   );
-
-  if (reduced) {
-    return (
-      <div className="overflow-x-auto overscroll-x-contain py-8">
-        <div className="flex w-max items-end gap-6 px-[var(--gutter-page)]">
-          {cardList}
-          {endPlate}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div ref={track} className="relative h-[420svh]">
