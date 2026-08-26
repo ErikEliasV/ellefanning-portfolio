@@ -12,7 +12,7 @@ type RuleProps = {
 const weightClass: Record<RuleWeight, string> = {
   hair: "h-px",
   rule: "h-px",
-  heavy: "h-0.5",
+  heavy: "h-[2px]",
   block: "h-[3px]",
 };
 

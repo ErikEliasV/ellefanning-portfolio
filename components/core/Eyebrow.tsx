@@ -34,7 +34,7 @@ export function Eyebrow({
   return (
     <div
       className={cn(
-        "flex items-center gap-3 font-mono text-label-sm font-bold uppercase tracking-label-wide",
+        "flex items-center gap-2 font-mono text-label-sm font-bold uppercase tracking-label-wide",
         toneClass[tone],
         className,
       )}
