@@ -1,6 +1,7 @@
 import { Hero } from "@/sections/Hero";
 import { Filmography } from "@/sections/Filmography";
 import { Characters } from "@/sections/Characters";
+import { CareerTimeline } from "@/sections/CareerTimeline";
 
 export default function Home() {
   return (
@@ -9,6 +10,7 @@ export default function Home() {
         <Hero />
         <Filmography />
         <Characters />
+        <CareerTimeline />
       </main>
     </>
   );
