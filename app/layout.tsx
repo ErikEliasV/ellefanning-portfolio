@@ -27,13 +27,13 @@ const archivo = Archivo({
 export const metadata: Metadata = {
   title: "Elle Fanning — Actress & Producer",
   description:
-    "Portfolio editorial de Elle Fanning: filmografia, personagens, linha do tempo da carreira, editoriais e bastidores.",
+    "Editorial portfolio of Elle Fanning: filmography, characters, career timeline, editorials and behind the scenes.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
-      lang="pt-BR"
+      lang="en"
       className={`${anton.variable} ${spaceMono.variable} ${archivo.variable} h-full`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
