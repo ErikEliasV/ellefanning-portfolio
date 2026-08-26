@@ -3,6 +3,7 @@ import { Filmography } from "@/sections/Filmography";
 import { Characters } from "@/sections/Characters";
 import { CareerTimeline } from "@/sections/CareerTimeline";
 import { Editorial } from "@/sections/Editorial";
+import { BehindTheScenes } from "@/sections/BehindTheScenes";
 
 export default function Home() {
   return (
@@ -13,6 +14,7 @@ export default function Home() {
         <Characters />
         <CareerTimeline />
         <Editorial />
+        <BehindTheScenes />
       </main>
     </>
   );
