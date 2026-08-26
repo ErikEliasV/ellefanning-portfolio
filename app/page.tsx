@@ -4,6 +4,7 @@ import { Characters } from "@/sections/Characters";
 import { CareerTimeline } from "@/sections/CareerTimeline";
 import { Editorial } from "@/sections/Editorial";
 import { BehindTheScenes } from "@/sections/BehindTheScenes";
+import { CurrentProjects } from "@/sections/CurrentProjects";
 
 export default function Home() {
   return (
@@ -15,6 +16,7 @@ export default function Home() {
         <CareerTimeline />
         <Editorial />
         <BehindTheScenes />
+        <CurrentProjects />
       </main>
     </>
   );
