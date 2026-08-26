@@ -5,8 +5,8 @@ export type Film = {
   character: string;
   director: string;
   poster?: string;
-  clip?: string;
   youtubeId?: string;
+  clipStart?: number;
   summary?: string;
 };
 
@@ -18,7 +18,7 @@ export const FILMS: readonly Film[] = [
     character: "Lucy Dawson",
     director: "Jessie Nelson",
     poster: "/images/films/i-am-sam.jpg",
-    clip: "/videos/i-am-sam.mp4",
+    youtubeId: "dAlYuokC9R0",
     summary:
       "A custody fight over a father with a developmental disability, told through the daughter who outgrows him.",
   },
@@ -29,7 +29,7 @@ export const FILMS: readonly Film[] = [
     character: "Debbie Jones",
     director: "Alejandro G. Iñárritu",
     poster: "/images/films/babel.jpg",
-    clip: "/videos/babel.mp4",
+    youtubeId: "gxkWMFSWx10",
     summary:
       "One rifle shot in the Moroccan desert sets four stories colliding across three continents.",
   },
@@ -40,7 +40,8 @@ export const FILMS: readonly Film[] = [
     character: "Daisy",
     director: "David Fincher",
     poster: "/images/films/benjamin-button.jpg",
-    clip: "/videos/benjamin-button.mp4",
+    youtubeId: "yLz4s4M7VXE",
+    clipStart: 76,
     summary:
       "A man born elderly ages backwards through the century, always out of step with the woman he loves.",
   },
@@ -51,7 +52,7 @@ export const FILMS: readonly Film[] = [
     character: "Phoebe Lichten",
     director: "Daniel Barnz",
     poster: "/images/films/phoebe-in-wonderland.jpg",
-    clip: "/videos/phoebe-in-wonderland.mp4",
+    youtubeId: "jLkBC6ZVbOk",
     summary:
       "A girl who cannot follow the rules finds room to breathe in a school staging of Alice in Wonderland.",
   },
@@ -62,7 +63,7 @@ export const FILMS: readonly Film[] = [
     character: "Cleo",
     director: "Sofia Coppola",
     poster: "/images/films/somewhere.jpg",
-    clip: "/videos/somewhere.mp4",
+    youtubeId: "iEga7Hz9a3U",
     summary:
       "A film star drifting through the Chateau Marmont is pulled back to earth by the daughter he barely knows.",
   },
@@ -73,7 +74,7 @@ export const FILMS: readonly Film[] = [
     character: "Alice Dainard",
     director: "J. J. Abrams",
     poster: "/images/films/super-8.jpg",
-    clip: "/videos/super-8.mp4",
+    youtubeId: "DRGjkQ_iBL8",
     summary:
       "Kids shooting a zombie movie on Super 8 film a train crash — and whatever the wreck sets loose.",
   },
@@ -84,7 +85,7 @@ export const FILMS: readonly Film[] = [
     character: "Ginger",
     director: "Sally Potter",
     poster: "/images/films/ginger-and-rosa.jpg",
-    clip: "/videos/ginger-and-rosa.mp4",
+    youtubeId: "tFYeYKAGVek",
     summary:
       "Two inseparable girls in 1962 London drift apart under the shadow of the bomb.",
   },
@@ -95,7 +96,7 @@ export const FILMS: readonly Film[] = [
     character: "Princess Aurora",
     director: "Robert Stromberg",
     poster: "/images/films/maleficent.jpg",
-    clip: "/videos/maleficent.mp4",
+    youtubeId: "c5_st7K2Mqk",
     summary:
       "Sleeping Beauty retold from the fairy's side, where the curse answers a betrayal.",
   },
@@ -106,7 +107,7 @@ export const FILMS: readonly Film[] = [
     character: "Jesse",
     director: "Nicolas Winding Refn",
     poster: "/images/films/the-neon-demon.jpg",
-    clip: "/videos/the-neon-demon.mp4",
+    youtubeId: "fYH1dzQ07mQ",
     summary:
       "An aspiring model arrives in Los Angeles, where beauty is coveted to the point of consumption.",
   },
@@ -117,7 +118,7 @@ export const FILMS: readonly Film[] = [
     character: "Julie",
     director: "Mike Mills",
     poster: "/images/films/20th-century-women.jpg",
-    clip: "/videos/20th-century-women.mp4",
+    youtubeId: "PRz0kAbtBmc",
     summary:
       "Santa Barbara, 1979: a mother enlists two younger women to help raise her teenage son.",
   },
@@ -128,7 +129,7 @@ export const FILMS: readonly Film[] = [
     character: "Alicia",
     director: "Sofia Coppola",
     poster: "/images/films/the-beguiled.jpg",
-    clip: "/videos/the-beguiled.mp4",
+    youtubeId: "bGyziXoBIrQ",
     summary:
       "A wounded Union soldier shelters in a Southern girls' seminary, and the household turns on itself.",
   },
@@ -139,7 +140,7 @@ export const FILMS: readonly Film[] = [
     character: "Mary Shelley",
     director: "Haifaa al-Mansour",
     poster: "/images/films/mary-shelley.jpg",
-    clip: "/videos/mary-shelley.mp4",
+    youtubeId: "T-WGaZaojFc",
     summary:
       "The teenage love affair with Percy Shelley that ended in the writing of Frankenstein.",
   },
@@ -150,7 +151,7 @@ export const FILMS: readonly Film[] = [
     character: "Violet Valenski",
     director: "Max Minghella",
     poster: "/images/films/teen-spirit.jpg",
-    clip: "/videos/teen-spirit.mp4",
+    youtubeId: "HzHCYMu0q5A",
     summary:
       "A shy farm girl on the Isle of Wight chases a singing contest as her way out.",
   },
@@ -161,7 +162,7 @@ export const FILMS: readonly Film[] = [
     character: "Catherine the Great",
     director: "Tony McNamara",
     poster: "/images/films/the-great.jpg",
-    clip: "/videos/the-great.mp4",
+    youtubeId: "d63QOayTyuQ",
     summary:
       "A young empress arrives in Russia to a brute of a husband and decides to take the throne herself.",
   },
@@ -172,7 +173,7 @@ export const FILMS: readonly Film[] = [
     character: "Michelle Carter",
     director: "Lisa Cholodenko",
     poster: "/images/films/the-girl-from-plainville.jpg",
-    clip: "/videos/the-girl-from-plainville.mp4",
+    youtubeId: "B-RadqZ-A3o",
     summary:
       "The true case of a teenager charged over the texts that preceded her boyfriend's death.",
   },
@@ -183,7 +184,7 @@ export const FILMS: readonly Film[] = [
     character: "Sylvie Russo",
     director: "James Mangold",
     poster: "/images/films/a-complete-unknown.jpg",
-    clip: "/videos/a-complete-unknown.mp4",
+    youtubeId: "kYjOrzd0rjs",
     summary:
       "Bob Dylan's arrival in New York and the folk scene he electrified on his way out of it.",
   },

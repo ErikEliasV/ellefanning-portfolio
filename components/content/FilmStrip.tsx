@@ -12,9 +12,9 @@ type FilmStripProps = {
 };
 
 const LANES = [
-  { width: "clamp(148px, 17vw, 292px)", drop: 0, depth: 1 },
-  { width: "clamp(110px, 12vw, 210px)", drop: 66, depth: 0.52 },
-  { width: "clamp(128px, 14.5vw, 248px)", drop: 26, depth: 0.76 },
+  { width: "clamp(148px, min(17vw, 25vh), 292px)", drop: 0, depth: 1 },
+  { width: "clamp(110px, min(12vw, 18vh), 210px)", drop: 66, depth: 0.52 },
+  { width: "clamp(128px, min(14.5vw, 21vh), 248px)", drop: 26, depth: 0.76 },
 ] as const;
 
 const READ_MARK = 0.34;
@@ -159,13 +159,13 @@ export function FilmStrip({
       <article
         key={film.id}
         style={{ width: lane.width, marginTop: lane.drop }}
-        className="group shrink-0 will-change-transform"
+        className="group relative z-0 shrink-0 will-change-transform hover:z-30"
       >
         <HoverClip
           alt={`${film.title} (${film.year})`}
           poster={film.poster}
-          clip={film.clip}
           youtubeId={film.youtubeId}
+          clipStart={film.clipStart}
           ratio="2 / 3"
           sizes="(min-width: 1024px) 18vw, (min-width: 640px) 32vw, 52vw"
           reveal="color"
@@ -174,7 +174,7 @@ export function FilmStrip({
           placeholder={`${film.title.toUpperCase()}\n${film.year}`}
         />
 
-        <div className="mt-3 border-t border-line-hairline pt-2">
+        <div className="relative z-40 mt-3 border-t border-line-hairline bg-paper-100 pt-2">
           <div className="flex items-baseline justify-between gap-3 font-mono text-label font-bold uppercase tracking-label">
             <span className="truncate text-ink-900 transition-colors duration-[140ms] ease-[var(--ease-out)] group-hover:text-yellow-600">
               {film.title}
