@@ -27,7 +27,7 @@ const archivo = Archivo({
 export const metadata: Metadata = {
   title: "Elle Fanning — Actress & Producer",
   description:
-    "Editorial portfolio of Elle Fanning: filmography, characters, career timeline, editorials and behind the scenes.",
+    "Editorial portfolio of Elle Fanning: filmography, characters, editorials and current work.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
