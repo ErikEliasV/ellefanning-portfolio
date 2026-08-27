@@ -10,13 +10,13 @@ export type EditorialShot = {
 };
 
 export const EDITORIAL_NOTE =
-  "Magazine work, campaigns and red carpets. Hover a frame to open it — keep scrolling while it is open to read the rest.";
+  "Magazine work, campaigns and red carpets. Scroll runs the reel; the frame under the cursor opens full screen.";
 
 export const EDITORIAL_SHOTS: readonly EditorialShot[] = [
   {
     id: "vogue-2014",
     title: "Vogue",
-    kicker: "Revista",
+    kicker: "Magazine",
     year: "2014",
     src: "/images/editorial/vogue-2014.jpg",
     width: 1159,
@@ -25,7 +25,7 @@ export const EDITORIAL_SHOTS: readonly EditorialShot[] = [
   {
     id: "vogue-2017",
     title: "Vogue",
-    kicker: "Revista",
+    kicker: "Magazine",
     year: "2017",
     src: "/images/editorial/vogue-2017.webp",
     width: 877,
@@ -34,7 +34,7 @@ export const EDITORIAL_SHOTS: readonly EditorialShot[] = [
   {
     id: "vanity-fair-2020",
     title: "Vanity Fair",
-    kicker: "Revista",
+    kicker: "Magazine",
     year: "2020",
     src: "/images/editorial/vanity-fair-2020.webp",
     width: 1471,
@@ -42,8 +42,8 @@ export const EDITORIAL_SHOTS: readonly EditorialShot[] = [
   },
   {
     id: "icon-magazine-2020",
-    title: "Icon Magazine",
-    kicker: "Revista",
+    title: "Icon",
+    kicker: "Magazine",
     year: "2020",
     src: "/images/editorial/icon-magazine-2020.jpg",
     width: 1024,
@@ -60,7 +60,7 @@ export const EDITORIAL_SHOTS: readonly EditorialShot[] = [
   },
   {
     id: "w-magazine-cannes-2023",
-    title: "W Magazine",
+    title: "W",
     kicker: "Cannes",
     year: "2023",
     src: "/images/editorial/w-magazine-cannes-2023.avif",
@@ -88,7 +88,7 @@ export const EDITORIAL_SHOTS: readonly EditorialShot[] = [
   {
     id: "vogue-2026",
     title: "Vogue",
-    kicker: "Revista",
+    kicker: "Magazine",
     year: "2026",
     src: "/images/editorial/vogue-2026.jpg",
     width: 1080,
@@ -97,8 +97,8 @@ export const EDITORIAL_SHOTS: readonly EditorialShot[] = [
   {
     id: "harpers-bazaar",
     title: "Harper's Bazaar",
-    kicker: "Revista",
-    year: "",
+    kicker: "Magazine",
+    year: "2023",
     src: "/images/editorial/harpers-bazaar.avif",
     width: 980,
     height: 1322,

@@ -22,47 +22,54 @@ export function Editorial() {
     active,
     shown,
     armed,
-    open,
-    close,
+    settled,
+    onPointerEnter,
+    onPointerMove,
+    onPointerLeave,
+    onTap,
+    onFocusCell,
   } = useEditorialReel(EDITORIAL_SHOTS.length);
 
   const item = EDITORIAL_SHOTS[shown];
+  const isOpen = active !== null;
 
   return (
     <div ref={track} className="ed-track">
       <section
         id="editorial"
         className="ed-pin"
-        data-open={active === null ? undefined : ""}
-        onPointerLeave={close}
+        data-open={isOpen ? "" : undefined}
+        data-settled={settled ? "" : undefined}
+        onPointerEnter={onPointerEnter}
+        onPointerMove={onPointerMove}
+        onPointerLeave={onPointerLeave}
+        onClick={onTap}
       >
         <h2 className="sr-only">Editorial</h2>
 
         <div className="ed-reel">
-          {EDITORIAL_SHOTS.map((item, index) => (
+          {EDITORIAL_SHOTS.map((shot, index) => (
             <button
-              key={item.id}
+              key={shot.id}
               type="button"
               className="ed-cell"
               data-active={index === active ? "" : undefined}
-              aria-label={`${item.title} — ${item.kicker}${item.year ? `, ${item.year}` : ""}`}
-              onPointerEnter={(event) => {
-                if (event.pointerType === "mouse") open(index);
-              }}
-              onFocus={() => open(index)}
-              onClick={() => (index === active ? close() : open(index))}
+              aria-label={`${shot.title} — ${shot.kicker}, ${shot.year}`}
+              onFocus={() => onFocusCell(index)}
             >
               <Image
-                src={asset(item.src)}
+                src={asset(shot.src)}
                 alt=""
-                width={item.width}
-                height={item.height}
+                width={shot.width}
+                height={shot.height}
                 className="ed-cell-img"
                 sizes="(max-width: 760px) 80vw, 30vw"
                 loading={armed ? "eager" : "lazy"}
               />
-              <span aria-hidden className="ed-cell-index">
-                {pad(index)}
+              <span aria-hidden className="ed-cell-tag">
+                <span className="ed-cell-num">{pad(index)}</span>
+                {shot.title}
+                <span className="ed-cell-year">{shot.year}</span>
               </span>
             </button>
           ))}
@@ -70,7 +77,7 @@ export function Editorial() {
 
         <div aria-hidden className="ed-scrim" />
 
-        <div ref={capWrap} aria-hidden={active === null} className="ed-caption-wrap">
+        <div ref={capWrap} aria-hidden={!isOpen} className="ed-caption-wrap">
           <div ref={capBlock} className="ed-caption">
             <div className="ed-cap-row">
               <p ref={capTitle} className="ed-title">
@@ -96,7 +103,9 @@ export function Editorial() {
         </div>
 
         <span aria-hidden className="ed-hint">
-          Scroll to read · Esc to close
+          {isOpen
+            ? "Keep scrolling to run the reel · Esc to close"
+            : "Scroll to run the reel · Move the cursor to open a frame"}
         </span>
       </section>
     </div>
