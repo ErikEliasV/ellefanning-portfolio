@@ -1,26 +1,9 @@
-import Image from "next/image";
 import { HoverClip } from "@/components/content/HoverClip";
-import { asset } from "@/lib/asset";
 import { CHARACTERS } from "@/lib/characters";
 import "@/styles/characters.css";
 
 const LEAD =
   "Not the films — the people inside them. Hover a face to read what she made of it.";
-
-const BAND = [
-  {
-    src: "/images/characters/band-01.webp",
-    alt: "Elle Fanning on the red carpet",
-  },
-  {
-    src: "/images/characters/band-02.webp",
-    alt: "Elle Fanning in a black off-shoulder gown",
-  },
-  {
-    src: "/images/characters/band-03.webp",
-    alt: "Elle Fanning in amber cat-eye glasses",
-  },
-];
 
 export function Characters() {
   return (
@@ -67,21 +50,6 @@ export function Characters() {
           </li>
         ))}
       </ul>
-
-      <div className="character-band">
-        {BAND.map((shot) => (
-          <div key={shot.src} className="character-band-cell">
-            <Image
-              src={asset(shot.src)}
-              alt={shot.alt}
-              fill
-              sizes="34vw"
-              draggable={false}
-              className="character-band-img"
-            />
-          </div>
-        ))}
-      </div>
     </section>
   );
 }
