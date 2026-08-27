@@ -5,9 +5,9 @@
 
 .film-header-row {
   display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: clamp(24px, 4vw, 80px);
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(20px, 2vw, 32px);
 }
 
 .film-heading {
@@ -23,13 +23,25 @@
 }
 
 .film-lead {
-  flex-shrink: 0;
   max-width: 350px;
   font-family: var(--font-mono);
   font-size: var(--text-body-sm);
   line-height: 1.55;
   text-transform: uppercase;
   color: var(--color-ink-500);
+}
+
+@media (width >= 64rem) {
+  .film-header-row {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: clamp(24px, 4vw, 80px);
+  }
+
+  .film-lead {
+    flex: 0 1 350px;
+  }
 }
 
 .film-gate {
