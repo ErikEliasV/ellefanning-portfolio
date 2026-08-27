@@ -1,0 +1,32 @@
+.site-footer {
+  container-type: inline-size;
+}
+
+.footer-mark {
+  --mark-ratio: 3.24;
+  margin: 0;
+  padding-left: var(--gutter-page);
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: calc((100cqw - var(--gutter-page) * 2) / var(--mark-ratio));
+  line-height: 0.86;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  color: var(--color-ink-800);
+  white-space: nowrap;
+}
+
+.footer-mark > span {
+  display: block;
+}
+
+.footer-dot {
+  color: var(--color-lime-400);
+}
+
+.footer-body {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(32px, 3.125vw, 60px);
+  padding-block: clamp(48px, 5vw, 96px);
+}

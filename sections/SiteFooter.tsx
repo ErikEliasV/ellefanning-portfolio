@@ -1,25 +1,27 @@
 import { Rule } from "@/components/core/Rule";
 import { LINKS } from "@/lib/links";
+import "@/styles/footer.css";
+
+const MARKS = [
+  "Actress · Producer",
+  "Portfolio · 2026 edition",
+  "Fan project — not affiliated",
+];
 
 export function SiteFooter() {
   return (
     <footer
       id="footer"
-      className="grain relative border-t border-line-rule bg-ink-900 text-paper-100"
+      className="site-footer grain relative overflow-hidden border-t border-line-rule bg-ink-900 text-paper-100"
     >
-      <div className="bleed relative flex flex-col gap-10 py-16">
-        <div className="flex flex-col gap-3">
-          <span className="font-mono text-label-sm font-bold uppercase tracking-label-wide text-ink-300">
-            08 / End credits
-          </span>
-          <h2 className="font-display text-poster uppercase leading-[0.86] tracking-poster text-paper-100">
-            Elle
-            <br />
-            Fanning
-            <span className="text-yellow-400">.</span>
-          </h2>
-        </div>
+      <h2 className="footer-mark">
+        <span>Elle</span>
+        <span>
+          Fanning<span className="footer-dot">.</span>
+        </span>
+      </h2>
 
+      <div className="bleed footer-body">
         <Rule tone="invert" />
 
         <div className="grid gap-8 md:grid-cols-[1fr_auto]">
@@ -30,16 +32,16 @@ export function SiteFooter() {
                   href={link.href}
                   target="_blank"
                   rel="noreferrer noopener"
-                  className="group flex items-baseline justify-between gap-6 border-b border-line-invert py-3 font-mono text-label font-bold uppercase tracking-label-wide text-paper-100 transition-colors duration-[140ms] ease-[var(--ease-out)] hover:text-yellow-400"
+                  className="group flex items-baseline justify-between gap-6 border-b border-line-invert py-3 font-mono text-label font-bold uppercase tracking-label-wide text-paper-100 transition-colors duration-[140ms] ease-[var(--ease-out)] hover:text-lime-400"
                 >
                   <span className="flex items-center gap-3">
                     <span
                       aria-hidden
-                      className="inline-block size-2 bg-yellow-400"
+                      className="inline-block size-2 bg-lime-400"
                     />
                     {link.label}
                   </span>
-                  <span className="text-ink-300 transition-colors duration-[140ms] ease-[var(--ease-out)] group-hover:text-yellow-400">
+                  <span className="text-ink-300 transition-colors duration-[140ms] ease-[var(--ease-out)] group-hover:text-lime-400">
                     {link.value}
                   </span>
                 </a>
@@ -48,16 +50,16 @@ export function SiteFooter() {
           </ul>
 
           <div className="flex flex-col justify-end gap-2 font-mono text-micro uppercase tracking-label text-ink-300 md:text-right">
-            <span>Actress · Producer</span>
-            <span>Portfolio · 2026 edition</span>
-            <span>Fan project — not affiliated</span>
+            {MARKS.map((mark) => (
+              <span key={mark}>{mark}</span>
+            ))}
           </div>
         </div>
 
         <div className="flex items-baseline justify-between gap-4 font-mono text-micro uppercase tracking-label-wide text-ink-500">
           <a
             href="#hero"
-            className="transition-colors duration-[140ms] ease-[var(--ease-out)] hover:text-yellow-400"
+            className="transition-colors duration-[140ms] ease-[var(--ease-out)] hover:text-lime-400"
           >
             &uarr; Back to top
           </a>
