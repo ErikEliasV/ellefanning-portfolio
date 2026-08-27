@@ -43,19 +43,3 @@
     flex: 0 1 350px;
   }
 }
-
-.character-band {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  height: min(65.1vw, 1250px);
-  background-color: var(--color-paper-100);
-}
-
-.character-band-cell {
-  position: relative;
-  overflow: hidden;
-}
-
-.character-band-img {
-  object-fit: cover;
-}
