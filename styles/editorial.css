@@ -1,0 +1,250 @@
+@property --q {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+@property --c {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+@property --open {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+.ed-track {
+  position: relative;
+  flex: none;
+  height: var(--track-h, 320svh);
+}
+
+.ed-pin {
+  --open: 0;
+  --c: 0;
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow: hidden;
+  background-color: var(--color-ink-900);
+  transition:
+    --open 620ms var(--ease-out),
+    --c 520ms var(--ease-out);
+}
+
+.ed-pin[data-open] {
+  --open: 1;
+}
+
+.ed-pin[data-open][data-settled] {
+  --c: 1;
+}
+
+.ed-reel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  transform: translateX(calc((var(--open) - 1) * var(--q) * var(--pan-max, 0px)));
+}
+
+.ed-cell {
+  position: relative;
+  flex: 0 0 calc(var(--cell-w, 30vw) * (1 - var(--open)));
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  background-color: var(--color-ink-800);
+  cursor: pointer;
+  appearance: none;
+}
+
+.ed-cell[data-active] {
+  flex-basis: calc(var(--cell-w, 30vw) + var(--open) * (100% - var(--cell-w, 30vw)));
+}
+
+.ed-cell + .ed-cell {
+  box-shadow: -1px 0 0 var(--color-line-invert);
+}
+
+.ed-cell-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  object-position: center calc(var(--open) * 22%);
+}
+
+.ed-cell-tag {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 12px 14px;
+  font-family: var(--font-mono);
+  font-size: var(--text-label-sm);
+  font-weight: 700;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--color-paper-100);
+  background-color: var(--scrim-plate);
+  opacity: calc(1 - var(--open));
+  pointer-events: none;
+}
+
+.ed-cell-num {
+  color: var(--color-lime-400);
+}
+
+.ed-cell-year {
+  margin-left: auto;
+  color: var(--color-ink-300);
+}
+
+.ed-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background-color: rgba(44, 44, 44, 0.68);
+  opacity: var(--open);
+  pointer-events: none;
+}
+
+.ed-caption-wrap {
+  position: absolute;
+  z-index: 20;
+  left: 5.573vw;
+  width: 86.198vw;
+  top: 12.03svh;
+  bottom: 11.45svh;
+  display: flex;
+  align-items: flex-start;
+  opacity: var(--open);
+  pointer-events: none;
+}
+
+.ed-caption {
+  width: 100%;
+  transform: translateY(calc((1 - var(--c)) * var(--cap-travel, 0px)));
+}
+
+.ed-cap-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 3vw;
+}
+
+.ed-cap-row-foot {
+  align-items: flex-start;
+  margin-top: 1.042vw;
+}
+
+.ed-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 12.747vw;
+  line-height: 1;
+  letter-spacing: -0.0155em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--color-paper-100);
+  flex: 0 0 auto;
+  min-width: 0;
+  transform-origin: left bottom;
+  transform: scale(var(--title-fit, 1));
+}
+
+.ed-year {
+  flex: 0 0 auto;
+}
+
+.ed-year,
+.ed-kicker {
+  font-family: var(--font-mono);
+  font-size: 5.995vw;
+  line-height: 0.875;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  color: var(--color-paper-100);
+  white-space: nowrap;
+}
+
+.ed-rule {
+  height: 0.521vw;
+  min-height: 3px;
+  margin-top: 1.042vw;
+  background-color: var(--color-lime-400);
+}
+
+.ed-more {
+  width: 36.51vw;
+  opacity: var(--c);
+}
+
+.ed-note {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: clamp(11px, 0.99vw, 19px);
+  line-height: 1.06;
+  text-transform: uppercase;
+  color: var(--color-paper-100);
+}
+
+.ed-count {
+  display: block;
+  margin-top: 0.83vw;
+  font-family: var(--font-mono);
+  font-size: clamp(10px, 0.73vw, 14px);
+  font-weight: 700;
+  letter-spacing: var(--tracking-label-wide);
+  text-transform: uppercase;
+  color: var(--color-lime-400);
+}
+
+.ed-hint {
+  position: absolute;
+  z-index: 20;
+  top: 12.03svh;
+  right: 5.573vw;
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  letter-spacing: var(--tracking-label-wide);
+  text-transform: uppercase;
+  color: var(--color-paper-100);
+  opacity: calc((1 - var(--c)) * 0.7);
+  pointer-events: none;
+}
+
+@media (width < 48rem) {
+  .ed-caption-wrap {
+    left: 22px;
+    width: calc(100% - 44px);
+  }
+
+  .ed-title {
+    font-size: 17vw;
+  }
+
+  .ed-year,
+  .ed-kicker {
+    font-size: 8vw;
+  }
+
+  .ed-more {
+    width: 52vw;
+  }
+
+  .ed-hint {
+    display: none;
+  }
+}

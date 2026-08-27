@@ -9,13 +9,13 @@ export function CurrentProjects() {
     <section id="current" className="border-t border-line-rule">
       <div className="flex">
         <SideLabel tone="accent" className="self-stretch">
-          07 — Now
+          05 — Now
         </SideLabel>
 
         <div className="min-w-0 flex-1">
           <div className="bleed py-8">
             <SectionHeader
-              index="07"
+              index="05"
               eyebrow="Current work"
               title="Now"
               lead="Where the filmography stops being an archive and starts being a schedule."
