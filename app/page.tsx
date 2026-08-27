@@ -2,7 +2,7 @@ import { Hero } from "@/sections/Hero";
 import { Filmography } from "@/sections/Filmography";
 import { Characters } from "@/sections/Characters";
 import { Editorial } from "@/sections/Editorial";
-import { CurrentProjects } from "@/sections/CurrentProjects";
+import { Now } from "@/sections/Now";
 import { SiteFooter } from "@/sections/SiteFooter";
 
 export default function Home() {
@@ -13,7 +13,7 @@ export default function Home() {
         <Filmography />
         <Characters />
         <Editorial />
-        <CurrentProjects />
+        <Now />
       </main>
       <SiteFooter />
     </>

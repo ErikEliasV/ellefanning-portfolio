@@ -191,9 +191,17 @@ export const FILMS: readonly Film[] = [
 ];
 
 export const CURRENT_WORK = {
-  title: "Predator: Badlands",
+  title: "Sentimental Value",
+  originalTitle: "Affeksjonsverdi",
   year: 2025,
-  character: "Thia",
-  director: "Dan Trachtenberg",
-  note: "The newest chapter — and the one still being written.",
+  character: "Rachel Kemp",
+  director: "Joachim Trier",
+  format: "Feature",
+  status: "Released",
+  premiere: "Cannes 2025",
+  note: "The part a director's daughter refuses — and the American actress who takes it.",
+  clips: [
+    "/videos/hvorfor-flyttet-dere-ikke-bare-etter-det.mp4",
+    "/videos/jeg-kan-ikke.mp4",
+  ],
 } as const;
