@@ -12,9 +12,9 @@ type FilmStripProps = {
 };
 
 const LANES = [
-  { width: "clamp(148px, min(17vw, 25vh), 292px)", drop: 0, depth: 1 },
-  { width: "clamp(110px, min(12vw, 18vh), 210px)", drop: 66, depth: 0.52 },
-  { width: "clamp(128px, min(14.5vw, 21vh), 248px)", drop: 26, depth: 0.76 },
+  { width: "clamp(168px, min(20vw, 43vh), 420px)", drop: 0, depth: 1 },
+  { width: "clamp(132px, min(15.6vw, 34vh), 328px)", drop: 48, depth: 0.52 },
+  { width: "clamp(150px, min(17.8vw, 38vh), 372px)", drop: 18, depth: 0.76 },
 ] as const;
 
 const READ_MARK = 0.34;
@@ -167,21 +167,21 @@ export function FilmStrip({
           youtubeId={film.youtubeId}
           clipStart={film.clipStart}
           ratio="2 / 3"
-          sizes="(min-width: 1024px) 18vw, (min-width: 640px) 32vw, 52vw"
+          sizes="(min-width: 1024px) 20vw, (min-width: 640px) 32vw, 52vw"
           reveal="color"
           summary={film.summary}
           meta={`Dir. ${film.director}`}
           placeholder={`${film.title.toUpperCase()}\n${film.year}`}
         />
 
-        <div className="relative z-40 mt-3 border-t border-line-hairline bg-paper-100 pt-2">
-          <div className="flex items-baseline justify-between gap-3 font-mono text-label font-bold uppercase tracking-label">
+        <div className="film-meta relative z-40">
+          <div className="film-meta-title">
             <span className="truncate text-ink-900 transition-colors duration-[140ms] ease-[var(--ease-out)] group-hover:text-yellow-600">
               {film.title}
             </span>
             <span className="shrink-0 text-ink-500">{film.year}</span>
           </div>
-          <div className="mt-1 flex items-baseline justify-between gap-3 font-mono text-micro uppercase tracking-label text-ink-500">
+          <div className="film-meta-role">
             <span className="truncate">as {film.character}</span>
             <span className="shrink-0 text-ink-300">{two(index + 1)}</span>
           </div>
@@ -210,29 +210,27 @@ export function FilmStrip({
 
   return (
     <div ref={track} className="relative h-[420svh]">
-      <div
-        ref={stage}
-        style={{ "--gate": "clamp(76px, 17%, 208px)" } as CSSProperties}
-        className="sticky top-0 h-svh overflow-hidden"
-      >
+      <div ref={stage} className="film-gate sticky top-0 h-svh overflow-hidden">
         <div
           ref={gate}
-          className="absolute inset-y-0 left-[calc(var(--gate)+2px)] right-0 overflow-hidden"
+          className="absolute inset-y-0 left-[var(--window)] right-0 overflow-hidden"
         >
           <div
             ref={backdrop}
             aria-hidden
-            style={{
-              backgroundImage:
-                "repeating-linear-gradient(to right, var(--color-paper-300) 0 1px, transparent 1px 132px)",
-            }}
+            style={
+              {
+                backgroundImage:
+                  "repeating-linear-gradient(to right, var(--color-paper-300) 0 1px, transparent 1px 132px)",
+              } as CSSProperties
+            }
             className="pointer-events-none absolute inset-y-0 left-0 w-[200%] will-change-transform"
           />
 
           <div className="absolute inset-0 flex flex-col justify-center">
             <div
               ref={strip}
-              className="flex w-max items-start gap-[clamp(16px,2.4vw,40px)] pl-[clamp(48px,26%,520px)] will-change-transform"
+              className="film-strip flex w-max items-start pl-[clamp(64px,22.26vw,428px)] will-change-transform"
             >
               {cardList}
               {endPlate}
@@ -240,24 +238,12 @@ export function FilmStrip({
           </div>
         </div>
 
-        <div className="pointer-events-none absolute inset-y-0 left-0 z-20 flex w-[var(--gate)] flex-col justify-center bg-paper-100 pl-[var(--gutter-page)] pr-3">
-          <div className="font-display text-display-3 leading-none text-ink-900">
-            {two(active + 1)}
+        <div className="film-index pointer-events-none z-20">
+          <div className="film-index-row">
+            <span className="film-index-now">{two(active + 1)}</span>
+            <span className="film-index-total">/ {two(films.length)}</span>
           </div>
-          <div className="mt-1 font-mono text-label-sm font-bold uppercase tracking-label-wide text-ink-300">
-            / {two(films.length)}
-          </div>
-          <div className="mt-4 border-t border-line-hairline pt-2 font-mono text-label font-bold uppercase tracking-label text-ink-900">
-            {now.year}
-          </div>
-        </div>
-
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-40 flex items-baseline gap-4 border-b border-line-hairline bg-paper-100 px-[var(--gutter-page)] py-3 font-mono text-label-sm font-bold uppercase tracking-label">
-          <span className="shrink-0 text-ink-300">Reel —</span>
-          <span className="min-w-0 truncate text-ink-900">{now.title}</span>
-          <span className="ml-auto hidden shrink-0 text-ink-500 sm:block">
-            Dir. {now.director}
-          </span>
+          <div className="film-index-year">{now.year}</div>
         </div>
 
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-[2px] bg-line-hairline">
@@ -267,8 +253,6 @@ export function FilmStrip({
             className="h-full w-full origin-left bg-yellow-400 will-change-transform"
           />
         </div>
-
-        <div className="pointer-events-none absolute inset-y-0 left-[var(--gate)] z-30 w-[2px] bg-line-rule" />
       </div>
     </div>
   );
