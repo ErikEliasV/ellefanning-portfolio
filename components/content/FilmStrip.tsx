@@ -164,8 +164,6 @@ export function FilmStrip({
         <HoverClip
           alt={`${film.title} (${film.year})`}
           poster={film.poster}
-          youtubeId={film.youtubeId}
-          clipStart={film.clipStart}
           ratio="2 / 3"
           sizes="(min-width: 1024px) 20vw, (min-width: 640px) 32vw, 52vw"
           reveal="color"
