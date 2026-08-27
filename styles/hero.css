@@ -1,0 +1,97 @@
+@property --p {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+@property --inv {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+
+.hero-track {
+  position: relative;
+  flex: none;
+  height: calc(var(--morph, 90svh) + var(--frame-h-b, 100svh));
+}
+
+.hero-frame {
+  position: sticky;
+  top: 0;
+  overflow: hidden;
+  height: calc(
+    var(--frame-h-b, 100svh) - var(--inv) *
+      (var(--frame-h-b, 100svh) - var(--frame-h-a, 100svh))
+  );
+  background-color: var(--color-paper-100);
+}
+
+.hero-track:not([data-ready]) .hero-frame > * {
+  visibility: hidden;
+}
+
+.hero-title {
+  position: absolute;
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  line-height: 0.875;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transform-origin: 0 0;
+  pointer-events: none;
+}
+
+.hero-title > span {
+  display: block;
+}
+
+.hero-title-ink {
+  left: var(--ink-left);
+  top: var(--ink-top);
+  font-size: var(--ink-size);
+  color: var(--color-ink-900);
+  z-index: 5;
+}
+
+.hero-lime {
+  position: absolute;
+  inset: 0;
+  background-color: var(--color-lime-400);
+  clip-path: inset(0 0 0 calc(var(--inv) * var(--lime-left, 0px)));
+  z-index: 10;
+}
+
+.hero-title-paper {
+  left: var(--paper-left);
+  top: var(--paper-top);
+  font-size: var(--paper-size);
+  color: var(--color-paper-200);
+  transform: translate(calc(var(--inv) * var(--paper-dx)), calc(var(--inv) * var(--paper-dy)))
+    scale(calc(1 - var(--inv) * (1 - var(--paper-k))));
+}
+
+.hero-portrait {
+  position: absolute;
+  left: var(--img-x);
+  top: var(--img-y);
+  width: var(--img-w);
+  height: var(--img-h);
+  transform-origin: 0 0;
+  transform: translate(calc(var(--inv) * var(--img-dx)), calc(var(--inv) * var(--img-dy)))
+    scale(calc(1 - var(--inv) * (1 - var(--img-k))));
+  z-index: 20;
+}
+
+.hero-portrait-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+}
+
+.hero-dot {
+  color: var(--color-lime-400);
+}
