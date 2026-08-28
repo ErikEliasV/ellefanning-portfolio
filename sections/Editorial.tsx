@@ -8,6 +8,8 @@ import "@/styles/editorial.css";
 
 const TOTAL = String(EDITORIAL_SHOTS.length).padStart(2, "0");
 
+const FRAMES = EDITORIAL_SHOTS.map((shot) => 1 + (shot.gallery?.length ?? 0));
+
 function pad(index: number) {
   return String(index + 1).padStart(2, "0");
 }
@@ -22,9 +24,10 @@ export function Editorial() {
     capYear,
     active,
     shown,
+    frame,
     armed,
     open,
-  } = useEditorialReel(EDITORIAL_SHOTS.length);
+  } = useEditorialReel(FRAMES);
 
   const item = EDITORIAL_SHOTS[shown];
   const isOpen = active !== null;
@@ -59,6 +62,20 @@ export function Editorial() {
                 sizes="(max-width: 760px) 80vw, 70vw"
                 loading={armed ? "eager" : "lazy"}
               />
+              {index === active
+                ? shot.gallery?.map((src, step) => (
+                    <Image
+                      key={src}
+                      src={asset(src)}
+                      alt=""
+                      fill
+                      sizes="100vw"
+                      className="ed-shot"
+                      data-on={frame === step + 1 ? "" : undefined}
+                    />
+                  ))
+                : null}
+
               <span aria-hidden className="ed-cell-tag">
                 <span className="ed-cell-num">{pad(index)}</span>
                 {shot.title}

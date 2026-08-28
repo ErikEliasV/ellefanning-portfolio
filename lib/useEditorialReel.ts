@@ -9,8 +9,8 @@ const NARROW_MAX = 760;
 const PAN_FACTOR = 0.42;
 const PAN_MIN_VH = 1.2;
 const PAN_MAX_VH = 2;
-const READ_VH = 0.8;
-const READ_MIN = 420;
+const STEP_VH = 0.6;
+const STEP_MIN = 340;
 const IDLE_MS = 180;
 
 function clamp01(value: number) {
@@ -40,7 +40,9 @@ function fitTitle(title: HTMLElement | null, year: HTMLElement | null) {
   title.style.setProperty("--title-fit", fit.toFixed(4));
 }
 
-export function useEditorialReel(count: number) {
+export function useEditorialReel(frames: readonly number[]) {
+  const count = frames.length;
+
   const track = useRef<HTMLDivElement>(null);
   const pin = useRef<HTMLElement>(null);
   const capWrap = useRef<HTMLDivElement>(null);
@@ -50,11 +52,13 @@ export function useEditorialReel(count: number) {
 
   const [active, setActive] = useState<number | null>(null);
   const [shown, setShown] = useState(0);
+  const [frame, setFrame] = useState(0);
   const [armed, setArmed] = useState(false);
 
   const activeRef = useRef<number | null>(null);
+  const frameRef = useRef(0);
   const armedRef = useRef(false);
-  const geometry = useRef({ cell: 1, panMax: 0, panScroll: 1, read: 1, frame: 0 });
+  const geometry = useRef({ cell: 1, panMax: 0, panScroll: 1, step: 1, view: 0 });
   const openAt = useRef(0);
   const spent = useRef(0);
   const idle = useRef(0);
@@ -65,14 +69,20 @@ export function useEditorialReel(count: number) {
     return node ? -node.getBoundingClientRect().top : 0;
   }, []);
 
+  const readFor = useCallback(
+    (index: number | null) =>
+      geometry.current.step * (index === null ? 1 : frames[index] || 1),
+    [frames],
+  );
+
   const close = useCallback(() => {
     if (activeRef.current === null) return;
-    const read = geometry.current.read;
+    const read = readFor(activeRef.current);
     spent.current += clamp01((scrolled() - openAt.current) / read) * read;
     activeRef.current = null;
     setActive(null);
     repaint.current();
-  }, [scrolled]);
+  }, [readFor, scrolled]);
 
   const open = useCallback(
     (index: number) => {
@@ -82,9 +92,11 @@ export function useEditorialReel(count: number) {
       }
       activeRef.current = index;
       openAt.current = scrolled();
+      frameRef.current = 0;
       track.current?.style.setProperty("--c", "0");
       setActive(index);
       setShown(index);
+      setFrame(0);
       repaint.current();
     },
     [close, scrolled],
@@ -107,9 +119,10 @@ export function useEditorialReel(count: number) {
         setArmed(true);
       }
 
-      const { panScroll, read, frame } = geometry.current;
+      const { panScroll, view } = geometry.current;
       const scroll = -rect.top;
       const index = activeRef.current;
+      const read = readFor(index);
       const live = index === null ? 0 : scroll - openAt.current;
 
       if (index !== null && (live < 0 || live >= read)) {
@@ -118,11 +131,25 @@ export function useEditorialReel(count: number) {
       }
 
       const style = node.style;
-      style.setProperty("--q", clamp01((scroll - spent.current - live) / panScroll).toFixed(4));
-      if (index !== null) style.setProperty("--c", (live / read).toFixed(4));
+      style.setProperty(
+        "--q",
+        clamp01((scroll - spent.current - live) / panScroll).toFixed(4),
+      );
+
+      if (index !== null) {
+        const ratio = live / read;
+        style.setProperty("--c", ratio.toFixed(4));
+        const steps = frames[index] || 1;
+        const shot = Math.min(Math.floor(ratio * steps), steps - 1);
+        if (shot !== frameRef.current) {
+          frameRef.current = shot;
+          setFrame(shot);
+        }
+      }
+
       style.setProperty(
         "--track-h",
-        `${(frame + panScroll + spent.current + live).toFixed(2)}px`,
+        `${(view + panScroll + spent.current + live).toFixed(2)}px`,
       );
     }
 
@@ -158,8 +185,8 @@ export function useEditorialReel(count: number) {
         cell,
         panMax,
         panScroll,
-        read: Math.max(READ_VH * vh, READ_MIN),
-        frame: vh,
+        step: Math.max(STEP_VH * vh, STEP_MIN),
+        view: vh,
       };
 
       const hover = Math.max(CELL_HOVER_VW * vw, cell);
@@ -206,7 +233,7 @@ export function useEditorialReel(count: number) {
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("keydown", onKey);
     };
-  }, [count, close]);
+  }, [count, close, readFor, frames]);
 
   useEffect(() => {
     const node = track.current;
@@ -229,6 +256,7 @@ export function useEditorialReel(count: number) {
     capYear,
     active,
     shown,
+    frame,
     armed,
     open,
     close,
