@@ -64,6 +64,7 @@ export function Editorial() {
               data-active={index === active ? "" : undefined}
               aria-expanded={index === active}
               aria-label={`${shot.title} — ${shot.kicker}, ${shot.year}`}
+              data-cursor="Open"
               onClick={() => open(index)}
             >
               <Image
