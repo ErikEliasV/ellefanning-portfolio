@@ -27,6 +27,7 @@ export function Characters() {
             <HoverClip
               alt={`${character.name} — ${character.film}`}
               poster={character.still}
+              reveal="color"
               ratio="3 / 4"
               sizes="(min-width: 768px) 25vw, 50vw"
               placeholder={`${character.name.toUpperCase()}\n${character.film}`}
