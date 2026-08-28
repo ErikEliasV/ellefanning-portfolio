@@ -1,3 +1,9 @@
+export type EditorialFrame = {
+  src: string;
+  width: number;
+  height: number;
+};
+
 export type EditorialShot = {
   id: string;
   title: string;
@@ -7,7 +13,7 @@ export type EditorialShot = {
   width: number;
   height: number;
   note?: string;
-  gallery?: readonly string[];
+  gallery?: readonly EditorialFrame[];
 };
 
 export const EDITORIAL_NOTE =
@@ -23,8 +29,8 @@ export const EDITORIAL_SHOTS: readonly EditorialShot[] = [
     width: 1159,
     height: 1542,
     gallery: [
-      "/images/editorial/vogue-2014/01.webp",
-      "/images/editorial/vogue-2014/02.webp",
+      { src: "/images/editorial/vogue-2014/01.webp", width: 984, height: 763 },
+      { src: "/images/editorial/vogue-2014/02.webp", width: 604, height: 804 },
     ],
   },
   {
@@ -36,9 +42,9 @@ export const EDITORIAL_SHOTS: readonly EditorialShot[] = [
     width: 877,
     height: 1200,
     gallery: [
-      "/images/editorial/vogue-2017/01.webp",
-      "/images/editorial/vogue-2017/02.webp",
-      "/images/editorial/vogue-2017/03.webp",
+      { src: "/images/editorial/vogue-2017/01.webp", width: 1600, height: 1095 },
+      { src: "/images/editorial/vogue-2017/02.webp", width: 1200, height: 630 },
+      { src: "/images/editorial/vogue-2017/03.webp", width: 1024, height: 693 },
     ],
   },
   {
@@ -50,9 +56,9 @@ export const EDITORIAL_SHOTS: readonly EditorialShot[] = [
     width: 1471,
     height: 2000,
     gallery: [
-      "/images/editorial/vanity-fair-2020/01.webp",
-      "/images/editorial/vanity-fair-2020/02.webp",
-      "/images/editorial/vanity-fair-2020/03.webp",
+      { src: "/images/editorial/vanity-fair-2020/01.webp", width: 1200, height: 1800 },
+      { src: "/images/editorial/vanity-fair-2020/02.webp", width: 1200, height: 1800 },
+      { src: "/images/editorial/vanity-fair-2020/03.webp", width: 1600, height: 1066 },
     ],
   },
   {
@@ -64,10 +70,10 @@ export const EDITORIAL_SHOTS: readonly EditorialShot[] = [
     width: 1024,
     height: 1331,
     gallery: [
-      "/images/editorial/icon-magazine-2020/01.webp",
-      "/images/editorial/icon-magazine-2020/02.webp",
-      "/images/editorial/icon-magazine-2020/03.webp",
-      "/images/editorial/icon-magazine-2020/04.webp",
+      { src: "/images/editorial/icon-magazine-2020/01.webp", width: 1024, height: 1331 },
+      { src: "/images/editorial/icon-magazine-2020/02.webp", width: 800, height: 1018 },
+      { src: "/images/editorial/icon-magazine-2020/03.webp", width: 800, height: 1000 },
+      { src: "/images/editorial/icon-magazine-2020/04.webp", width: 800, height: 1000 },
     ],
   },
   {
@@ -79,8 +85,8 @@ export const EDITORIAL_SHOTS: readonly EditorialShot[] = [
     width: 1600,
     height: 2400,
     gallery: [
-      "/images/editorial/vogue-met-gala-2023/01.webp",
-      "/images/editorial/vogue-met-gala-2023/02.webp",
+      { src: "/images/editorial/vogue-met-gala-2023/01.webp", width: 1350, height: 1800 },
+      { src: "/images/editorial/vogue-met-gala-2023/02.webp", width: 1200, height: 1800 },
     ],
   },
   {
@@ -92,10 +98,10 @@ export const EDITORIAL_SHOTS: readonly EditorialShot[] = [
     width: 1800,
     height: 2629,
     gallery: [
-      "/images/editorial/w-magazine-cannes-2023/01.webp",
-      "/images/editorial/w-magazine-cannes-2023/02.webp",
-      "/images/editorial/w-magazine-cannes-2023/03.webp",
-      "/images/editorial/w-magazine-cannes-2023/04.webp",
+      { src: "/images/editorial/w-magazine-cannes-2023/01.webp", width: 1232, height: 1800 },
+      { src: "/images/editorial/w-magazine-cannes-2023/02.webp", width: 828, height: 1246 },
+      { src: "/images/editorial/w-magazine-cannes-2023/03.webp", width: 750, height: 1125 },
+      { src: "/images/editorial/w-magazine-cannes-2023/04.webp", width: 640, height: 706 },
     ],
   },
   {
@@ -107,8 +113,8 @@ export const EDITORIAL_SHOTS: readonly EditorialShot[] = [
     width: 1080,
     height: 1080,
     gallery: [
-      "/images/editorial/harpers-bazaar-coach-2025/01.webp",
-      "/images/editorial/harpers-bazaar-coach-2025/02.webp",
+      { src: "/images/editorial/harpers-bazaar-coach-2025/01.webp", width: 768, height: 960 },
+      { src: "/images/editorial/harpers-bazaar-coach-2025/02.webp", width: 768, height: 523 },
     ],
   },
   {
@@ -120,7 +126,7 @@ export const EDITORIAL_SHOTS: readonly EditorialShot[] = [
     width: 2560,
     height: 3839,
     gallery: [
-      "/images/editorial/vogue-oscars-2025/01.webp",
+      { src: "/images/editorial/vogue-oscars-2025/01.webp", width: 1200, height: 1800 },
     ],
   },
   {
@@ -132,11 +138,11 @@ export const EDITORIAL_SHOTS: readonly EditorialShot[] = [
     width: 1080,
     height: 1350,
     gallery: [
-      "/images/editorial/vogue-2026/01.webp",
-      "/images/editorial/vogue-2026/02.webp",
-      "/images/editorial/vogue-2026/03.webp",
-      "/images/editorial/vogue-2026/04.webp",
-      "/images/editorial/vogue-2026/05.webp",
+      { src: "/images/editorial/vogue-2026/01.webp", width: 1440, height: 1800 },
+      { src: "/images/editorial/vogue-2026/02.webp", width: 1440, height: 1800 },
+      { src: "/images/editorial/vogue-2026/03.webp", width: 1440, height: 1799 },
+      { src: "/images/editorial/vogue-2026/04.webp", width: 1439, height: 1799 },
+      { src: "/images/editorial/vogue-2026/05.webp", width: 1439, height: 1799 },
     ],
   },
   {
@@ -148,10 +154,10 @@ export const EDITORIAL_SHOTS: readonly EditorialShot[] = [
     width: 980,
     height: 1322,
     gallery: [
-      "/images/editorial/harpers-bazaar/01.webp",
-      "/images/editorial/harpers-bazaar/02.webp",
-      "/images/editorial/harpers-bazaar/03.webp",
-      "/images/editorial/harpers-bazaar/04.webp",
+      { src: "/images/editorial/harpers-bazaar/01.webp", width: 1600, height: 1066 },
+      { src: "/images/editorial/harpers-bazaar/02.webp", width: 1600, height: 902 },
+      { src: "/images/editorial/harpers-bazaar/03.webp", width: 980, height: 1303 },
+      { src: "/images/editorial/harpers-bazaar/04.webp", width: 980, height: 1299 },
     ],
   },
 ];

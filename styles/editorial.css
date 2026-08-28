@@ -117,18 +117,6 @@
   filter: var(--filter-image-color);
 }
 
-.ed-shot {
-  z-index: 1;
-  object-fit: cover;
-  opacity: 0;
-  filter: var(--filter-image-color);
-  transition: opacity var(--duration-base) var(--ease-out);
-}
-
-.ed-shot[data-on] {
-  opacity: 1;
-}
-
 .ed-cell-tag {
   position: absolute;
   left: 0;
@@ -165,6 +153,31 @@
   background-color: rgba(44, 44, 44, 0.68);
   opacity: var(--open);
   pointer-events: none;
+}
+
+.ed-cards {
+  position: absolute;
+  inset: 0;
+  z-index: 15;
+  opacity: var(--open);
+  pointer-events: none;
+}
+
+.ed-card {
+  --t: clamp(0, calc((var(--c) - var(--a)) / (var(--b) - var(--a))), 1);
+  position: absolute;
+  width: min(var(--w), calc(52svh * var(--ar)));
+  height: auto;
+  max-width: 46vw;
+  box-shadow: var(--shadow-offset-md);
+  filter: var(--filter-image-color);
+  opacity: var(--t);
+  transform: translate3d(
+    calc((1 - var(--t)) * var(--dx)),
+    calc((1 - var(--t)) * var(--dy)),
+    0
+  );
+  will-change: transform, opacity;
 }
 
 .ed-caption-wrap {
@@ -277,6 +290,10 @@
 }
 
 @media (width < 48rem) {
+  .ed-card {
+    width: min(46vw, calc(40svh * var(--ar)));
+  }
+
   .ed-caption-wrap {
     left: 22px;
     width: calc(100% - 44px);

@@ -52,11 +52,9 @@ export function useEditorialReel(frames: readonly number[]) {
 
   const [active, setActive] = useState<number | null>(null);
   const [shown, setShown] = useState(0);
-  const [frame, setFrame] = useState(0);
   const [armed, setArmed] = useState(false);
 
   const activeRef = useRef<number | null>(null);
-  const frameRef = useRef(0);
   const armedRef = useRef(false);
   const geometry = useRef({ cell: 1, panMax: 0, panScroll: 1, step: 1, view: 0 });
   const openAt = useRef(0);
@@ -92,11 +90,9 @@ export function useEditorialReel(frames: readonly number[]) {
       }
       activeRef.current = index;
       openAt.current = scrolled();
-      frameRef.current = 0;
       track.current?.style.setProperty("--c", "0");
       setActive(index);
       setShown(index);
-      setFrame(0);
       repaint.current();
     },
     [close, scrolled],
@@ -136,16 +132,7 @@ export function useEditorialReel(frames: readonly number[]) {
         clamp01((scroll - spent.current - live) / panScroll).toFixed(4),
       );
 
-      if (index !== null) {
-        const ratio = live / read;
-        style.setProperty("--c", ratio.toFixed(4));
-        const steps = frames[index] || 1;
-        const shot = Math.min(Math.floor(ratio * steps), steps - 1);
-        if (shot !== frameRef.current) {
-          frameRef.current = shot;
-          setFrame(shot);
-        }
-      }
+      if (index !== null) style.setProperty("--c", (live / read).toFixed(4));
 
       style.setProperty(
         "--track-h",
@@ -256,7 +243,6 @@ export function useEditorialReel(frames: readonly number[]) {
     capYear,
     active,
     shown,
-    frame,
     armed,
     open,
     close,
