@@ -77,15 +77,17 @@
     --squeeze 300ms var(--ease-out);
 }
 
-.ed-pin:not([data-open]) .ed-reel:has(.ed-cell:hover) .ed-cell:not(:hover),
-.ed-pin:not([data-open])
+.ed-pin:not([data-open]):not([data-scrolling])
+  .ed-reel:has(.ed-cell:hover)
+  .ed-cell:not(:hover),
+.ed-pin:not([data-open]):not([data-scrolling])
   .ed-reel:has(.ed-cell:focus-visible)
   .ed-cell:not(:focus-visible) {
   --squeeze: 1;
 }
 
-.ed-pin:not([data-open]) .ed-cell:hover,
-.ed-pin:not([data-open]) .ed-cell:focus-visible {
+.ed-pin:not([data-open]):not([data-scrolling]) .ed-cell:hover,
+.ed-pin:not([data-open]):not([data-scrolling]) .ed-cell:focus-visible {
   --grow: 1;
 }
 

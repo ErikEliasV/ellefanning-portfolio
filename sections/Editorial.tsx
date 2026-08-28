@@ -15,6 +15,7 @@ function pad(index: number) {
 export function Editorial() {
   const {
     track,
+    pin,
     capWrap,
     capBlock,
     capTitle,
@@ -31,6 +32,7 @@ export function Editorial() {
   return (
     <div ref={track} className="ed-track">
       <section
+        ref={pin}
         id="editorial"
         className="ed-pin"
         data-open={isOpen ? "" : undefined}

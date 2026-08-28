@@ -11,6 +11,7 @@ const PAN_MIN_VH = 1.2;
 const PAN_MAX_VH = 2;
 const READ_VH = 0.8;
 const READ_MIN = 420;
+const IDLE_MS = 180;
 
 function clamp01(value: number) {
   return value < 0 ? 0 : value > 1 ? 1 : value;
@@ -41,6 +42,7 @@ function fitTitle(title: HTMLElement | null, year: HTMLElement | null) {
 
 export function useEditorialReel(count: number) {
   const track = useRef<HTMLDivElement>(null);
+  const pin = useRef<HTMLElement>(null);
   const capWrap = useRef<HTMLDivElement>(null);
   const capBlock = useRef<HTMLDivElement>(null);
   const capTitle = useRef<HTMLParagraphElement>(null);
@@ -55,6 +57,7 @@ export function useEditorialReel(count: number) {
   const geometry = useRef({ cell: 1, panMax: 0, panScroll: 1, read: 1, frame: 0 });
   const openAt = useRef(0);
   const spent = useRef(0);
+  const idle = useRef(0);
   const repaint = useRef(() => {});
 
   const scrolled = useCallback(() => {
@@ -124,6 +127,15 @@ export function useEditorialReel(count: number) {
     }
 
     function schedule() {
+      const pinNode = pin.current;
+      if (pinNode) {
+        pinNode.setAttribute("data-scrolling", "");
+        window.clearTimeout(idle.current);
+        idle.current = window.setTimeout(
+          () => pinNode.removeAttribute("data-scrolling"),
+          IDLE_MS,
+        );
+      }
       if (!ticket) ticket = requestAnimationFrame(progress);
     }
 
@@ -188,6 +200,7 @@ export function useEditorialReel(count: number) {
 
     return () => {
       cancelAnimationFrame(ticket);
+      window.clearTimeout(idle.current);
       observer.disconnect();
       window.removeEventListener("resize", measure);
       window.removeEventListener("scroll", schedule);
@@ -209,6 +222,7 @@ export function useEditorialReel(count: number) {
 
   return {
     track,
+    pin,
     capWrap,
     capBlock,
     capTitle,
