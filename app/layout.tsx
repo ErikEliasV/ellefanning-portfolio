@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Anton, Space_Mono, Archivo } from "next/font/google";
+import { Cursor } from "@/components/core/Cursor";
 import { Preloader } from "@/components/core/Preloader";
 import "@/styles/globals.css";
 
@@ -39,6 +40,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <Preloader />
+        <Cursor />
         {children}
       </body>
     </html>

@@ -12,6 +12,7 @@ export function SiteFooter() {
   return (
     <footer
       id="footer"
+      data-cursor-skin="invert"
       className="site-footer grain relative overflow-hidden border-t border-line-rule bg-ink-900 text-paper-100"
     >
       <h2 className="footer-mark">
@@ -32,6 +33,7 @@ export function SiteFooter() {
                   href={link.href}
                   target="_blank"
                   rel="noreferrer noopener"
+                  data-cursor="Visit"
                   className="group flex items-baseline justify-between gap-6 border-b border-line-invert py-3 font-mono text-label font-bold uppercase tracking-label-wide text-paper-100 transition-colors duration-[140ms] ease-[var(--ease-out)] hover:text-lime-400"
                 >
                   <span className="flex items-center gap-3">
