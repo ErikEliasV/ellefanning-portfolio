@@ -10,7 +10,7 @@ export type EditorialShot = {
 };
 
 export const EDITORIAL_NOTE =
-  "Magazine work, campaigns and red carpets. Scroll runs the reel; the frame under the cursor opens full screen.";
+  "Magazine work, campaigns and red carpets. Scroll runs the reel; click a frame to open it full screen.";
 
 export const EDITORIAL_SHOTS: readonly EditorialShot[] = [
   {

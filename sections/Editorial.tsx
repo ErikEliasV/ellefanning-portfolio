@@ -22,12 +22,7 @@ export function Editorial() {
     active,
     shown,
     armed,
-    settled,
-    onPointerEnter,
-    onPointerMove,
-    onPointerLeave,
-    onTap,
-    onFocusCell,
+    open,
   } = useEditorialReel(EDITORIAL_SHOTS.length);
 
   const item = EDITORIAL_SHOTS[shown];
@@ -39,11 +34,6 @@ export function Editorial() {
         id="editorial"
         className="ed-pin"
         data-open={isOpen ? "" : undefined}
-        data-settled={settled ? "" : undefined}
-        onPointerEnter={onPointerEnter}
-        onPointerMove={onPointerMove}
-        onPointerLeave={onPointerLeave}
-        onClick={onTap}
       >
         <h2 className="sr-only">Editorial</h2>
 
@@ -54,8 +44,9 @@ export function Editorial() {
               type="button"
               className="ed-cell"
               data-active={index === active ? "" : undefined}
+              aria-expanded={index === active}
               aria-label={`${shot.title} — ${shot.kicker}, ${shot.year}`}
-              onFocus={() => onFocusCell(index)}
+              onClick={() => open(index)}
             >
               <Image
                 src={asset(shot.src)}
@@ -63,7 +54,7 @@ export function Editorial() {
                 width={shot.width}
                 height={shot.height}
                 className="ed-cell-img"
-                sizes="(max-width: 760px) 80vw, 30vw"
+                sizes="(max-width: 760px) 80vw, 36vw"
                 loading={armed ? "eager" : "lazy"}
               />
               <span aria-hidden className="ed-cell-tag">
@@ -104,8 +95,8 @@ export function Editorial() {
 
         <span aria-hidden className="ed-hint">
           {isOpen
-            ? "Keep scrolling to run the reel · Esc to close"
-            : "Scroll to run the reel · Move the cursor to open a frame"}
+            ? "Scroll to read · Click or Esc to close"
+            : "Scroll to run the reel · Click a frame to open it"}
         </span>
       </section>
     </div>

@@ -16,6 +16,12 @@
   initial-value: 0;
 }
 
+@property --grow {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+
 .ed-track {
   position: relative;
   flex: none;
@@ -24,23 +30,16 @@
 
 .ed-pin {
   --open: 0;
-  --c: 0;
   position: sticky;
   top: 0;
   height: 100svh;
   overflow: hidden;
   background-color: var(--color-ink-900);
-  transition:
-    --open 620ms var(--ease-out),
-    --c 520ms var(--ease-out);
+  transition: --open 620ms var(--ease-out);
 }
 
 .ed-pin[data-open] {
   --open: 1;
-}
-
-.ed-pin[data-open][data-settled] {
-  --c: 1;
 }
 
 .ed-reel {
@@ -52,19 +51,28 @@
 
 .ed-cell {
   position: relative;
-  flex: 0 0 calc(var(--cell-w, 30vw) * (1 - var(--open)));
+  flex: 0 0 calc(
+    var(--cell-w, 30vw) * (1 - var(--open)) * (1 + var(--grow) * 0.16)
+  );
   height: 100%;
   margin: 0;
   padding: 0;
   border: 0;
   overflow: hidden;
   background-color: var(--color-ink-800);
-  cursor: pointer;
+  cursor: zoom-in;
   appearance: none;
+  transition: --grow 240ms var(--ease-out);
+}
+
+.ed-pin:not([data-open]) .ed-cell:hover,
+.ed-pin:not([data-open]) .ed-cell:focus-visible {
+  --grow: 1;
 }
 
 .ed-cell[data-active] {
   flex-basis: calc(var(--cell-w, 30vw) + var(--open) * (100% - var(--cell-w, 30vw)));
+  cursor: zoom-out;
 }
 
 .ed-cell + .ed-cell {
