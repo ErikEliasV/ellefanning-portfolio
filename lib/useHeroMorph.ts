@@ -11,17 +11,17 @@ const SIL_WIDTH = 1490 / 1900;
 const FRAME_W = 1920;
 const TITLE_FIT_H = 1120;
 
-const A_SIL_W_VW = 0.72;
-const A_SIL_W_VH = 1.624;
+const A_SIL_W_VW = 1.0342;
+const A_SIL_W_VH = 1.6;
 const A_SIL_W_MAX_VW = 1.9;
-const A_SIL_TOP_VH = 0.115;
-const A_SIL_CX_VW = 0.5129;
+const A_SIL_SHOW = 0.38;
+const A_SIL_CX_VW = 0.5115;
+const A_RISE_VH = 0.22;
 
 const B_SIL_W_VW = 1.04;
-const B_GROWTH = 1.16;
 const B_HEADROOM = 0.12;
 
-const LIME_LEFT = 807 / FRAME_W;
+const LIME_LEFT = 941 / FRAME_W;
 const MORPH_VH = 0.7;
 
 const INK_LEFT = -54;
@@ -92,13 +92,16 @@ export function useHeroMorph() {
         Math.max(A_SIL_W_VW * vw, A_SIL_W_VH * vh),
         A_SIL_W_MAX_VW * vw,
       );
-      const silTa = Math.max(A_SIL_TOP_VH * vh, vh - silWa / SIL_RATIO);
-      const boxA = imageBox(silWa, A_SIL_CX_VW * vw, silTa);
+      const silHa = silWa / SIL_RATIO;
 
-      const silWb = Math.max(B_SIL_W_VW * vw, B_GROWTH * silWa);
+      const silWb = Math.max(B_SIL_W_VW * vw, silWa);
       const silHb = silWb / SIL_RATIO;
       const frameHb = Math.max(vh, silHb / (1 - B_HEADROOM));
-      const boxB = imageBox(silWb, vw / 2, frameHb - silHb);
+      const silTb = frameHb - silHb;
+      const boxB = imageBox(silWb, vw / 2, silTb);
+
+      const silTa = Math.max(vh - A_SIL_SHOW * silHa, silTb + A_RISE_VH * vh);
+      const boxA = imageBox(silWa, A_SIL_CX_VW * vw, silTa);
 
       morph = MORPH_VH * vh;
 
