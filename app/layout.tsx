@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Anton, Space_Mono, Archivo } from "next/font/google";
+import { Preloader } from "@/components/core/Preloader";
 import "@/styles/globals.css";
 
 const anton = Anton({
@@ -36,7 +37,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${anton.variable} ${spaceMono.variable} ${archivo.variable} h-full`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <Preloader />
+        {children}
+      </body>
     </html>
   );
 }
