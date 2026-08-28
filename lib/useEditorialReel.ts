@@ -1,19 +1,22 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type {
-  MouseEvent as ReactMouseEvent,
-  PointerEvent as ReactPointerEvent,
-} from "react";
 
 const CELL_VW = 0.3;
+const CELL_HOVER_VW = 0.7;
 const CELL_VW_NARROW = 0.8;
 const NARROW_MAX = 760;
 const PAN_FACTOR = 0.42;
 const PAN_MIN_VH = 1.2;
 const PAN_MAX_VH = 2;
-const INTENT_PX = 12;
-const SETTLE_MS = 620;
+const STEP_VH = 0.6;
+const STEP_MIN = 340;
+const IDLE_MS = 180;
+const EXIT_MS = 780;
+
+function clamp01(value: number) {
+  return value < 0 ? 0 : value > 1 ? 1 : value;
+}
 
 function smallViewportHeight() {
   const probe = document.createElement("div");
@@ -38,8 +41,11 @@ function fitTitle(title: HTMLElement | null, year: HTMLElement | null) {
   title.style.setProperty("--title-fit", fit.toFixed(4));
 }
 
-export function useEditorialReel(count: number) {
+export function useEditorialReel(frames: readonly number[]) {
+  const count = frames.length;
+
   const track = useRef<HTMLDivElement>(null);
+  const pin = useRef<HTMLElement>(null);
   const capWrap = useRef<HTMLDivElement>(null);
   const capBlock = useRef<HTMLDivElement>(null);
   const capTitle = useRef<HTMLParagraphElement>(null);
@@ -48,104 +54,56 @@ export function useEditorialReel(count: number) {
   const [active, setActive] = useState<number | null>(null);
   const [shown, setShown] = useState(0);
   const [armed, setArmed] = useState(false);
-  const [settled, setSettled] = useState(false);
+  const [leaving, setLeaving] = useState(false);
 
   const activeRef = useRef<number | null>(null);
   const armedRef = useRef(false);
-  const settledRef = useRef(false);
-  const settleTimer = useRef(0);
+  const geometry = useRef({ cell: 1, panMax: 0, panScroll: 1, step: 1, view: 0 });
+  const openAt = useRef(0);
+  const spent = useRef(0);
+  const idle = useRef(0);
+  const exit = useRef(0);
+  const repaint = useRef(() => {});
 
-  const engaged = useRef(false);
-  const pointer = useRef({ x: -1, inside: false, travel: 0 });
-  const geometry = useRef({ cell: 1, panMax: 0, panScroll: 1, q: 0 });
-
-  const rest = useCallback(() => {
-    if (settledRef.current) {
-      settledRef.current = false;
-      setSettled(false);
-    }
-    window.clearTimeout(settleTimer.current);
-    settleTimer.current = window.setTimeout(() => {
-      settledRef.current = true;
-      setSettled(true);
-    }, SETTLE_MS);
+  const scrolled = useCallback(() => {
+    const node = track.current;
+    return node ? -node.getBoundingClientRect().top : 0;
   }, []);
 
-  const focus = useCallback(
-    (index: number | null) => {
-      if (activeRef.current === index) return;
-      activeRef.current = index;
-      setActive(index);
-      if (index !== null) setShown(index);
-      rest();
-    },
-    [rest],
+  const readFor = useCallback(
+    (index: number | null) =>
+      geometry.current.step * (index === null ? 1 : frames[index] || 1),
+    [frames],
   );
-
-  const sync = useCallback(() => {
-    if (!engaged.current || !pointer.current.inside) {
-      focus(null);
-      return;
-    }
-    const { cell, panMax, q } = geometry.current;
-    const raw = Math.floor((pointer.current.x + q * panMax) / cell);
-    focus(Math.min(Math.max(raw, 0), count - 1));
-  }, [count, focus]);
 
   const close = useCallback(() => {
-    engaged.current = false;
-    pointer.current.travel = 0;
-    focus(null);
-  }, [focus]);
+    if (activeRef.current === null) return;
+    const read = readFor(activeRef.current);
+    spent.current += clamp01((scrolled() - openAt.current) / read) * read;
+    activeRef.current = null;
+    setActive(null);
+    setLeaving(true);
+    window.clearTimeout(exit.current);
+    exit.current = window.setTimeout(() => setLeaving(false), EXIT_MS);
+    repaint.current();
+  }, [readFor, scrolled]);
 
-  const onPointerEnter = useCallback((event: ReactPointerEvent) => {
-    pointer.current.x = event.clientX;
-    pointer.current.inside = true;
-    pointer.current.travel = 0;
-  }, []);
-
-  const onPointerMove = useCallback(
-    (event: ReactPointerEvent) => {
-      const previous = pointer.current.x;
-      pointer.current.x = event.clientX;
-      pointer.current.inside = true;
-      if (previous >= 0) {
-        pointer.current.travel += Math.abs(event.clientX - previous);
-      }
-      if (!engaged.current && pointer.current.travel >= INTENT_PX) {
-        engaged.current = true;
-      }
-      sync();
-    },
-    [sync],
-  );
-
-  const onPointerLeave = useCallback(() => {
-    pointer.current = { x: -1, inside: false, travel: 0 };
-    close();
-  }, [close]);
-
-  const onTap = useCallback(
-    (event: ReactMouseEvent) => {
+  const open = useCallback(
+    (index: number) => {
       if (activeRef.current !== null) {
         close();
         return;
       }
-      pointer.current.x = event.clientX;
-      pointer.current.inside = true;
-      engaged.current = true;
-      sync();
+      activeRef.current = index;
+      openAt.current = scrolled();
+      window.clearTimeout(exit.current);
+      setLeaving(false);
+      track.current?.style.setProperty("--c", "0");
+      setActive(index);
+      setShown(index);
+      repaint.current();
     },
-    [close, sync],
-  );
-
-  const onFocusCell = useCallback(
-    (index: number) => {
-      engaged.current = true;
-      pointer.current.inside = true;
-      focus(index);
-    },
-    [focus],
+    [close, scrolled],
   );
 
   useEffect(() => {
@@ -156,25 +114,58 @@ export function useEditorialReel(count: number) {
 
     function progress() {
       ticket = 0;
-      if (!trackNode) return;
-      const rect = trackNode.getBoundingClientRect();
+      const node = track.current;
+      if (!node) return;
+
+      const rect = node.getBoundingClientRect();
       if (!armedRef.current && rect.top < window.innerHeight * 2) {
         armedRef.current = true;
         setArmed(true);
       }
-      const q = Math.min(Math.max(-rect.top / geometry.current.panScroll, 0), 1);
-      geometry.current.q = q;
-      trackNode.style.setProperty("--q", q.toFixed(4));
-      rest();
-      sync();
+
+      const { panScroll, view } = geometry.current;
+      const scroll = -rect.top;
+      const index = activeRef.current;
+      const read = readFor(index);
+      const live = index === null ? 0 : scroll - openAt.current;
+
+      if (index !== null && (live < 0 || live >= read)) {
+        close();
+        return;
+      }
+
+      const style = node.style;
+      style.setProperty(
+        "--q",
+        clamp01((scroll - spent.current - live) / panScroll).toFixed(4),
+      );
+
+      if (index !== null) style.setProperty("--c", (live / read).toFixed(4));
+
+      style.setProperty(
+        "--track-h",
+        `${(view + panScroll + spent.current + live).toFixed(2)}px`,
+      );
     }
 
     function schedule() {
+      const pinNode = pin.current;
+      if (pinNode) {
+        pinNode.setAttribute("data-scrolling", "");
+        window.clearTimeout(idle.current);
+        idle.current = window.setTimeout(
+          () => pinNode.removeAttribute("data-scrolling"),
+          IDLE_MS,
+        );
+      }
       if (!ticket) ticket = requestAnimationFrame(progress);
     }
 
+    repaint.current = progress;
+
     function measure() {
-      if (!trackNode) return;
+      const node = track.current;
+      if (!node) return;
       const vw = document.documentElement.clientWidth;
       const vh = smallViewportHeight();
       if (!vw || !vh) return;
@@ -185,12 +176,25 @@ export function useEditorialReel(count: number) {
         Math.max(panMax * PAN_FACTOR, PAN_MIN_VH * vh),
         PAN_MAX_VH * vh,
       );
-      geometry.current = { ...geometry.current, cell, panMax, panScroll };
+      geometry.current = {
+        cell,
+        panMax,
+        panScroll,
+        step: Math.max(STEP_VH * vh, STEP_MIN),
+        view: vh,
+      };
 
-      const style = trackNode.style;
+      const hover = Math.max(CELL_HOVER_VW * vw, cell);
+      const rest =
+        count > 1
+          ? Math.max((count * cell - hover) / (count - 1), cell * 0.4)
+          : cell;
+
+      const style = node.style;
       style.setProperty("--cell-w", `${cell.toFixed(2)}px`);
+      style.setProperty("--cell-hover", `${hover.toFixed(2)}px`);
+      style.setProperty("--cell-rest", `${rest.toFixed(2)}px`);
       style.setProperty("--pan-max", `${panMax.toFixed(2)}px`);
-      style.setProperty("--track-h", `${(vh + panScroll).toFixed(2)}px`);
 
       fitTitle(capTitle.current, capYear.current);
 
@@ -199,6 +203,12 @@ export function useEditorialReel(count: number) {
       if (wrap && block) {
         const travel = Math.max(0, wrap.clientHeight - block.offsetHeight);
         style.setProperty("--cap-travel", `${travel.toFixed(2)}px`);
+
+        const rule = block.querySelector<HTMLElement>(".ed-rule");
+        if (rule) {
+          const top = wrap.offsetTop + rule.offsetTop + rule.offsetHeight;
+          style.setProperty("--cards-top", `${top.toFixed(2)}px`);
+        }
       }
 
       progress();
@@ -218,28 +228,30 @@ export function useEditorialReel(count: number) {
 
     return () => {
       cancelAnimationFrame(ticket);
-      window.clearTimeout(settleTimer.current);
+      window.clearTimeout(idle.current);
+      window.clearTimeout(exit.current);
       observer.disconnect();
       window.removeEventListener("resize", measure);
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("keydown", onKey);
     };
-  }, [count, close, rest, sync]);
+  }, [count, close, readFor, frames]);
 
   useEffect(() => {
-    const trackNode = track.current;
-    if (!trackNode) return;
+    const node = track.current;
+    if (!node) return;
     fitTitle(capTitle.current, capYear.current);
     const wrap = capWrap.current;
     const block = capBlock.current;
     if (wrap && block) {
       const travel = Math.max(0, wrap.clientHeight - block.offsetHeight);
-      trackNode.style.setProperty("--cap-travel", `${travel.toFixed(2)}px`);
+      node.style.setProperty("--cap-travel", `${travel.toFixed(2)}px`);
     }
   }, [shown]);
 
   return {
     track,
+    pin,
     capWrap,
     capBlock,
     capTitle,
@@ -247,12 +259,8 @@ export function useEditorialReel(count: number) {
     active,
     shown,
     armed,
-    settled,
+    leaving,
+    open,
     close,
-    onPointerEnter,
-    onPointerMove,
-    onPointerLeave,
-    onTap,
-    onFocusCell,
   };
 }

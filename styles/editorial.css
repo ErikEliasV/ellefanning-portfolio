@@ -16,6 +16,18 @@
   initial-value: 0;
 }
 
+@property --grow {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+
+@property --squeeze {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+
 .ed-track {
   position: relative;
   flex: none;
@@ -24,23 +36,18 @@
 
 .ed-pin {
   --open: 0;
-  --c: 0;
+  --cc: clamp(0, calc(var(--c) / 0.2), 1);
   position: sticky;
   top: 0;
   height: 100svh;
   overflow: hidden;
   background-color: var(--color-ink-900);
-  transition:
-    --open 620ms var(--ease-out),
-    --c 520ms var(--ease-out);
+  transition: --open 620ms var(--ease-out) 180ms;
 }
 
 .ed-pin[data-open] {
   --open: 1;
-}
-
-.ed-pin[data-open][data-settled] {
-  --c: 1;
+  transition: --open 620ms var(--ease-out);
 }
 
 .ed-reel {
@@ -52,19 +59,43 @@
 
 .ed-cell {
   position: relative;
-  flex: 0 0 calc(var(--cell-w, 30vw) * (1 - var(--open)));
+  flex: 0 0 calc(
+    (
+        var(--cell-w, 30vw) +
+          var(--grow) * (var(--cell-hover, 70vw) - var(--cell-w, 30vw)) -
+          var(--squeeze) * (var(--cell-w, 30vw) - var(--cell-rest, 26vw))
+      ) * (1 - var(--open))
+  );
   height: 100%;
   margin: 0;
   padding: 0;
   border: 0;
   overflow: hidden;
   background-color: var(--color-ink-800);
-  cursor: pointer;
+  cursor: zoom-in;
   appearance: none;
+  transition:
+    --grow 300ms var(--ease-out),
+    --squeeze 300ms var(--ease-out);
+}
+
+.ed-pin:not([data-open]):not([data-scrolling])
+  .ed-reel:has(.ed-cell:hover)
+  .ed-cell:not(:hover),
+.ed-pin:not([data-open]):not([data-scrolling])
+  .ed-reel:has(.ed-cell:focus-visible)
+  .ed-cell:not(:focus-visible) {
+  --squeeze: 1;
+}
+
+.ed-pin:not([data-open]):not([data-scrolling]) .ed-cell:hover,
+.ed-pin:not([data-open]):not([data-scrolling]) .ed-cell:focus-visible {
+  --grow: 1;
 }
 
 .ed-cell[data-active] {
   flex-basis: calc(var(--cell-w, 30vw) + var(--open) * (100% - var(--cell-w, 30vw)));
+  cursor: zoom-out;
 }
 
 .ed-cell + .ed-cell {
@@ -78,6 +109,14 @@
   max-width: none;
   object-fit: cover;
   object-position: center calc(var(--open) * 22%);
+  filter: var(--filter-image);
+  transition: filter var(--duration-base) var(--ease-out);
+}
+
+.ed-cell:hover .ed-cell-img,
+.ed-cell:focus-visible .ed-cell-img,
+.ed-cell[data-active] .ed-cell-img {
+  filter: var(--filter-image-color);
 }
 
 .ed-cell-tag {
@@ -118,6 +157,44 @@
   pointer-events: none;
 }
 
+.ed-cards {
+  --band: calc(100svh - var(--cards-top, 46svh) - 10svh);
+  position: absolute;
+  inset: 0;
+  z-index: 15;
+  opacity: var(--open);
+  pointer-events: none;
+}
+
+.ed-card {
+  --t: clamp(0, calc((var(--c) - var(--a)) / (var(--b) - var(--a))), 1);
+  position: absolute;
+  width: min(var(--w), calc(var(--band) * var(--ar)));
+  height: auto;
+  max-height: var(--band);
+  max-width: 46vw;
+  box-shadow: var(--shadow-offset-md);
+  filter: var(--filter-image-color);
+  opacity: var(--t);
+  transform: translate3d(
+      calc((1 - var(--t)) * var(--dx)),
+      calc((1 - var(--t)) * var(--dy)),
+      0
+    )
+    rotate(calc(var(--rot) - (1 - var(--t)) * var(--spin)));
+  will-change: transform, opacity;
+}
+
+.ed-cards[data-exit] .ed-card {
+  transition:
+    transform 560ms var(--ease-out),
+    opacity 420ms var(--ease-out);
+  transition-delay: var(--out-delay, 0ms);
+  transform: translate3d(var(--dx), var(--dy), 0)
+    rotate(calc(var(--rot) - var(--spin)));
+  opacity: 0;
+}
+
 .ed-caption-wrap {
   position: absolute;
   z-index: 20;
@@ -133,7 +210,7 @@
 
 .ed-caption {
   width: 100%;
-  transform: translateY(calc((1 - var(--c)) * var(--cap-travel, 0px)));
+  transform: translateY(calc((1 - var(--cc)) * var(--cap-travel, 0px)));
 }
 
 .ed-cap-row {
@@ -188,7 +265,7 @@
 
 .ed-more {
   width: 36.51vw;
-  opacity: var(--c);
+  opacity: var(--cc);
 }
 
 .ed-note {
@@ -216,16 +293,22 @@
   z-index: 20;
   top: 12.03svh;
   right: 5.573vw;
+  padding: 6px 10px;
+  background-color: var(--scrim-plate);
   font-family: var(--font-mono);
   font-size: var(--text-micro);
   letter-spacing: var(--tracking-label-wide);
   text-transform: uppercase;
   color: var(--color-paper-100);
-  opacity: calc((1 - var(--c)) * 0.7);
+  opacity: calc((1 - var(--cc)) * 0.7);
   pointer-events: none;
 }
 
 @media (width < 48rem) {
+  .ed-card {
+    width: min(58vw, calc(var(--band) * var(--ar)));
+  }
+
   .ed-caption-wrap {
     left: 22px;
     width: calc(100% - 44px);
