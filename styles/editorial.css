@@ -107,6 +107,14 @@
   max-width: none;
   object-fit: cover;
   object-position: center calc(var(--open) * 22%);
+  filter: var(--filter-image);
+  transition: filter var(--duration-base) var(--ease-out);
+}
+
+.ed-cell:hover .ed-cell-img,
+.ed-cell:focus-visible .ed-cell-img,
+.ed-cell[data-active] .ed-cell-img {
+  filter: var(--filter-image-color);
 }
 
 .ed-cell-tag {
