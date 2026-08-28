@@ -12,6 +12,7 @@ const PAN_MAX_VH = 2;
 const STEP_VH = 0.6;
 const STEP_MIN = 340;
 const IDLE_MS = 180;
+const EXIT_MS = 780;
 
 function clamp01(value: number) {
   return value < 0 ? 0 : value > 1 ? 1 : value;
@@ -53,6 +54,7 @@ export function useEditorialReel(frames: readonly number[]) {
   const [active, setActive] = useState<number | null>(null);
   const [shown, setShown] = useState(0);
   const [armed, setArmed] = useState(false);
+  const [leaving, setLeaving] = useState(false);
 
   const activeRef = useRef<number | null>(null);
   const armedRef = useRef(false);
@@ -60,6 +62,7 @@ export function useEditorialReel(frames: readonly number[]) {
   const openAt = useRef(0);
   const spent = useRef(0);
   const idle = useRef(0);
+  const exit = useRef(0);
   const repaint = useRef(() => {});
 
   const scrolled = useCallback(() => {
@@ -79,6 +82,9 @@ export function useEditorialReel(frames: readonly number[]) {
     spent.current += clamp01((scrolled() - openAt.current) / read) * read;
     activeRef.current = null;
     setActive(null);
+    setLeaving(true);
+    window.clearTimeout(exit.current);
+    exit.current = window.setTimeout(() => setLeaving(false), EXIT_MS);
     repaint.current();
   }, [readFor, scrolled]);
 
@@ -90,6 +96,8 @@ export function useEditorialReel(frames: readonly number[]) {
       }
       activeRef.current = index;
       openAt.current = scrolled();
+      window.clearTimeout(exit.current);
+      setLeaving(false);
       track.current?.style.setProperty("--c", "0");
       setActive(index);
       setShown(index);
@@ -221,6 +229,7 @@ export function useEditorialReel(frames: readonly number[]) {
     return () => {
       cancelAnimationFrame(ticket);
       window.clearTimeout(idle.current);
+      window.clearTimeout(exit.current);
       observer.disconnect();
       window.removeEventListener("resize", measure);
       window.removeEventListener("scroll", schedule);
@@ -250,6 +259,7 @@ export function useEditorialReel(frames: readonly number[]) {
     active,
     shown,
     armed,
+    leaving,
     open,
     close,
   };

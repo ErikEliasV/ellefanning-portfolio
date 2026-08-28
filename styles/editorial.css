@@ -42,11 +42,12 @@
   height: 100svh;
   overflow: hidden;
   background-color: var(--color-ink-900);
-  transition: --open 620ms var(--ease-out);
+  transition: --open 620ms var(--ease-out) 180ms;
 }
 
 .ed-pin[data-open] {
   --open: 1;
+  transition: --open 620ms var(--ease-out);
 }
 
 .ed-reel {
@@ -182,6 +183,16 @@
     )
     rotate(calc(var(--rot) - (1 - var(--t)) * var(--spin)));
   will-change: transform, opacity;
+}
+
+.ed-cards[data-exit] .ed-card {
+  transition:
+    transform 560ms var(--ease-out),
+    opacity 420ms var(--ease-out);
+  transition-delay: var(--out-delay, 0ms);
+  transform: translate3d(var(--dx), var(--dy), 0)
+    rotate(calc(var(--rot) - var(--spin)));
+  opacity: 0;
 }
 
 .ed-caption-wrap {

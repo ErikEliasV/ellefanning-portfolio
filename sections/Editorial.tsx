@@ -36,6 +36,7 @@ export function Editorial() {
     active,
     shown,
     armed,
+    leaving,
     open,
   } = useEditorialReel(FRAMES);
 
@@ -85,8 +86,12 @@ export function Editorial() {
 
         <div aria-hidden className="ed-scrim" />
 
-        <div aria-hidden className="ed-cards">
-          {isOpen
+        <div
+          aria-hidden
+          className="ed-cards"
+          data-exit={leaving ? "" : undefined}
+        >
+          {isOpen || leaving
             ? cards.map((card, index) => {
                 const slot = SLOTS[index % SLOTS.length];
                 return (
@@ -107,6 +112,7 @@ export function Editorial() {
                         "--dx": slot.dx,
                         "--dy": slot.dy,
                         "--rot": slot.rot,
+                        "--out-delay": `${(cards.length - 1 - index) * 55}ms`,
                         "--spin": slot.spin,
                         "--ar": (card.width / card.height).toFixed(4),
                         "--a": (CARDS_START + index * span).toFixed(4),
