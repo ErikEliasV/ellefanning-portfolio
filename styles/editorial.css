@@ -36,6 +36,7 @@
 
 .ed-pin {
   --open: 0;
+  --cc: clamp(0, calc(var(--c) / 0.2), 1);
   position: sticky;
   top: 0;
   height: 100svh;
@@ -156,6 +157,7 @@
 }
 
 .ed-cards {
+  --band: calc(100svh - var(--cards-top, 46svh) - 10svh);
   position: absolute;
   inset: 0;
   z-index: 15;
@@ -166,17 +168,19 @@
 .ed-card {
   --t: clamp(0, calc((var(--c) - var(--a)) / (var(--b) - var(--a))), 1);
   position: absolute;
-  width: min(var(--w), calc(52svh * var(--ar)));
+  width: min(var(--w), calc(var(--band) * var(--ar)));
   height: auto;
+  max-height: var(--band);
   max-width: 46vw;
   box-shadow: var(--shadow-offset-md);
   filter: var(--filter-image-color);
   opacity: var(--t);
   transform: translate3d(
-    calc((1 - var(--t)) * var(--dx)),
-    calc((1 - var(--t)) * var(--dy)),
-    0
-  );
+      calc((1 - var(--t)) * var(--dx)),
+      calc((1 - var(--t)) * var(--dy)),
+      0
+    )
+    rotate(calc(var(--rot) - (1 - var(--t)) * var(--spin)));
   will-change: transform, opacity;
 }
 
@@ -195,7 +199,7 @@
 
 .ed-caption {
   width: 100%;
-  transform: translateY(calc((1 - var(--c)) * var(--cap-travel, 0px)));
+  transform: translateY(calc((1 - var(--cc)) * var(--cap-travel, 0px)));
 }
 
 .ed-cap-row {
@@ -250,7 +254,7 @@
 
 .ed-more {
   width: 36.51vw;
-  opacity: var(--c);
+  opacity: var(--cc);
 }
 
 .ed-note {
@@ -285,13 +289,13 @@
   letter-spacing: var(--tracking-label-wide);
   text-transform: uppercase;
   color: var(--color-paper-100);
-  opacity: calc((1 - var(--c)) * 0.7);
+  opacity: calc((1 - var(--cc)) * 0.7);
   pointer-events: none;
 }
 
 @media (width < 48rem) {
   .ed-card {
-    width: min(46vw, calc(40svh * var(--ar)));
+    width: min(58vw, calc(var(--band) * var(--ar)));
   }
 
   .ed-caption-wrap {

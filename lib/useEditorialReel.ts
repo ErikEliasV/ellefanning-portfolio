@@ -195,6 +195,12 @@ export function useEditorialReel(frames: readonly number[]) {
       if (wrap && block) {
         const travel = Math.max(0, wrap.clientHeight - block.offsetHeight);
         style.setProperty("--cap-travel", `${travel.toFixed(2)}px`);
+
+        const rule = block.querySelector<HTMLElement>(".ed-rule");
+        if (rule) {
+          const top = wrap.offsetTop + rule.offsetTop + rule.offsetHeight;
+          style.setProperty("--cards-top", `${top.toFixed(2)}px`);
+        }
       }
 
       progress();

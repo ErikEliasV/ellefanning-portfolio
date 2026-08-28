@@ -11,12 +11,14 @@ const TOTAL = String(EDITORIAL_SHOTS.length).padStart(2, "0");
 
 const FRAMES = EDITORIAL_SHOTS.map((shot) => 1 + (shot.gallery?.length ?? 0));
 
+const CARDS_START = 0.22;
+
 const SLOTS = [
-  { top: "8svh", left: "5vw", w: "25vw", dx: "-55vw", dy: "0svh" },
-  { top: "24svh", right: "5vw", w: "28vw", dx: "55vw", dy: "0svh" },
-  { bottom: "7svh", left: "37vw", w: "22vw", dx: "0vw", dy: "62svh" },
-  { bottom: "16svh", left: "7vw", w: "20vw", dx: "-55vw", dy: "0svh" },
-  { top: "6svh", right: "33vw", w: "18vw", dx: "55vw", dy: "0svh" },
+  { bottom: "4svh", left: "7vw", w: "34vw", rot: "-4deg", spin: "16deg", dx: "-75vw", dy: "0svh" },
+  { bottom: "8svh", left: "29vw", w: "32vw", rot: "3deg", spin: "-14deg", dx: "75vw", dy: "0svh" },
+  { bottom: "3svh", left: "49vw", w: "33vw", rot: "-1deg", spin: "12deg", dx: "0vw", dy: "72svh" },
+  { bottom: "10svh", left: "17vw", w: "30vw", rot: "6deg", spin: "-18deg", dx: "-75vw", dy: "0svh" },
+  { bottom: "6svh", left: "40vw", w: "31vw", rot: "-7deg", spin: "14deg", dx: "0vw", dy: "72svh" },
 ];
 
 function pad(index: number) {
@@ -40,7 +42,7 @@ export function Editorial() {
   const item = EDITORIAL_SHOTS[shown];
   const isOpen = active !== null;
   const cards = item.gallery ?? [];
-  const span = 1 / (cards.length + 0.5);
+  const span = (1 - CARDS_START) / (cards.length + 0.5);
 
   return (
     <div ref={track} className="ed-track">
@@ -95,19 +97,20 @@ export function Editorial() {
                     width={card.width}
                     height={card.height}
                     className="ed-card"
-                    sizes="30vw"
+                    sizes="36vw"
                     style={
                       {
-                        top: slot.top,
-                        left: slot.left,
-                        right: slot.right,
                         bottom: slot.bottom,
+                        left: slot.left,
+                        zIndex: index + 1,
                         "--w": slot.w,
                         "--dx": slot.dx,
                         "--dy": slot.dy,
+                        "--rot": slot.rot,
+                        "--spin": slot.spin,
                         "--ar": (card.width / card.height).toFixed(4),
-                        "--a": (index * span).toFixed(4),
-                        "--b": ((index + 1) * span).toFixed(4),
+                        "--a": (CARDS_START + index * span).toFixed(4),
+                        "--b": (CARDS_START + (index + 1) * span).toFixed(4),
                       } as CSSProperties
                     }
                   />
