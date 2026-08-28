@@ -54,7 +54,7 @@ export function Editorial() {
                 width={shot.width}
                 height={shot.height}
                 className="ed-cell-img"
-                sizes="(max-width: 760px) 80vw, 36vw"
+                sizes="(max-width: 760px) 80vw, 70vw"
                 loading={armed ? "eager" : "lazy"}
               />
               <span aria-hidden className="ed-cell-tag">

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const CELL_VW = 0.3;
+const CELL_HOVER_VW = 0.7;
 const CELL_VW_NARROW = 0.8;
 const NARROW_MAX = 760;
 const PAN_FACTOR = 0.42;
@@ -149,8 +150,16 @@ export function useEditorialReel(count: number) {
         frame: vh,
       };
 
+      const hover = Math.max(CELL_HOVER_VW * vw, cell);
+      const rest =
+        count > 1
+          ? Math.max((count * cell - hover) / (count - 1), cell * 0.4)
+          : cell;
+
       const style = node.style;
       style.setProperty("--cell-w", `${cell.toFixed(2)}px`);
+      style.setProperty("--cell-hover", `${hover.toFixed(2)}px`);
+      style.setProperty("--cell-rest", `${rest.toFixed(2)}px`);
       style.setProperty("--pan-max", `${panMax.toFixed(2)}px`);
 
       fitTitle(capTitle.current, capYear.current);

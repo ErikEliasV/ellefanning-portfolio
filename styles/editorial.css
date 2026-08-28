@@ -22,6 +22,12 @@
   initial-value: 0;
 }
 
+@property --squeeze {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+
 .ed-track {
   position: relative;
   flex: none;
@@ -52,7 +58,11 @@
 .ed-cell {
   position: relative;
   flex: 0 0 calc(
-    var(--cell-w, 30vw) * (1 - var(--open)) * (1 + var(--grow) * 0.16)
+    (
+        var(--cell-w, 30vw) +
+          var(--grow) * (var(--cell-hover, 70vw) - var(--cell-w, 30vw)) -
+          var(--squeeze) * (var(--cell-w, 30vw) - var(--cell-rest, 26vw))
+      ) * (1 - var(--open))
   );
   height: 100%;
   margin: 0;
@@ -62,7 +72,16 @@
   background-color: var(--color-ink-800);
   cursor: zoom-in;
   appearance: none;
-  transition: --grow 240ms var(--ease-out);
+  transition:
+    --grow 300ms var(--ease-out),
+    --squeeze 300ms var(--ease-out);
+}
+
+.ed-pin:not([data-open]) .ed-reel:has(.ed-cell:hover) .ed-cell:not(:hover),
+.ed-pin:not([data-open])
+  .ed-reel:has(.ed-cell:focus-visible)
+  .ed-cell:not(:focus-visible) {
+  --squeeze: 1;
 }
 
 .ed-pin:not([data-open]) .ed-cell:hover,
@@ -224,6 +243,8 @@
   z-index: 20;
   top: 12.03svh;
   right: 5.573vw;
+  padding: 6px 10px;
+  background-color: var(--scrim-plate);
   font-family: var(--font-mono);
   font-size: var(--text-micro);
   letter-spacing: var(--tracking-label-wide);
