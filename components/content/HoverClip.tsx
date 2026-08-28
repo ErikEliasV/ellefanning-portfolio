@@ -2,7 +2,7 @@ import Image from "next/image";
 import { asset } from "@/lib/asset";
 import { cn } from "@/lib/cn";
 
-type HoverClipReveal = "contrast" | "color";
+type HoverClipReveal = "contrast" | "color" | "always-color";
 
 type HoverClipProps = {
   alt: string;
@@ -17,8 +17,9 @@ type HoverClipProps = {
 };
 
 const revealClass: Record<HoverClipReveal, string> = {
-  contrast: "group-hover:[filter:var(--filter-image-hover)]",
-  color: "group-hover:[filter:var(--filter-image-color)]",
+  contrast: "img-brand group-hover:[filter:var(--filter-image-hover)]",
+  color: "img-brand group-hover:[filter:var(--filter-image-color)]",
+  "always-color": "[filter:var(--filter-image-color)]",
 };
 
 export function HoverClip({
@@ -45,7 +46,7 @@ export function HoverClip({
             fill
             sizes={sizes}
             draggable={false}
-            className={cn("img-brand object-cover", revealClass[reveal])}
+            className={cn("object-cover", revealClass[reveal])}
           />
         ) : (
           <span className="absolute inset-0 grid place-items-center whitespace-pre-line p-3 text-center font-mono text-label-sm tracking-label text-ink-300">
