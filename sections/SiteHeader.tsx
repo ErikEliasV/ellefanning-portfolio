@@ -1,8 +1,4 @@
-const MARKS = [
-  { id: "role", lines: ["Actress", "Producer"] },
-  { id: "kind", lines: ["Portfolio", "Selected work"] },
-  { id: "edition", lines: ["Archive", "2026 edition"] },
-];
+import { MARKS } from "@/lib/marks";
 
 export function SiteHeader() {
   return (
