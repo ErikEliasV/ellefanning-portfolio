@@ -1,0 +1,131 @@
+@property --pre-p {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+.pre {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  overflow: hidden;
+  container-type: inline-size;
+  background-color: var(--color-paper-100);
+  transition: transform var(--duration-slow) var(--ease-out);
+}
+
+.pre[data-exit] {
+  transform: translateY(-100%);
+}
+
+.pre:not([data-typeset]) .pre-title,
+.pre:not([data-typeset]) .pre-band,
+.pre:not([data-typeset]) .pre-foot {
+  visibility: hidden;
+}
+
+.pre-title {
+  position: absolute;
+  left: var(--gutter-page);
+  top: 50%;
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: min(
+    calc((100cqw - var(--gutter-page) * 2) / 3.24),
+    calc((100svh - 144px) / 2.1)
+  );
+  line-height: 0.86;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.pre-title > span {
+  display: block;
+}
+
+.pre-title-ink {
+  z-index: 5;
+  color: var(--color-ink-900);
+}
+
+.pre-lime {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background-color: var(--color-lime-400);
+  clip-path: inset(0 calc((1 - var(--pre-p)) * 100%) 0 0);
+}
+
+.pre-title-paper {
+  color: var(--color-paper-200);
+}
+
+.pre-dot {
+  color: var(--color-lime-400);
+}
+
+.pre-title-paper .pre-dot {
+  color: var(--color-ink-900);
+}
+
+.pre-edge {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--pre-p) * 100%);
+  z-index: 15;
+  width: 2px;
+  margin-left: -1px;
+  background-color: var(--color-ink-900);
+}
+
+.pre-band,
+.pre-foot {
+  position: absolute;
+  right: 0;
+  left: 0;
+  z-index: 20;
+  display: flex;
+  gap: 12px;
+  padding-block: calc(var(--spacing) * 3);
+  padding-inline: var(--gutter-page);
+  font-family: var(--font-mono);
+  font-size: var(--text-label-sm);
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: var(--tracking-label-wide);
+  text-transform: uppercase;
+  color: var(--color-ink-800);
+}
+
+.pre-band {
+  top: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--color-line-rule);
+}
+
+.pre-mark {
+  display: flex;
+  flex-direction: column;
+  white-space: nowrap;
+}
+
+.pre-mark:last-child {
+  text-align: right;
+}
+
+.pre-foot {
+  bottom: 0;
+  align-items: baseline;
+  justify-content: space-between;
+  border-top: 1px solid var(--color-line-rule);
+}
+
+.pre-pct {
+  color: var(--color-ink-500);
+}
