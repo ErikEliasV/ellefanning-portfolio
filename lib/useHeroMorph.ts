@@ -9,7 +9,6 @@ const SIL_TOP = 86 / 1140;
 const SIL_WIDTH = 1490 / 1900;
 
 const FRAME_W = 1920;
-const TITLE_FIT_H = 1120;
 
 const A_SIL_W_VW = 1.0342;
 const A_SIL_W_VH = 1.6;
@@ -21,23 +20,20 @@ const A_RISE_VH = 0.22;
 const B_SIL_W_VW = 1.04;
 const B_HEADROOM = 0.12;
 
-const ROSE_LEFT = 941 / FRAME_W;
 const MORPH_VH = 0.7;
 
-const INK_WIDTH = 1911.794;
-const INK_CAP_TOP = 17.744;
-const INK_GLYPH_LEFT = -35.5;
-const INK_LINE = 517.892;
+const ENTRY_TEXT = "ELLE FANNING";
+const ENTRY_W_VW = 1017.6 / FRAME_W;
+const ENTRY_W_MIN = 280;
+const ENTRY_W_MAX_VW = 0.86;
+const ENTRY_CAP_K = 91.2 / 1017.6;
+const ENTRY_TOP_VH = 363.2 / 1219.2;
 
-const PAPER_A_WIDTH = 1222.335;
-const PAPER_A_CAP_TOP = -342.258;
-const PAPER_A_GLYPH_LEFT = 728.83;
-const PAPER_A_LINE = 331.122;
-
-const PAPER_B_WIDTH = 2717.464;
-const PAPER_B_CAP_TOP = -6.778;
-const PAPER_B_GLYPH_LEFT = -63.71;
-const PAPER_B_LINE = 736.142;
+const PAPER_WIDTH = 2717.464;
+const PAPER_CAP_TOP = -6.778;
+const PAPER_GLYPH_LEFT = -63.71;
+const PAPER_LINE = 736.142;
+const PAPER_K = 0.84;
 
 const SAMPLE = "FANNING.";
 const SAMPLE_SIZE = 1000;
@@ -50,8 +46,20 @@ type Face = {
   bbLeft: number;
 };
 
+type EntryFace = {
+  ink: number;
+  cap: number;
+  asc: number;
+  desc: number;
+  bbLeft: number;
+};
+
+function context2d() {
+  return document.createElement("canvas").getContext("2d");
+}
+
 function measureFace(family: string): Face | null {
-  const context = document.createElement("canvas").getContext("2d");
+  const context = context2d();
   if (!context || !family) return null;
 
   context.letterSpacing = "-0.01em";
@@ -71,6 +79,27 @@ function measureFace(family: string): Face | null {
   };
 }
 
+function measureEntry(family: string): EntryFace | null {
+  const context = context2d();
+  if (!context || !family) return null;
+
+  context.letterSpacing = "0em";
+  context.textAlign = "left";
+  context.textBaseline = "alphabetic";
+  context.font = `400 ${SAMPLE_SIZE}px ${family}`;
+
+  const metrics = context.measureText(ENTRY_TEXT);
+  if (!metrics.width) return null;
+
+  return {
+    ink: (metrics.actualBoundingBoxLeft + metrics.actualBoundingBoxRight) / SAMPLE_SIZE,
+    cap: metrics.actualBoundingBoxAscent / SAMPLE_SIZE,
+    asc: metrics.fontBoundingBoxAscent / SAMPLE_SIZE,
+    desc: metrics.fontBoundingBoxDescent / SAMPLE_SIZE,
+    bbLeft: metrics.actualBoundingBoxLeft / SAMPLE_SIZE,
+  };
+}
+
 function fit(face: Face, width: number, capTop: number, glyphLeft: number, line: number) {
   const size = width / face.w;
   const offset = (line - (face.asc + face.desc) * size) / 2 + face.asc * size;
@@ -78,6 +107,18 @@ function fit(face: Face, width: number, capTop: number, glyphLeft: number, line:
     size,
     top: capTop - offset + face.cap * size,
     left: glyphLeft + face.bbLeft * size,
+  };
+}
+
+function fitEntry(face: EntryFace, width: number, cap: number, capTop: number) {
+  const size = cap / face.cap;
+  const track = (width / size - face.ink) / (ENTRY_TEXT.length - 1);
+  const offset = size * ((1 - face.asc - face.desc) / 2 + face.asc);
+  return {
+    size,
+    track: track * size,
+    top: capTop - offset + face.cap * size,
+    left: face.bbLeft * size,
   };
 }
 
@@ -112,7 +153,7 @@ export function useHeroMorph(onProgress?: (value: number) => void) {
     let ticket = 0;
     let morph = 1;
     let live = true;
-    let faces: { g: Face; e: Face } | null = null;
+    let faces: { lockup: Face; entry: { g: EntryFace; e: EntryFace } } | null = null;
 
     function progress() {
       ticket = 0;
@@ -133,7 +174,6 @@ export function useHeroMorph(onProgress?: (value: number) => void) {
       const vh = smallViewportHeight();
       if (!vw || !vh) return;
 
-      const ua = Math.min(vw / FRAME_W, vh / TITLE_FIT_H);
       const ub = vw / FRAME_W;
 
       const silWa = Math.min(
@@ -153,20 +193,18 @@ export function useHeroMorph(onProgress?: (value: number) => void) {
 
       morph = MORPH_VH * vh;
 
-      const inkG = fit(faces.g, INK_WIDTH * ua, INK_CAP_TOP * ua, INK_GLYPH_LEFT * ua, INK_LINE * ua);
-      const inkE = fit(faces.e, INK_WIDTH * ua, INK_CAP_TOP * ua, INK_GLYPH_LEFT * ua, INK_LINE * ua);
+      const entryW = Math.min(Math.max(ENTRY_W_VW * vw, ENTRY_W_MIN), ENTRY_W_MAX_VW * vw);
+      const entryCap = ENTRY_CAP_K * entryW;
+      const entryTop = ENTRY_TOP_VH * vh;
+      const entryG = fitEntry(faces.entry.g, entryW, entryCap, entryTop);
+      const entryE = fitEntry(faces.entry.e, entryW, entryCap, entryTop);
 
-      const paperAg = fit(
-        faces.g, PAPER_A_WIDTH * ua, PAPER_A_CAP_TOP * ua, PAPER_A_GLYPH_LEFT * ua, PAPER_A_LINE * ua,
-      );
-      const paperBg = fit(
-        faces.g, PAPER_B_WIDTH * ub, PAPER_B_CAP_TOP * ub, PAPER_B_GLYPH_LEFT * ub, PAPER_B_LINE * ub,
-      );
-      const paperAe = fit(
-        faces.e, PAPER_A_WIDTH * ua, PAPER_A_CAP_TOP * ua, PAPER_A_GLYPH_LEFT * ua, PAPER_A_LINE * ua,
-      );
-      const paperBe = fit(
-        faces.e, PAPER_B_WIDTH * ub, PAPER_B_CAP_TOP * ub, PAPER_B_GLYPH_LEFT * ub, PAPER_B_LINE * ub,
+      const paper = fit(
+        faces.lockup,
+        PAPER_WIDTH * ub,
+        PAPER_CAP_TOP * ub,
+        PAPER_GLYPH_LEFT * ub,
+        PAPER_LINE * ub,
       );
 
       const set = (name: string, value: number, unit = "px") =>
@@ -175,7 +213,6 @@ export function useHeroMorph(onProgress?: (value: number) => void) {
       set("--morph", morph);
       set("--frame-h-a", vh);
       set("--frame-h-b", frameHb);
-      set("--rose-left", ROSE_LEFT * vw);
 
       set("--img-w", boxB.width);
       set("--img-h", boxB.height);
@@ -185,28 +222,22 @@ export function useHeroMorph(onProgress?: (value: number) => void) {
       set("--img-y", boxB.y);
       set("--img-k", silWa / silWb, "");
 
-      set("--ink-line", INK_LINE * ua);
-      set("--ink-g-size", inkG.size);
-      set("--ink-g-top", inkG.top);
-      set("--ink-g-left", inkG.left);
-      set("--ink-e-size", inkE.size);
-      set("--ink-e-top", inkE.top);
-      set("--ink-e-left", inkE.left);
+      set("--entry-left", (vw - entryW) / 2);
+      set("--entry-width", entryW);
+      set("--entry-g-size", entryG.size);
+      set("--entry-g-top", entryG.top);
+      set("--entry-g-left", entryG.left);
+      set("--entry-g-track", entryG.track);
+      set("--entry-e-size", entryE.size);
+      set("--entry-e-top", entryE.top);
+      set("--entry-e-left", entryE.left);
+      set("--entry-e-track", entryE.track);
 
-      set("--paper-line", PAPER_B_LINE * ub);
-      set("--paper-k", paperAg.size / paperBg.size, "");
-
-      set("--paper-g-size", paperBg.size);
-      set("--paper-g-top", paperBg.top);
-      set("--paper-g-left", paperBg.left);
-      set("--paper-g-dx", paperAg.left - paperBg.left);
-      set("--paper-g-dy", paperAg.top - paperBg.top);
-
-      set("--paper-e-size", paperBe.size);
-      set("--paper-e-top", paperBe.top);
-      set("--paper-e-left", paperBe.left);
-      set("--paper-e-dx", paperAe.left - paperBe.left);
-      set("--paper-e-dy", paperAe.top - paperBe.top);
+      set("--paper-line", PAPER_LINE * ub);
+      set("--paper-k", PAPER_K, "");
+      set("--paper-size", paper.size);
+      set("--paper-top", paper.top);
+      set("--paper-left", paper.left);
 
       trackNode.dataset.ready = "";
       progress();
@@ -218,10 +249,11 @@ export function useHeroMorph(onProgress?: (value: number) => void) {
 
     document.fonts.ready.then(() => {
       if (!live) return;
-      const g = measureFace(grotesk);
-      const e = measureFace(editorial);
-      if (!g || !e) return;
-      faces = { g, e };
+      const lockup = measureFace(editorial);
+      const entryG = measureEntry(grotesk);
+      const entryE = measureEntry(editorial);
+      if (!lockup || !entryG || !entryE) return;
+      faces = { lockup, entry: { g: entryG, e: entryE } };
       measure();
     });
 

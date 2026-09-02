@@ -5,12 +5,17 @@ import { asset } from "@/lib/asset";
 
 export const HERO_FIELD = "/images/ellefanning-hero-field.webp";
 
-const BLOCKS_A = 64;
+const BLOCKS_A = 67;
 const BLOCKS_B = 40;
-const WASH_A = 0.86;
-const WASH_B = 0.93;
+const WASH_PAPER = 0.86;
+const WASH_ROSE = 0.82;
 const CONTRAST = 1.12;
+const LINE_PX = 2;
 const PAPER: [number, number, number] = [0.976, 0.949, 0.957];
+const ROSE: [number, number, number] = [0.859, 0.478, 0.592];
+const LINE_PAPER: [number, number, number] = [0.984, 0.969, 0.973];
+const LINE_ROSE: [number, number, number] = [0.914, 0.627, 0.71];
+const WASH_HOLD = 0.08;
 const MAX_DPR = 2;
 
 const VERTEX = `
@@ -28,14 +33,17 @@ uniform sampler2D uTex;
 uniform vec2 uCanvas;
 uniform float uTexRatio;
 uniform float uCell;
-uniform float uWash;
+uniform float uGap;
 uniform float uContrast;
-uniform vec3 uPaper;
+uniform float uWash;
+uniform vec3 uTint;
+uniform vec3 uLine;
 varying vec2 vUv;
 
 void main() {
   vec2 grid = max(uCanvas / uCell, vec2(1.0));
-  vec2 block = (floor(vUv * grid) + 0.5) / grid;
+  vec2 scaled = vUv * grid;
+  vec2 block = (floor(scaled) + 0.5) / grid;
 
   float canvasRatio = uCanvas.x / uCanvas.y;
   vec2 uv = block;
@@ -47,7 +55,11 @@ void main() {
 
   vec3 color = texture2D(uTex, clamp(uv, 0.0, 1.0)).rgb;
   color = clamp((color - 0.5) * uContrast + 0.5, 0.0, 1.0);
-  gl_FragColor = vec4(mix(color, uPaper, uWash), 1.0);
+  color = mix(color, uTint, uWash);
+
+  vec2 edge = fract(scaled);
+  float inside = min(step(uGap, edge.x), step(uGap, edge.y));
+  gl_FragColor = vec4(mix(uLine, color, inside), 1.0);
 }
 `;
 
@@ -61,6 +73,10 @@ function compile(gl: WebGLRenderingContext, type: number, source: string) {
     return null;
   }
   return shader;
+}
+
+function blend(a: [number, number, number], b: [number, number, number], k: number) {
+  return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k];
 }
 
 export function useHeroField() {
@@ -127,10 +143,12 @@ export function useHeroField() {
     const uCanvas = gl.getUniformLocation(program, "uCanvas");
     const uTexRatio = gl.getUniformLocation(program, "uTexRatio");
     const uCell = gl.getUniformLocation(program, "uCell");
+    const uGap = gl.getUniformLocation(program, "uGap");
     const uWash = gl.getUniformLocation(program, "uWash");
+    const uTint = gl.getUniformLocation(program, "uTint");
+    const uLine = gl.getUniformLocation(program, "uLine");
 
     gl.uniform1f(gl.getUniformLocation(program, "uContrast"), CONTRAST);
-    gl.uniform3f(gl.getUniformLocation(program, "uPaper"), PAPER[0], PAPER[1], PAPER[2]);
 
     const texture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -156,11 +174,20 @@ export function useHeroField() {
       }
 
       const p = value.current;
+      const ramp = Math.min(Math.max((p - WASH_HOLD) / (1 - WASH_HOLD), 0), 1);
+      const wash = ramp * ramp * (3 - 2 * ramp);
+      const cell = width / (BLOCKS_A + (BLOCKS_B - BLOCKS_A) * p);
+      const tint = blend(PAPER, ROSE, wash);
+      const line = blend(LINE_PAPER, LINE_ROSE, wash);
+
       gl.viewport(0, 0, width, height);
       gl.uniform2f(uCanvas, width, height);
       gl.uniform1f(uTexRatio, ratio);
-      gl.uniform1f(uCell, width / (BLOCKS_A + (BLOCKS_B - BLOCKS_A) * p));
-      gl.uniform1f(uWash, WASH_A + (WASH_B - WASH_A) * p);
+      gl.uniform1f(uCell, cell);
+      gl.uniform1f(uGap, ((1 - wash) * LINE_PX * dpr) / cell);
+      gl.uniform1f(uWash, WASH_PAPER + (WASH_ROSE - WASH_PAPER) * wash);
+      gl.uniform3f(uTint, tint[0], tint[1], tint[2]);
+      gl.uniform3f(uLine, line[0], line[1], line[2]);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     };
 

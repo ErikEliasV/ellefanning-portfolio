@@ -6,34 +6,6 @@ import { HERO_FIELD, useHeroField } from "@/lib/useHeroField";
 import { useHeroMorph } from "@/lib/useHeroMorph";
 import "@/styles/hero.css";
 
-function TitleLines() {
-  return (
-    <>
-      <span>Elle</span>
-      <span>
-        Fanning<span className="hero-dot">.</span>
-      </span>
-    </>
-  );
-}
-
-function TitleFaces() {
-  return (
-    <>
-      <span className="hero-wipe hero-wipe-g">
-        <span className="hero-face hero-face-g">
-          <TitleLines />
-        </span>
-      </span>
-      <span aria-hidden className="hero-wipe hero-wipe-e">
-        <span className="hero-face hero-face-e">
-          <TitleLines />
-        </span>
-      </span>
-    </>
-  );
-}
-
 export function Hero() {
   const { canvas, progress, failed } = useHeroField();
   const track = useHeroMorph(progress);
@@ -50,15 +22,23 @@ export function Hero() {
           )}
         </div>
 
-        <h1 className="hero-title hero-title-under">
-          <TitleFaces />
+        <h1 className="hero-title hero-title-entry">
+          <span className="hero-wipe hero-wipe-g">
+            <span className="hero-face hero-face-g">Elle Fanning</span>
+          </span>
+          <span aria-hidden className="hero-wipe hero-wipe-e">
+            <span className="hero-face hero-face-e">Elle Fanning</span>
+          </span>
         </h1>
 
-        <div aria-hidden className="hero-rose">
-          <p className="hero-title hero-title-over">
-            <TitleFaces />
-          </p>
-        </div>
+        <p aria-hidden className="hero-title hero-title-lockup">
+          <span className="hero-face hero-face-e">
+            <span>Elle</span>
+            <span>
+              Fanning<span className="hero-dot">.</span>
+            </span>
+          </span>
+        </p>
 
         <div className="hero-portrait">
           <Image

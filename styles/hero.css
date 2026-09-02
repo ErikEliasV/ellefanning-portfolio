@@ -16,11 +16,27 @@
   initial-value: 0;
 }
 
+@property --entry-a {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+
+@property --lock-a {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
 .hero-track {
   position: relative;
   flex: none;
   height: calc(var(--morph, 90svh) + var(--frame-h-b, 100svh));
-  --t: clamp(0, calc((var(--p) - 0.2) / 0.5), 1);
+  --t: clamp(0, calc((var(--p) - 0.08) / 0.26), 1);
+  --entry-a: clamp(0, calc((0.58 - var(--p)) / 0.2), 1);
+  --lock-a: clamp(0, calc((var(--p) - 0.38) / 0.2), 1);
+  --seam-a: calc((1 - var(--t)) * 118% - 18%);
+  --seam-b: calc((1 - var(--t)) * 118%);
 }
 
 .hero-frame {
@@ -73,8 +89,12 @@
   content: "";
   position: absolute;
   inset: 0;
-  background-color: var(--color-blush-100);
-  opacity: 0.78;
+  background-color: color-mix(
+    in srgb,
+    var(--color-blush-100),
+    var(--color-rose-400) calc(var(--p) * 100%)
+  );
+  opacity: 0.82;
 }
 
 .hero-title {
@@ -105,11 +125,13 @@
 }
 
 .hero-wipe-g {
-  clip-path: inset(0 calc(var(--t) * 100%) 0 0);
+  -webkit-mask-image: linear-gradient(90deg, #000 var(--seam-a), transparent var(--seam-b));
+  mask-image: linear-gradient(90deg, #000 var(--seam-a), transparent var(--seam-b));
 }
 
 .hero-wipe-e {
-  clip-path: inset(0 0 0 calc((1 - var(--t)) * 100%));
+  -webkit-mask-image: linear-gradient(90deg, transparent var(--seam-a), #000 var(--seam-b));
+  mask-image: linear-gradient(90deg, transparent var(--seam-a), #000 var(--seam-b));
 }
 
 .hero-face-g {
@@ -120,60 +142,52 @@
   font-family: var(--font-editorial);
 }
 
-.hero-title-under {
+.hero-title-entry {
   z-index: 5;
   color: var(--color-rose-400);
+  opacity: var(--entry-a);
 }
 
-.hero-title-under .hero-face-g {
-  left: var(--ink-g-left);
-  top: var(--ink-g-top);
-  font-size: var(--ink-g-size);
-  line-height: var(--ink-line);
+.hero-title-entry .hero-wipe {
+  left: var(--entry-left);
+  right: auto;
+  width: var(--entry-width);
 }
 
-.hero-title-under .hero-face-e {
-  left: var(--ink-e-left);
-  top: var(--ink-e-top);
-  font-size: var(--ink-e-size);
-  line-height: var(--ink-line);
+.hero-title-entry .hero-face {
+  line-height: 1;
 }
 
-.hero-title-under .hero-dot {
-  color: var(--color-ink-900);
+.hero-title-entry .hero-face-g {
+  left: var(--entry-g-left);
+  top: var(--entry-g-top);
+  font-size: var(--entry-g-size);
+  letter-spacing: var(--entry-g-track);
 }
 
-.hero-rose {
-  position: absolute;
-  inset: 0;
-  background-color: var(--color-rose-400);
-  clip-path: inset(0 0 0 calc(var(--inv) * var(--rose-left, 0px)));
+.hero-title-entry .hero-face-e {
+  left: var(--entry-e-left);
+  top: var(--entry-e-top);
+  font-size: var(--entry-e-size);
+  letter-spacing: var(--entry-e-track);
+}
+
+.hero-title-lockup {
   z-index: 10;
-}
-
-.hero-title-over {
   color: var(--color-paper-100);
+  opacity: var(--lock-a);
 }
 
-.hero-title-over .hero-face-g {
-  left: var(--paper-g-left);
-  top: var(--paper-g-top);
-  font-size: var(--paper-g-size);
+.hero-title-lockup .hero-face-e {
+  left: var(--paper-left);
+  top: var(--paper-top);
+  font-size: var(--paper-size);
   line-height: var(--paper-line);
-  transform: translate(calc(var(--inv) * var(--paper-g-dx)), calc(var(--inv) * var(--paper-g-dy)))
-    scale(calc(1 - var(--inv) * (1 - var(--paper-k))));
+  transform-origin: 50% 50%;
+  transform: scale(calc(1 - var(--inv) * (1 - var(--paper-k))));
 }
 
-.hero-title-over .hero-face-e {
-  left: var(--paper-e-left);
-  top: var(--paper-e-top);
-  font-size: var(--paper-e-size);
-  line-height: var(--paper-line);
-  transform: translate(calc(var(--inv) * var(--paper-e-dx)), calc(var(--inv) * var(--paper-e-dy)))
-    scale(calc(1 - var(--inv) * (1 - var(--paper-k))));
-}
-
-.hero-title-over .hero-dot {
+.hero-title-lockup .hero-dot {
   color: var(--color-rose-500);
 }
 
