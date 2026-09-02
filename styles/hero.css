@@ -32,9 +32,10 @@
   position: relative;
   flex: none;
   height: calc(var(--morph, 90svh) + var(--frame-h-b, 100svh));
-  --t: clamp(0, calc((var(--p) - 0.08) / 0.26), 1);
-  --entry-a: clamp(0, calc((0.58 - var(--p)) / 0.2), 1);
-  --lock-a: clamp(0, calc((var(--p) - 0.38) / 0.2), 1);
+  --t: clamp(0, calc((var(--p) - 0.05) / 0.5), 1);
+  --entry-a: clamp(0, calc((0.62 - var(--p)) / 0.2), 1);
+  --lock-a: clamp(0, calc((var(--p) - 0.42) / 0.2), 1);
+  --entry-k: calc(1 + var(--p) * 1.6);
   --seam-a: calc((1 - var(--t)) * 118% - 18%);
   --seam-b: calc((1 - var(--t)) * 118%);
 }
@@ -152,6 +153,8 @@
   left: var(--entry-left);
   right: auto;
   width: var(--entry-width);
+  transform-origin: 50% var(--entry-origin);
+  transform: scale(var(--entry-k));
 }
 
 .hero-title-entry .hero-face {

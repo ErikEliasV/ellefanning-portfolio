@@ -33,7 +33,7 @@ const PAPER_WIDTH = 2717.464;
 const PAPER_CAP_TOP = -6.778;
 const PAPER_GLYPH_LEFT = -63.71;
 const PAPER_LINE = 736.142;
-const PAPER_K = 0.84;
+const PAPER_K = 0.55;
 
 const SAMPLE = "FANNING.";
 const SAMPLE_SIZE = 1000;
@@ -224,6 +224,7 @@ export function useHeroMorph(onProgress?: (value: number) => void) {
 
       set("--entry-left", (vw - entryW) / 2);
       set("--entry-width", entryW);
+      set("--entry-origin", entryTop + entryCap / 2);
       set("--entry-g-size", entryG.size);
       set("--entry-g-top", entryG.top);
       set("--entry-g-left", entryG.left);
