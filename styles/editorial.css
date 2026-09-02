@@ -140,7 +140,7 @@
 }
 
 .ed-cell-num {
-  color: var(--color-lime-400);
+  color: var(--color-rose-400);
 }
 
 .ed-cell-year {
@@ -260,7 +260,7 @@
   height: 0.521vw;
   min-height: 3px;
   margin-top: 1.042vw;
-  background-color: var(--color-lime-400);
+  background-color: var(--color-rose-400);
 }
 
 .ed-more {
@@ -285,7 +285,7 @@
   font-weight: 700;
   letter-spacing: var(--tracking-label-wide);
   text-transform: uppercase;
-  color: var(--color-lime-400);
+  color: var(--color-rose-400);
 }
 
 .ed-hint {

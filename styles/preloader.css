@@ -52,11 +52,11 @@
   color: var(--color-ink-900);
 }
 
-.pre-lime {
+.pre-rose {
   position: absolute;
   inset: 0;
   z-index: 10;
-  background-color: var(--color-lime-400);
+  background-color: var(--color-rose-400);
   clip-path: inset(0 calc((1 - var(--pre-p)) * 100%) 0 0);
 }
 
@@ -65,7 +65,7 @@
 }
 
 .pre-dot {
-  color: var(--color-lime-400);
+  color: var(--color-rose-400);
 }
 
 .pre-title-paper .pre-dot {

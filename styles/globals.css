@@ -11,9 +11,12 @@
   --color-ink-500: #5c5852;
   --color-ink-300: #8e8981;
 
-  --color-lime-500: #b8cd23;
-  --color-lime-400: #cde431;
-  --color-lime-300: #daed6a;
+  --color-rose-500: #c4617f;
+  --color-rose-400: #db7a97;
+  --color-rose-300: #e9a0b5;
+
+  --color-blush-100: #f8f1f3;
+  --color-blush-200: #f2e6ea;
 
   --color-yellow-600: #c79a00;
   --color-yellow-500: #ebba00;
@@ -31,6 +34,8 @@
   --font-display: var(--font-anton), Impact, "Haettenschweiler", "Arial Narrow", sans-serif;
   --font-mono: var(--font-space-mono), ui-monospace, "Courier New", monospace;
   --font-sans: var(--font-archivo), "Helvetica Neue", Arial, sans-serif;
+  --font-grotesk: var(--font-nature), "Helvetica Neue", Arial, sans-serif;
+  --font-editorial: var(--font-oskon), "Times New Roman", Georgia, serif;
 
   --text-poster: clamp(64px, 11vw, 168px);
   --text-poster--line-height: 0.86;

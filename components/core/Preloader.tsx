@@ -40,7 +40,7 @@ export function Preloader() {
           <TitleLines />
         </p>
 
-        <div className="pre-lime">
+        <div className="pre-rose">
           <p className="pre-title pre-title-paper">
             <TitleLines />
           </p>
