@@ -10,10 +10,17 @@
   initial-value: 1;
 }
 
+@property --t {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
 .hero-track {
   position: relative;
   flex: none;
   height: calc(var(--morph, 90svh) + var(--frame-h-b, 100svh));
+  --t: clamp(0, calc((var(--p) - 0.2) / 0.5), 1);
 }
 
 .hero-frame {
@@ -24,53 +31,150 @@
     var(--frame-h-b, 100svh) - var(--inv) *
       (var(--frame-h-b, 100svh) - var(--frame-h-a, 100svh))
   );
-  background-color: var(--color-paper-100);
+  background-color: var(--color-blush-100);
 }
 
-.hero-track:not([data-ready]) .hero-frame > * {
+.hero-track:not([data-ready]) .hero-frame > *:not(.hero-field) {
   visibility: hidden;
+}
+
+.hero-field {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.hero-field-gl {
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity var(--duration-slow) var(--ease-out);
+}
+
+.hero-field-gl[data-ready] {
+  opacity: 1;
+}
+
+.hero-field-flat {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: calc(100% / 30);
+  height: calc(100% / 30);
+  object-fit: cover;
+  transform: scale(30);
+  transform-origin: 0 0;
+  image-rendering: pixelated;
+}
+
+.hero-field:has(.hero-field-flat)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-color: var(--color-blush-100);
+  opacity: 0.78;
 }
 
 .hero-title {
   position: absolute;
+  inset: 0;
   margin: 0;
-  font-family: var(--font-display);
+  pointer-events: none;
+}
+
+.hero-face {
+  position: absolute;
+  display: block;
   font-weight: 400;
-  line-height: 0.875;
   letter-spacing: -0.01em;
   text-transform: uppercase;
   white-space: nowrap;
   transform-origin: 0 0;
-  pointer-events: none;
 }
 
-.hero-title > span {
+.hero-face > span {
   display: block;
 }
 
-.hero-title-ink {
-  left: var(--ink-left);
-  top: var(--ink-top);
-  font-size: var(--ink-size);
-  color: var(--color-ink-900);
-  z-index: 5;
-}
-
-.hero-lime {
+.hero-wipe {
   position: absolute;
   inset: 0;
-  background-color: var(--color-lime-400);
-  clip-path: inset(0 0 0 calc(var(--inv) * var(--lime-left, 0px)));
+  display: block;
+}
+
+.hero-wipe-g {
+  clip-path: inset(0 calc(var(--t) * 100%) 0 0);
+}
+
+.hero-wipe-e {
+  clip-path: inset(0 0 0 calc((1 - var(--t)) * 100%));
+}
+
+.hero-face-g {
+  font-family: var(--font-grotesk);
+}
+
+.hero-face-e {
+  font-family: var(--font-editorial);
+}
+
+.hero-title-under {
+  z-index: 5;
+  color: var(--color-rose-400);
+}
+
+.hero-title-under .hero-face-g {
+  left: var(--ink-g-left);
+  top: var(--ink-g-top);
+  font-size: var(--ink-g-size);
+  line-height: var(--ink-line);
+}
+
+.hero-title-under .hero-face-e {
+  left: var(--ink-e-left);
+  top: var(--ink-e-top);
+  font-size: var(--ink-e-size);
+  line-height: var(--ink-line);
+}
+
+.hero-title-under .hero-dot {
+  color: var(--color-ink-900);
+}
+
+.hero-rose {
+  position: absolute;
+  inset: 0;
+  background-color: var(--color-rose-400);
+  clip-path: inset(0 0 0 calc(var(--inv) * var(--rose-left, 0px)));
   z-index: 10;
 }
 
-.hero-title-paper {
-  left: var(--paper-left);
-  top: var(--paper-top);
-  font-size: var(--paper-size);
-  color: var(--color-paper-200);
-  transform: translate(calc(var(--inv) * var(--paper-dx)), calc(var(--inv) * var(--paper-dy)))
+.hero-title-over {
+  color: var(--color-paper-100);
+}
+
+.hero-title-over .hero-face-g {
+  left: var(--paper-g-left);
+  top: var(--paper-g-top);
+  font-size: var(--paper-g-size);
+  line-height: var(--paper-line);
+  transform: translate(calc(var(--inv) * var(--paper-g-dx)), calc(var(--inv) * var(--paper-g-dy)))
     scale(calc(1 - var(--inv) * (1 - var(--paper-k))));
+}
+
+.hero-title-over .hero-face-e {
+  left: var(--paper-e-left);
+  top: var(--paper-e-top);
+  font-size: var(--paper-e-size);
+  line-height: var(--paper-line);
+  transform: translate(calc(var(--inv) * var(--paper-e-dx)), calc(var(--inv) * var(--paper-e-dy)))
+    scale(calc(1 - var(--inv) * (1 - var(--paper-k))));
+}
+
+.hero-title-over .hero-dot {
+  color: var(--color-rose-500);
 }
 
 .hero-portrait {
@@ -90,8 +194,4 @@
   width: 100%;
   height: 100%;
   max-width: none;
-}
-
-.hero-dot {
-  color: var(--color-lime-400);
 }
