@@ -1,0 +1,103 @@
+@media (pointer: fine) {
+  html[data-cursor-on],
+  html[data-cursor-on] * {
+    cursor: none;
+  }
+}
+
+.cur {
+  --cur-line: 3px;
+  --cur-mark: var(--color-ink-900);
+
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 200;
+  contain: layout style;
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform;
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+.cur[data-live] {
+  opacity: 1;
+}
+
+.cur[data-hot] {
+  --cur-line: 4px;
+}
+
+.cur[data-skin="invert"] {
+  --cur-mark: var(--color-paper-100);
+}
+
+.cur-corner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  box-sizing: border-box;
+  width: 24px;
+  height: 24px;
+  border: 0 solid var(--cur-mark);
+  will-change: transform;
+  transition:
+    border-width var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out);
+}
+
+.cur-tl {
+  border-top-width: var(--cur-line);
+  border-left-width: var(--cur-line);
+}
+
+.cur-tr {
+  border-top-width: var(--cur-line);
+  border-right-width: var(--cur-line);
+}
+
+.cur-br {
+  border-bottom-width: var(--cur-line);
+  border-right-width: var(--cur-line);
+}
+
+.cur-bl {
+  border-bottom-width: var(--cur-line);
+  border-left-width: var(--cur-line);
+}
+
+.cur-dot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  background-color: var(--cur-mark);
+  will-change: transform;
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+
+.cur-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 7px 10px 6px;
+  background-color: var(--color-rose-400);
+  font-family: var(--font-mono);
+  font-size: var(--text-label-sm);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: var(--tracking-label-wide);
+  text-indent: var(--tracking-label-wide);
+  text-transform: uppercase;
+  color: var(--color-ink-900);
+  white-space: nowrap;
+  clip-path: inset(0 100% 0 0);
+  will-change: transform, clip-path;
+  transition: clip-path var(--duration-base) var(--ease-out);
+}
+
+.cur[data-tag] .cur-label {
+  clip-path: inset(0 0 0 0);
+}

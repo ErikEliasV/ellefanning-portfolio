@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Anton, Space_Mono, Archivo } from "next/font/google";
+import localFont from "next/font/local";
+import { Cursor } from "@/components/core/Cursor";
 import { Preloader } from "@/components/core/Preloader";
 import "@/styles/globals.css";
 
@@ -25,6 +27,21 @@ const archivo = Archivo({
   display: "swap",
 });
 
+const nature = localFont({
+  variable: "--font-nature",
+  display: "swap",
+  src: [
+    { path: "../public/fonts/ZTNature-Regular.woff2", weight: "400", style: "normal" },
+    { path: "../public/fonts/ZTNature-Medium.woff2", weight: "500", style: "normal" },
+  ],
+});
+
+const oskon = localFont({
+  variable: "--font-oskon",
+  display: "swap",
+  src: [{ path: "../public/fonts/ZTBrosOskon90s-Regular.woff2", weight: "400", style: "normal" }],
+});
+
 export const metadata: Metadata = {
   title: "Elle Fanning — Actress & Producer",
   description:
@@ -35,10 +52,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${anton.variable} ${spaceMono.variable} ${archivo.variable} h-full`}
+      className={`${anton.variable} ${spaceMono.variable} ${archivo.variable} ${nature.variable} ${oskon.variable} h-full`}
     >
       <body className="min-h-full flex flex-col">
         <Preloader />
+        <Cursor />
         {children}
       </body>
     </html>

@@ -35,7 +35,7 @@ export function Characters() {
             />
 
             <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col gap-1 bg-[var(--scrim-plate)] px-3 py-2">
-              <span className="font-mono text-micro font-bold uppercase tracking-label text-lime-400">
+              <span className="font-mono text-micro font-bold uppercase tracking-label text-rose-400">
                 {String(index + 1).padStart(2, "0")}
               </span>
               <span className="font-display text-display-4 uppercase leading-[0.92] text-paper-100">

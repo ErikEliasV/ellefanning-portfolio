@@ -12,6 +12,7 @@ export function SiteFooter() {
   return (
     <footer
       id="footer"
+      data-cursor-skin="invert"
       className="site-footer grain relative overflow-hidden border-t border-line-rule bg-ink-900 text-paper-100"
     >
       <h2 className="footer-mark">
@@ -32,16 +33,17 @@ export function SiteFooter() {
                   href={link.href}
                   target="_blank"
                   rel="noreferrer noopener"
-                  className="group flex items-baseline justify-between gap-6 border-b border-line-invert py-3 font-mono text-label font-bold uppercase tracking-label-wide text-paper-100 transition-colors duration-[140ms] ease-[var(--ease-out)] hover:text-lime-400"
+                  data-cursor="Visit"
+                  className="group flex items-baseline justify-between gap-6 border-b border-line-invert py-3 font-mono text-label font-bold uppercase tracking-label-wide text-paper-100 transition-colors duration-[140ms] ease-[var(--ease-out)] hover:text-rose-400"
                 >
                   <span className="flex items-center gap-3">
                     <span
                       aria-hidden
-                      className="inline-block size-2 bg-lime-400"
+                      className="inline-block size-2 bg-rose-400"
                     />
                     {link.label}
                   </span>
-                  <span className="text-ink-300 transition-colors duration-[140ms] ease-[var(--ease-out)] group-hover:text-lime-400">
+                  <span className="text-ink-300 transition-colors duration-[140ms] ease-[var(--ease-out)] group-hover:text-rose-400">
                     {link.value}
                   </span>
                 </a>
@@ -59,7 +61,7 @@ export function SiteFooter() {
         <div className="flex items-baseline justify-between gap-4 font-mono text-micro uppercase tracking-label-wide text-ink-500">
           <a
             href="#hero"
-            className="transition-colors duration-[140ms] ease-[var(--ease-out)] hover:text-lime-400"
+            className="transition-colors duration-[140ms] ease-[var(--ease-out)] hover:text-rose-400"
           >
             &uarr; Back to top
           </a>

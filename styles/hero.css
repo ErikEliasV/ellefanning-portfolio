@@ -10,10 +10,34 @@
   initial-value: 1;
 }
 
+@property --t {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+@property --entry-a {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+
+@property --lock-a {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
 .hero-track {
   position: relative;
   flex: none;
   height: calc(var(--morph, 90svh) + var(--frame-h-b, 100svh));
+  --t: clamp(0, calc((var(--p) - 0.05) / 0.5), 1);
+  --entry-a: clamp(0, calc((0.62 - var(--p)) / 0.2), 1);
+  --lock-a: clamp(0, calc((var(--p) - 0.42) / 0.2), 1);
+  --entry-k: calc(1 + var(--p) * 1.6);
+  --seam-a: calc((1 - var(--t)) * 118% - 18%);
+  --seam-b: calc((1 - var(--t)) * 118%);
 }
 
 .hero-frame {
@@ -24,53 +48,150 @@
     var(--frame-h-b, 100svh) - var(--inv) *
       (var(--frame-h-b, 100svh) - var(--frame-h-a, 100svh))
   );
-  background-color: var(--color-paper-100);
+  background-color: var(--color-blush-100);
 }
 
-.hero-track:not([data-ready]) .hero-frame > * {
+.hero-track:not([data-ready]) .hero-frame > *:not(.hero-field) {
   visibility: hidden;
+}
+
+.hero-field {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.hero-field-gl {
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity var(--duration-slow) var(--ease-out);
+}
+
+.hero-field-gl[data-ready] {
+  opacity: 1;
+}
+
+.hero-field-flat {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: calc(100% / 30);
+  height: calc(100% / 30);
+  object-fit: cover;
+  transform: scale(30);
+  transform-origin: 0 0;
+  image-rendering: pixelated;
+}
+
+.hero-field:has(.hero-field-flat)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-color: color-mix(
+    in srgb,
+    var(--color-blush-100),
+    var(--color-rose-400) calc(var(--p) * 100%)
+  );
+  opacity: 0.82;
 }
 
 .hero-title {
   position: absolute;
+  inset: 0;
   margin: 0;
-  font-family: var(--font-display);
+  pointer-events: none;
+}
+
+.hero-face {
+  position: absolute;
+  display: block;
   font-weight: 400;
-  line-height: 0.875;
   letter-spacing: -0.01em;
   text-transform: uppercase;
   white-space: nowrap;
   transform-origin: 0 0;
-  pointer-events: none;
 }
 
-.hero-title > span {
+.hero-face > span {
   display: block;
 }
 
-.hero-title-ink {
-  left: var(--ink-left);
-  top: var(--ink-top);
-  font-size: var(--ink-size);
-  color: var(--color-ink-900);
-  z-index: 5;
-}
-
-.hero-lime {
+.hero-wipe {
   position: absolute;
   inset: 0;
-  background-color: var(--color-lime-400);
-  clip-path: inset(0 0 0 calc(var(--inv) * var(--lime-left, 0px)));
-  z-index: 10;
+  display: block;
 }
 
-.hero-title-paper {
+.hero-wipe-g {
+  -webkit-mask-image: linear-gradient(90deg, #000 var(--seam-a), transparent var(--seam-b));
+  mask-image: linear-gradient(90deg, #000 var(--seam-a), transparent var(--seam-b));
+}
+
+.hero-wipe-e {
+  -webkit-mask-image: linear-gradient(90deg, transparent var(--seam-a), #000 var(--seam-b));
+  mask-image: linear-gradient(90deg, transparent var(--seam-a), #000 var(--seam-b));
+}
+
+.hero-face-g {
+  font-family: var(--font-grotesk);
+}
+
+.hero-face-e {
+  font-family: var(--font-editorial);
+}
+
+.hero-title-entry {
+  z-index: 5;
+  color: var(--color-rose-400);
+  opacity: var(--entry-a);
+}
+
+.hero-title-entry .hero-wipe {
+  left: var(--entry-left);
+  right: auto;
+  width: var(--entry-width);
+  transform-origin: 50% var(--entry-origin);
+  transform: scale(var(--entry-k));
+}
+
+.hero-title-entry .hero-face {
+  line-height: 1;
+}
+
+.hero-title-entry .hero-face-g {
+  left: var(--entry-g-left);
+  top: var(--entry-g-top);
+  font-size: var(--entry-g-size);
+  letter-spacing: var(--entry-g-track);
+}
+
+.hero-title-entry .hero-face-e {
+  left: var(--entry-e-left);
+  top: var(--entry-e-top);
+  font-size: var(--entry-e-size);
+  letter-spacing: var(--entry-e-track);
+}
+
+.hero-title-lockup {
+  z-index: 10;
+  color: var(--color-paper-100);
+  opacity: var(--lock-a);
+}
+
+.hero-title-lockup .hero-face-e {
   left: var(--paper-left);
   top: var(--paper-top);
   font-size: var(--paper-size);
-  color: var(--color-paper-200);
-  transform: translate(calc(var(--inv) * var(--paper-dx)), calc(var(--inv) * var(--paper-dy)))
-    scale(calc(1 - var(--inv) * (1 - var(--paper-k))));
+  line-height: var(--paper-line);
+  transform-origin: 50% 50%;
+  transform: scale(calc(1 - var(--inv) * (1 - var(--paper-k))));
+}
+
+.hero-title-lockup .hero-dot {
+  color: var(--color-rose-500);
 }
 
 .hero-portrait {
@@ -90,8 +211,4 @@
   width: 100%;
   height: 100%;
   max-width: none;
-}
-
-.hero-dot {
-  color: var(--color-lime-400);
 }
