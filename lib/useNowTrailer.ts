@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { hush } from "@/lib/audio";
 
 const API_SRC = "https://www.youtube.com/iframe_api";
 const ENDED = 0;
@@ -81,6 +82,7 @@ export function useNowTrailer() {
   const wanted = useRef(true);
   const [ready, setReady] = useState(false);
   const [sound, setSound] = useState(false);
+  const [near, setNear] = useState(false);
 
   const raise = useCallback(() => {
     const node = player.current;
@@ -137,6 +139,7 @@ export function useNowTrailer() {
     const observer = new IntersectionObserver(
       ([entry]) => {
         onScreen.current = entry.isIntersecting;
+        setNear(entry.isIntersecting);
         if (entry.isIntersecting) play();
         else halt();
       },
@@ -174,6 +177,11 @@ export function useNowTrailer() {
       halt();
     };
   }, [raise]);
+
+  useEffect(() => {
+    hush(near);
+    return () => hush(false);
+  }, [near]);
 
   const toggleSound = useCallback(() => {
     const node = player.current;

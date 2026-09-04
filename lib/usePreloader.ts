@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { asset } from "@/lib/asset";
+import { release as openSound } from "@/lib/audio";
 
 const SIGNALS = 3;
 const MIN_MS = 900;
@@ -68,6 +69,7 @@ export function usePreloader() {
               if (!live) return;
               window.scrollTo(0, 0);
               release();
+              openSound();
               setPhase("done");
             }, EXIT_MS),
           );
