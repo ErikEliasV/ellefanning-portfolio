@@ -6,7 +6,9 @@
   --color-paper-200: #efeadc;
   --color-paper-300: #e4decc;
 
+  --color-ink-950: #121318;
   --color-ink-900: #131313;
+  --color-ink-850: #17181c;
   --color-ink-800: #1d1c1a;
   --color-ink-700: #2a2825;
   --color-ink-500: #5c5852;
@@ -20,6 +22,7 @@
 
   --color-blush-100: #f8f1f3;
   --color-blush-200: #f2e6ea;
+  --color-blush-300: #f4e5e0;
 
   --color-yellow-600: #c79a00;
   --color-yellow-500: #ebba00;
