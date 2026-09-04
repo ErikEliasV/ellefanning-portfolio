@@ -33,6 +33,7 @@ const nature = localFont({
   src: [
     { path: "../public/fonts/ZTNature-Regular.woff2", weight: "400", style: "normal" },
     { path: "../public/fonts/ZTNature-Medium.woff2", weight: "500", style: "normal" },
+    { path: "../public/fonts/ZTNature-Bold.woff2", weight: "700", style: "normal" },
   ],
 });
 
