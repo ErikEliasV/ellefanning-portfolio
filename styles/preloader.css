@@ -29,13 +29,13 @@
   left: var(--gutter-page);
   top: 50%;
   margin: 0;
-  font-family: var(--font-display);
+  font-family: var(--font-editorial);
   font-weight: 400;
   font-size: min(
-    calc((100cqw - var(--gutter-page) * 2) / 3.24),
-    calc((100svh - 144px) / 2.1)
+    calc((100cqw - var(--gutter-page) * 2) / 3.54),
+    calc((100svh - 144px) / 2.34)
   );
-  line-height: 0.86;
+  line-height: 0.96;
   letter-spacing: -0.01em;
   text-transform: uppercase;
   white-space: nowrap;
