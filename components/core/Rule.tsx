@@ -1,7 +1,7 @@
 import { cn } from "@/lib/cn";
 
 type RuleWeight = "hair" | "rule" | "heavy" | "block";
-type RuleTone = "ink" | "hair" | "accent" | "invert";
+type RuleTone = "ink" | "hair" | "accent" | "invert" | "periwinkle";
 
 type RuleProps = {
   weight?: RuleWeight;
@@ -21,6 +21,7 @@ const toneClass: Record<RuleTone, string> = {
   hair: "bg-line-hairline",
   accent: "bg-yellow-400",
   invert: "bg-line-invert",
+  periwinkle: "bg-periwinkle-400",
 };
 
 export function Rule({ weight = "rule", tone = "ink", className }: RuleProps) {
