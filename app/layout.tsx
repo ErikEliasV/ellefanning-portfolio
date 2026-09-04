@@ -3,6 +3,7 @@ import { Anton, Space_Mono, Archivo } from "next/font/google";
 import localFont from "next/font/local";
 import { Cursor } from "@/components/core/Cursor";
 import { Preloader } from "@/components/core/Preloader";
+import { SoundToggle } from "@/components/core/SoundToggle";
 import "@/styles/globals.css";
 
 const anton = Anton({
@@ -59,6 +60,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col">
         <Preloader />
         <Cursor />
+        <SoundToggle />
         {children}
       </body>
     </html>

@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { asset } from "@/lib/asset";
+import { reelTick } from "@/lib/audio";
 import type { Film } from "@/lib/films";
 
 type FilmStripProps = {
@@ -17,6 +18,7 @@ const TAIL = 32;
 // Handoff to Characters, in stage heights: the bar climbs, then it goes dark.
 const RISE = 0.85;
 const DARK = 0.45;
+const STRIDE = 80;
 
 function two(value: number) {
   return String(value).padStart(2, "0");
@@ -54,6 +56,7 @@ export function FilmStrip({ films, heading, span, pace = 1.6 }: FilmStripProps) 
     let run = 0;
     let rise = 0;
     let dark = 0;
+    let atNotch = -1;
 
     function paint() {
       ticket.current = 0;
@@ -98,6 +101,14 @@ export function FilmStrip({ films, heading, span, pace = 1.6 }: FilmStripProps) 
       if (current !== cursor.current) {
         cursor.current = current;
         setActive(current);
+      }
+
+      const reeling = run > 0 && passed > 0 && passed < run;
+      const notch = reeling ? Math.floor(shift / STRIDE) : -1;
+
+      if (notch !== atNotch) {
+        atNotch = notch;
+        if (reeling) reelTick(notch, reeled);
       }
     }
 
