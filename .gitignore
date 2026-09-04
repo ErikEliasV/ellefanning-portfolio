@@ -42,3 +42,6 @@ next-env.d.ts
 
 # design system (referencia local, nao versionada)
 /ellefaning_desingsystem/
+
+# originais das imagens (fontes pra reconverter, nao versionadas)
+/originais/

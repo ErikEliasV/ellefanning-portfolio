@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { asset } from "@/lib/asset";
+import { pixel } from "@/lib/audio";
 
 export const HERO_FIELD = "/images/ellefanning-hero-field.webp";
 
@@ -182,6 +183,11 @@ export function useHeroField() {
     let clock = 0;
     let last = 0;
 
+    let cols = BLOCKS_A;
+    let rows = BLOCKS_A;
+    let atCol = -1;
+    let atRow = -1;
+
     let aimX = 0.5;
     let aimY = 0.5;
     let aimA = 0;
@@ -205,6 +211,9 @@ export function useHeroField() {
       const cell = width / (BLOCKS_A + (BLOCKS_B - BLOCKS_A) * p);
       const tint = blend(PAPER, ROSE, wash);
       const line = blend(LINE_PAPER, LINE_ROSE, wash);
+
+      cols = Math.max(width / cell, 1);
+      rows = Math.max(height / cell, 1);
 
       gl.viewport(0, 0, width, height);
       gl.uniform2f(uCanvas, width, height);
@@ -249,13 +258,29 @@ export function useHeroField() {
       const y = (event.clientY - box.top) / box.height;
       const inside = x >= 0 && x <= 1 && y >= 0 && y <= 1;
       aimA = inside ? 1 : 0;
-      if (!inside) return;
+
+      if (!inside) {
+        atCol = -1;
+        atRow = -1;
+        return;
+      }
+
       aimX = x;
       aimY = 1 - y;
+
+      const col = Math.floor(aimX * cols);
+      const row = Math.floor(aimY * rows);
+      if (col === atCol && row === atRow) return;
+
+      atCol = col;
+      atRow = row;
+      if (raf) pixel(col, row, aimX);
     };
 
     const onLeave = () => {
       aimA = 0;
+      atCol = -1;
+      atRow = -1;
     };
 
     const image = new Image();

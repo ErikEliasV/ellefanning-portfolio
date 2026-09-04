@@ -1,22 +1,28 @@
 @import "tailwindcss";
 
 @theme {
+  --color-paper-000: #fffbfc;
   --color-paper-100: #f6f3e9;
   --color-paper-200: #efeadc;
   --color-paper-300: #e4decc;
 
+  --color-ink-950: #121318;
   --color-ink-900: #131313;
+  --color-ink-850: #17181c;
   --color-ink-800: #1d1c1a;
   --color-ink-700: #2a2825;
   --color-ink-500: #5c5852;
   --color-ink-300: #8e8981;
 
   --color-rose-500: #c4617f;
-  --color-rose-400: #db7a97;
+  --color-rose-400: #e07295;
   --color-rose-300: #e9a0b5;
+
+  --color-periwinkle-400: #8d9ac4;
 
   --color-blush-100: #f8f1f3;
   --color-blush-200: #f2e6ea;
+  --color-blush-300: #f4e5e0;
 
   --color-yellow-600: #c79a00;
   --color-yellow-500: #ebba00;

@@ -3,6 +3,7 @@ import { Anton, Space_Mono, Archivo } from "next/font/google";
 import localFont from "next/font/local";
 import { Cursor } from "@/components/core/Cursor";
 import { Preloader } from "@/components/core/Preloader";
+import { SoundToggle } from "@/components/core/SoundToggle";
 import "@/styles/globals.css";
 
 const anton = Anton({
@@ -31,8 +32,10 @@ const nature = localFont({
   variable: "--font-nature",
   display: "swap",
   src: [
+    { path: "../public/fonts/ZTNature-Light.woff2", weight: "300", style: "normal" },
     { path: "../public/fonts/ZTNature-Regular.woff2", weight: "400", style: "normal" },
     { path: "../public/fonts/ZTNature-Medium.woff2", weight: "500", style: "normal" },
+    { path: "../public/fonts/ZTNature-Bold.woff2", weight: "700", style: "normal" },
   ],
 });
 
@@ -57,6 +60,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col">
         <Preloader />
         <Cursor />
+        <SoundToggle />
         {children}
       </body>
     </html>

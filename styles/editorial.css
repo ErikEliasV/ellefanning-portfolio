@@ -227,14 +227,14 @@
 
 .ed-title {
   margin: 0;
-  font-family: var(--font-display);
+  font-family: var(--font-editorial);
   font-weight: 400;
   font-size: 12.747vw;
   line-height: 1;
   letter-spacing: -0.0155em;
   text-transform: uppercase;
   white-space: nowrap;
-  color: var(--color-paper-100);
+  color: var(--color-blush-300);
   flex: 0 0 auto;
   min-width: 0;
   transform-origin: left bottom;
@@ -247,12 +247,12 @@
 
 .ed-year,
 .ed-kicker {
-  font-family: var(--font-mono);
+  font-family: var(--font-grotesk);
   font-size: 5.995vw;
   line-height: 0.875;
   letter-spacing: -0.01em;
   text-transform: uppercase;
-  color: var(--color-paper-100);
+  color: var(--color-blush-300);
   white-space: nowrap;
 }
 
@@ -270,17 +270,17 @@
 
 .ed-note {
   margin: 0;
-  font-family: var(--font-mono);
+  font-family: var(--font-grotesk);
   font-size: clamp(11px, 0.99vw, 19px);
   line-height: 1.06;
   text-transform: uppercase;
-  color: var(--color-paper-100);
+  color: var(--color-blush-300);
 }
 
 .ed-count {
   display: block;
   margin-top: 0.83vw;
-  font-family: var(--font-mono);
+  font-family: var(--font-grotesk);
   font-size: clamp(10px, 0.73vw, 14px);
   font-weight: 700;
   letter-spacing: var(--tracking-label-wide);

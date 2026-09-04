@@ -1,23 +1,58 @@
+@property --lens-r {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
 .site-footer {
   container-type: inline-size;
 }
 
 .footer-mark {
-  --mark-ratio: 3.24;
+  --mark-ratio: 3.536;
+  --lens-r: 0px;
+  --mx: 50%;
+  --my: 50%;
+  position: relative;
   margin: 0;
   padding-left: var(--gutter-page);
-  font-family: var(--font-display);
+  font-family: var(--font-editorial);
   font-weight: 400;
   font-size: calc((100cqw - var(--gutter-page) * 2) / var(--mark-ratio));
-  line-height: 0.86;
+  line-height: 0.764;
   letter-spacing: -0.01em;
   text-transform: uppercase;
-  color: var(--color-ink-800);
+  color: var(--color-ink-950);
   white-space: nowrap;
+  transition: --lens-r var(--duration-slow) var(--ease-out);
 }
 
-.footer-mark > span {
+.footer-mark:hover {
+  --lens-r: clamp(78px, 9.4vw, 180px);
+}
+
+.footer-line {
   display: block;
+}
+
+.footer-lens {
+  position: absolute;
+  inset: 0;
+  padding-left: var(--gutter-page);
+  color: transparent;
+  mask-image: radial-gradient(
+    circle var(--lens-r) at var(--mx) var(--my),
+    #000 0%,
+    #000 44%,
+    transparent 100%
+  );
+  background-image: var(--mark-photo);
+  background-position: center 58%;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-clip: text;
+  -webkit-background-clip: text;
+  pointer-events: none;
 }
 
 .footer-dot {

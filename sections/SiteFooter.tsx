@@ -1,3 +1,4 @@
+import { FooterMark } from "@/components/content/FooterMark";
 import { Rule } from "@/components/core/Rule";
 import { LINKS } from "@/lib/links";
 import "@/styles/footer.css";
@@ -13,17 +14,12 @@ export function SiteFooter() {
     <footer
       id="footer"
       data-cursor-skin="invert"
-      className="site-footer grain relative overflow-hidden border-t border-line-rule bg-ink-900 text-paper-100"
+      className="site-footer grain relative overflow-hidden border-t border-ink-850 bg-ink-850 text-paper-000"
     >
-      <h2 className="footer-mark">
-        <span>Elle</span>
-        <span>
-          Fanning<span className="footer-dot">.</span>
-        </span>
-      </h2>
+      <FooterMark />
 
       <div className="bleed footer-body">
-        <Rule tone="invert" />
+        <Rule tone="periwinkle" />
 
         <div className="grid gap-8 md:grid-cols-[1fr_auto]">
           <ul className="flex flex-col">
@@ -34,7 +30,7 @@ export function SiteFooter() {
                   target="_blank"
                   rel="noreferrer noopener"
                   data-cursor="Visit"
-                  className="group flex items-baseline justify-between gap-6 border-b border-line-invert py-3 font-mono text-label font-bold uppercase tracking-label-wide text-paper-100 transition-colors duration-[140ms] ease-[var(--ease-out)] hover:text-rose-400"
+                  className="group flex items-baseline justify-between gap-6 border-b border-periwinkle-400 py-3 font-mono text-label font-bold uppercase tracking-label-wide text-paper-000 transition-colors duration-[140ms] ease-[var(--ease-out)] hover:text-rose-400"
                 >
                   <span className="flex items-center gap-3">
                     <span
@@ -43,7 +39,7 @@ export function SiteFooter() {
                     />
                     {link.label}
                   </span>
-                  <span className="text-ink-300 transition-colors duration-[140ms] ease-[var(--ease-out)] group-hover:text-rose-400">
+                  <span className="text-periwinkle-400 transition-colors duration-[140ms] ease-[var(--ease-out)] group-hover:text-rose-400">
                     {link.value}
                   </span>
                 </a>
@@ -51,7 +47,7 @@ export function SiteFooter() {
             ))}
           </ul>
 
-          <div className="flex flex-col justify-end gap-2 font-mono text-micro uppercase tracking-label text-ink-300 md:text-right">
+          <div className="flex flex-col justify-end gap-2 font-mono text-micro uppercase tracking-label text-periwinkle-400 md:text-right">
             {MARKS.map((mark) => (
               <span key={mark}>{mark}</span>
             ))}
