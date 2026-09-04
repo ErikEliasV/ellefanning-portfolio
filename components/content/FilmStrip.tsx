@@ -1,25 +1,19 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { HoverClip } from "@/components/content/HoverClip";
+import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
+import { asset } from "@/lib/asset";
 import type { Film } from "@/lib/films";
 
 type FilmStripProps = {
   films: readonly Film[];
+  heading: string;
+  span: string;
   pace?: number;
-  pull?: number;
-  rise?: number;
 };
 
-const LANES = [
-  { width: "clamp(168px, min(20vw, 43vh), 420px)", drop: 0, depth: 1 },
-  { width: "clamp(132px, min(15.6vw, 34vh), 328px)", drop: 48, depth: 0.52 },
-  { width: "clamp(150px, min(17.8vw, 38vh), 372px)", drop: 18, depth: 0.76 },
-] as const;
-
-const READ_MARK = 0.34;
-const EXIT_ZONE = 0.14;
-const EXIT_LIFT = 24;
+// Scroll held after the reel lands, so the last frame settles instead of stopping short.
+const TAIL = 32;
 
 function two(value: number) {
   return String(value).padStart(2, "0");
@@ -29,19 +23,12 @@ function clamp01(value: number) {
   return value < 0 ? 0 : value > 1 ? 1 : value;
 }
 
-export function FilmStrip({
-  films,
-  pace = 1.25,
-  pull = 180,
-  rise = 88,
-}: FilmStripProps) {
+export function FilmStrip({ films, heading, span, pace = 1.6 }: FilmStripProps) {
   const track = useRef<HTMLDivElement>(null);
   const stage = useRef<HTMLDivElement>(null);
-  const gate = useRef<HTMLDivElement>(null);
+  const rail = useRef<HTMLElement>(null);
   const strip = useRef<HTMLDivElement>(null);
-  const meter = useRef<HTMLDivElement>(null);
-  const backdrop = useRef<HTMLDivElement>(null);
-  const nodes = useRef<HTMLElement[]>([]);
+  const meter = useRef<HTMLSpanElement>(null);
   const boxes = useRef<{ left: number; width: number }[]>([]);
   const ticket = useRef(0);
   const cursor = useRef(0);
@@ -50,56 +37,32 @@ export function FilmStrip({
 
   useEffect(() => {
     let travel = 0;
-    let span = 0;
+    let run = 0;
 
     function paint() {
       ticket.current = 0;
 
       const trackEl = track.current;
-      const gateEl = gate.current;
       const stripEl = strip.current;
-      if (!trackEl || !gateEl || !stripEl || span <= 0) return;
+      const railEl = rail.current;
+      if (!trackEl || !stripEl || !railEl || run <= 0) return;
 
-      const meterEl = meter.current;
-      const backdropEl = backdrop.current;
-      const progress = clamp01(-trackEl.getBoundingClientRect().top / span);
+      const progress = clamp01(-trackEl.getBoundingClientRect().top / run);
       const shift = progress * travel;
-      const width = gateEl.clientWidth;
 
       stripEl.style.transform = `translate3d(${-shift}px, 0, 0)`;
-      if (meterEl) meterEl.style.transform = `scaleX(${progress})`;
-      if (backdropEl) {
-        backdropEl.style.transform = `translate3d(${-progress * width * 0.42}px, 0, 0)`;
-      }
+      if (meter.current) meter.current.style.transform = `scaleX(${progress})`;
 
-      const read = width * READ_MARK;
-      const lead = Math.max(width - read, 1);
-      const exit = Math.max(width * EXIT_ZONE, 1);
+      const read = railEl.offsetWidth;
       let current = films.length - 1;
-      let found = false;
 
-      for (let index = 0; index < nodes.current.length; index += 1) {
-        const node = nodes.current[index];
+      for (let index = 0; index < boxes.current.length; index += 1) {
         const box = boxes.current[index];
-        if (!node || !box) continue;
-
-        const depth = LANES[index % LANES.length].depth;
-        const approach = clamp01((box.left - shift - read) / lead);
-        const eased = approach * approach;
-        const offset = pull * depth * eased;
-        const x = box.left - shift + offset;
-        const leaving = 1 - clamp01(x / exit);
-        const drift = rise * depth * eased - EXIT_LIFT * leaving * leaving;
-
-        node.style.transform = `translate3d(${offset}px, ${drift}px, 0)`;
-
-        if (!found && x + box.width * 0.5 > 0) {
+        if (box.left - shift + box.width * 0.5 > read) {
           current = index;
-          found = true;
+          break;
         }
       }
-
-      if (current > films.length - 1) current = films.length - 1;
 
       if (current !== cursor.current) {
         cursor.current = current;
@@ -110,20 +73,25 @@ export function FilmStrip({
     function measure() {
       const trackEl = track.current;
       const stageEl = stage.current;
-      const gateEl = gate.current;
       const stripEl = strip.current;
-      if (!trackEl || !stageEl || !gateEl || !stripEl) return;
+      const railEl = rail.current;
+      if (!trackEl || !stageEl || !stripEl || !railEl) return;
 
-      nodes.current = Array.from(stripEl.children) as HTMLElement[];
-      boxes.current = nodes.current.map((node) => ({
-        left: node.offsetLeft,
-        width: node.offsetWidth,
+      boxes.current = Array.from(stripEl.children, (node) => ({
+        left: (node as HTMLElement).offsetLeft,
+        width: (node as HTMLElement).offsetWidth,
       }));
 
       const last = boxes.current[boxes.current.length - 1];
-      travel = last ? Math.max(last.left - gateEl.clientWidth * 0.38, 0) : 0;
-      span = travel / pace;
-      trackEl.style.height = `${stageEl.offsetHeight + span}px`;
+      const lead = boxes.current[0];
+      const next = boxes.current[1];
+
+      // Rest the last title one gap off the rail, hiding the one before it, so the counter reaches 16.
+      const gap = next ? next.left - lead.left - lead.width : 0;
+      const rest = railEl.offsetWidth + gap - 2;
+      travel = last && lead ? Math.max(last.left - rest, 0) : 0;
+      run = travel / pace;
+      trackEl.style.height = `${stageEl.offsetHeight + run + TAIL}px`;
       paint();
     }
 
@@ -148,108 +116,59 @@ export function FilmStrip({
       cancelAnimationFrame(ticket.current);
       ticket.current = 0;
     };
-  }, [pace, pull, rise, films.length]);
+  }, [pace, films.length]);
 
   const now = films[Math.min(active, films.length - 1)];
 
-  const cardList = films.map((film, index) => {
-    const lane = LANES[index % LANES.length];
-
-    return (
-      <article
-        key={film.id}
-        style={{ width: lane.width, marginTop: lane.drop }}
-        className="group relative z-0 shrink-0 will-change-transform hover:z-30"
-      >
-        <HoverClip
-          alt={`${film.title} (${film.year})`}
-          poster={film.poster}
-          ratio="2 / 3"
-          sizes="(min-width: 1024px) 20vw, (min-width: 640px) 32vw, 52vw"
-          reveal="color"
-          summary={film.summary}
-          meta={`Dir. ${film.director}`}
-          placeholder={`${film.title.toUpperCase()}\n${film.year}`}
-        />
-
-        <div className="film-meta relative z-40">
-          <div className="film-meta-title">
-            <span className="truncate text-ink-900 transition-colors duration-[140ms] ease-[var(--ease-out)] group-hover:text-yellow-600">
-              {film.title}
-            </span>
-            <span className="shrink-0 text-ink-500">{film.year}</span>
-          </div>
-          <div className="film-meta-role">
-            <span className="truncate">as {film.character}</span>
-            <span className="shrink-0 text-ink-300">{two(index + 1)}</span>
-          </div>
-        </div>
-      </article>
-    );
-  });
-
-  const endPlate = (
-    <div
-      key="end-of-reel"
-      style={{ width: "clamp(196px, 21vw, 340px)" }}
-      className="shrink-0 self-center border-2 border-line-rule px-6 py-6 will-change-transform"
-    >
-      <div className="font-mono text-label-sm font-bold uppercase tracking-label-wide text-ink-500">
-        End of reel
-      </div>
-      <div className="mt-4 font-display text-display-4 uppercase leading-none tracking-poster text-ink-900">
-        {films[0].year} — {films[films.length - 1].year}
-      </div>
-      <div className="mt-4 border-t border-line-rule pt-3 font-mono text-micro uppercase tracking-label text-ink-500">
-        {films.length} titles · still rolling
-      </div>
-    </div>
-  );
-
   return (
-    <div ref={track} className="relative h-[420svh]">
-      <div ref={stage} className="film-gate sticky top-0 h-svh overflow-hidden">
-        <div
-          ref={gate}
-          className="absolute inset-y-0 left-[var(--window)] right-0 overflow-hidden"
-        >
-          <div
-            ref={backdrop}
-            aria-hidden
-            style={
-              {
-                backgroundImage:
-                  "repeating-linear-gradient(to right, var(--color-paper-300) 0 1px, transparent 1px 132px)",
-              } as CSSProperties
-            }
-            className="pointer-events-none absolute inset-y-0 left-0 w-[200%] will-change-transform"
-          />
+    <div ref={track} className="film-track">
+      <div ref={stage} className="film-stage">
+        <div className="film-reel">
+          <div className="film-gate">
+            <div ref={strip} className="film-strip">
+              {films.map((film) => (
+                <article key={film.id} className="film-card">
+                  {film.poster ? (
+                    <Image
+                      src={asset(film.poster)}
+                      alt={`${film.title} (${film.year})`}
+                      fill
+                      sizes="(min-width: 64rem) 32vw, 62vw"
+                      draggable={false}
+                      className="film-card-image"
+                    />
+                  ) : (
+                    <span className="film-card-blank">{film.title}</span>
+                  )}
 
-          <div className="absolute inset-0 flex flex-col justify-center">
-            <div
-              ref={strip}
-              className="film-strip flex w-max items-start pl-[clamp(64px,22.26vw,428px)] will-change-transform"
-            >
-              {cardList}
-              {endPlate}
+                  <div className="film-card-plate">
+                    <span className="film-card-title">{film.title}</span>
+                    <span className="film-card-role">
+                      as {film.character} · dir. {film.director}
+                    </span>
+                  </div>
+                </article>
+              ))}
             </div>
           </div>
+
+          <aside ref={rail} className="film-rail">
+            <h2 className="film-heading">{heading}</h2>
+
+            <div className="film-index">
+              <div className="film-index-row">
+                <span className="film-index-now">{two(active + 1)}</span>
+                <span className="film-index-total">/ {two(films.length)}</span>
+              </div>
+              <span className="film-index-year">{now.year}</span>
+            </div>
+          </aside>
         </div>
 
-        <div className="film-index pointer-events-none z-20">
-          <div className="film-index-row">
-            <span className="film-index-now">{two(active + 1)}</span>
-            <span className="film-index-total">/ {two(films.length)}</span>
-          </div>
-          <div className="film-index-year">{now.year}</div>
-        </div>
-
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-[2px] bg-line-hairline">
-          <div
-            ref={meter}
-            style={{ transform: "scaleX(0)" }}
-            className="h-full w-full origin-left bg-yellow-400 will-change-transform"
-          />
+        <div className="film-bar">
+          <span ref={meter} aria-hidden className="film-meter" />
+          <span className="film-bar-name">Elle Fanning</span>
+          <span className="film-bar-span">{span}</span>
         </div>
       </div>
     </div>
