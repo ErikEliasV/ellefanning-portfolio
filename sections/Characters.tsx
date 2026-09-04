@@ -1,56 +1,73 @@
-import { HoverClip } from "@/components/content/HoverClip";
+"use client";
+
+import Image from "next/image";
+import { useState } from "react";
+import { asset } from "@/lib/asset";
 import { CHARACTERS } from "@/lib/characters";
+import { cn } from "@/lib/cn";
 import "@/styles/characters.css";
 
-const LEAD =
-  "Not the films — the people inside them. Hover a face to read what she made of it.";
+function two(value: number) {
+  return String(value).padStart(2, "0");
+}
 
 export function Characters() {
+  const [open, setOpen] = useState<string | null>(null);
+
   return (
     <section
       id="characters"
-      className="grain border-t border-line-rule bg-ink-900 text-paper-100"
+      className="character-section"
+      data-cursor-skin="invert"
     >
-      <div className="character-header">
-        <div className="character-header-row">
+      <div className="character-shell">
+        <div className="character-header">
           <h2 className="character-heading">Characters</h2>
-          <p className="character-lead">{LEAD}</p>
         </div>
+
+        <ul className="character-list">
+          {CHARACTERS.map((character, index) => {
+            const isOpen = open === character.id;
+
+            return (
+              <li key={character.id} className="character-cell">
+                <button
+                  type="button"
+                  aria-expanded={isOpen}
+                  data-cursor={isOpen ? "Close" : "Read more"}
+                  onClick={() => setOpen(isOpen ? null : character.id)}
+                  className={cn("character-card", isOpen && "is-open")}
+                >
+                  <span className="character-shot">
+                    {character.still ? (
+                      <Image
+                        src={asset(character.still)}
+                        alt={`${character.name} — ${character.film}`}
+                        fill
+                        sizes="(min-width: 64rem) 32vw, (min-width: 40rem) 48vw, 94vw"
+                        draggable={false}
+                        className="character-image"
+                      />
+                    ) : null}
+                  </span>
+
+                  <span className="character-plate">
+                    <span className="character-lead">
+                      <span className="character-index">{two(index + 1)}</span>
+                      <span className="character-name">{character.name}</span>
+                      <span className="character-credit">
+                        {character.film} · {character.year}
+                      </span>
+                    </span>
+
+                    <span className="character-story">{character.story}</span>
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
       </div>
-
-      <ul className="grid grid-cols-2 border-t border-line-invert md:grid-cols-4">
-        {CHARACTERS.map((character, index) => (
-          <li
-            key={character.id}
-            className="group relative border-b border-r border-line-invert last:border-r-0"
-          >
-            <HoverClip
-              alt={`${character.name} — ${character.film}`}
-              poster={character.still}
-              reveal="always-color"
-              ratio="3 / 4"
-              sizes="(min-width: 768px) 25vw, 50vw"
-              placeholder={`${character.name.toUpperCase()}\n${character.film}`}
-              className="bg-ink-800"
-            />
-
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col gap-1 bg-[var(--scrim-plate)] px-3 py-2">
-              <span className="font-mono text-micro font-bold uppercase tracking-label text-rose-400">
-                {String(index + 1).padStart(2, "0")}
-              </span>
-              <span className="font-display text-display-4 uppercase leading-[0.92] text-paper-100">
-                {character.name}
-              </span>
-              <span className="font-mono text-micro uppercase tracking-label text-ink-300">
-                {character.film} · {character.year}
-              </span>
-              <p className="max-h-0 overflow-hidden font-mono text-micro uppercase leading-relaxed text-paper-100 opacity-0 transition-all duration-[220ms] ease-[var(--ease-out)] group-hover:max-h-24 group-hover:pt-2 group-hover:opacity-100">
-                {character.note}
-              </p>
-            </div>
-          </li>
-        ))}
-      </ul>
     </section>
   );
 }
