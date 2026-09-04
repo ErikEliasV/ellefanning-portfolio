@@ -1,36 +1,81 @@
 "use client";
 
-import { asset } from "@/lib/asset";
 import { CURRENT_WORK } from "@/lib/films";
-import { useNowReel } from "@/lib/useNowReel";
+import { useNowTrailer } from "@/lib/useNowTrailer";
 import "@/styles/now.css";
 
+const PARAMS = [
+  "mute=1",
+  "loop=1",
+  `playlist=${CURRENT_WORK.youtubeId}`,
+  "controls=0",
+  "disablekb=1",
+  "modestbranding=1",
+  "rel=0",
+  "iv_load_policy=3",
+  "playsinline=1",
+  "enablejsapi=1",
+].join("&");
+
+const TRAILER = `https://www.youtube-nocookie.com/embed/${CURRENT_WORK.youtubeId}?${PARAMS}`;
+
 export function Now() {
-  const { frame, bind, advance, live } = useNowReel(CURRENT_WORK.clips.length);
+  const { frame, stage, ready, sound, toggleSound } = useNowTrailer();
 
   return (
     <section id="current" className="now">
-      <div ref={frame} className="now-frame">
-        {CURRENT_WORK.clips.map((clip, index) => (
-          <video
-            key={clip}
-            ref={bind(index)}
-            src={asset(clip)}
-            className="now-clip"
-            data-live={index === live ? "" : undefined}
-            muted
-            playsInline
-            preload="auto"
+      <div ref={frame} className="now-frame" data-cursor-skin="invert">
+        <div aria-hidden className="now-stage">
+          <iframe
+            ref={stage}
+            src={TRAILER}
+            title={`${CURRENT_WORK.title} trailer`}
+            className="now-embed"
             tabIndex={-1}
-            aria-hidden
-            disablePictureInPicture
-            controlsList="nodownload noplaybackrate nofullscreen"
-            onEnded={advance}
-            onContextMenu={(event) => event.preventDefault()}
+            allow="autoplay; encrypted-media"
+            referrerPolicy="strict-origin-when-cross-origin"
           />
-        ))}
+        </div>
 
         <div aria-hidden className="now-scrim" />
+
+        <button
+          type="button"
+          className="now-sound"
+          onClick={toggleSound}
+          aria-pressed={sound}
+          aria-label={sound ? "Mute the trailer" : "Unmute the trailer"}
+          data-cursor={sound ? "Mute" : "Unmute"}
+          data-ready={ready ? "" : undefined}
+        >
+          <span aria-hidden className="now-sound-icon">
+            <svg viewBox="0 0 16 16" fill="none">
+              <path d="M2 6.2h3.4L9 3v10L5.4 9.8H2z" fill="currentColor" />
+              {sound ? (
+                <g
+                  stroke="currentColor"
+                  strokeWidth="1.3"
+                  strokeLinecap="round"
+                >
+                  <path d="M10.9 6.1a2.6 2.6 0 0 1 0 3.8" />
+                  <path d="M12.9 4.4a5.2 5.2 0 0 1 0 7.2" />
+                </g>
+              ) : (
+                <g
+                  stroke="currentColor"
+                  strokeWidth="1.3"
+                  strokeLinecap="round"
+                >
+                  <path d="M10.9 6.4 14.1 9.6" />
+                  <path d="M14.1 6.4 10.9 9.6" />
+                </g>
+              )}
+            </svg>
+          </span>
+          <span className="now-sound-label">
+            {sound ? "Sound on" : "Sound off"}
+          </span>
+        </button>
 
         <div className="now-row">
           <h2 className="now-word">Now</h2>

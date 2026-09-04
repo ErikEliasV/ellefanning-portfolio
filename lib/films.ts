@@ -191,17 +191,14 @@ export const FILMS: readonly Film[] = [
 ];
 
 export const CURRENT_WORK = {
-  title: "Sentimental Value",
-  originalTitle: "Affeksjonsverdi",
-  year: 2025,
-  character: "Rachel Kemp",
-  director: "Joachim Trier",
+  title: "The Hunger Games: Sunrise on the Reaping",
+  originalTitle: "Sunrise on the Reaping",
+  year: 2026,
+  character: "Effie Trinket",
+  director: "Francis Lawrence",
   format: "Feature",
-  status: "Released",
-  premiere: "Cannes 2025",
-  note: "The part a director's daughter refuses — and the American actress who takes it.",
-  clips: [
-    "/videos/hvorfor-flyttet-dere-ikke-bare-etter-det.mp4",
-    "/videos/jeg-kan-ikke.mp4",
-  ],
+  status: "Upcoming",
+  premiere: "November 20, 2026",
+  note: "Twenty-four years before the catchphrase, Effie Trinket is still learning to say the worst thing in the brightest voice.",
+  youtubeId: "makIBf-BW3k",
 } as const;
