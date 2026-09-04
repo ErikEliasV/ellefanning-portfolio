@@ -1,6 +1,6 @@
 .now {
   border-top: 1px solid var(--color-line-rule);
-  background-color: var(--color-paper-100);
+  background-color: var(--color-paper-000);
   padding-inline: clamp(12px, 4.1146vw, 79px);
   padding-block: clamp(18px, 2.5vw, 48px);
 }
@@ -62,13 +62,13 @@
 
 .now-word {
   margin: 0;
-  font-family: var(--font-display);
+  font-family: var(--font-grotesk);
   font-weight: 400;
   font-size: clamp(64px, 12.7474vw, 245px);
   line-height: 0.78;
   letter-spacing: -0.0155em;
   text-transform: uppercase;
-  color: #fff;
+  color: var(--color-blush-300);
 }
 
 .now-meta {
@@ -90,15 +90,15 @@
 .now-tag {
   display: inline-flex;
   align-items: center;
-  border: 1px solid #fff;
+  border: 1px solid var(--color-blush-300);
   padding: 5px 10px;
-  font-family: var(--font-mono);
+  font-family: var(--font-grotesk);
   font-weight: 700;
   font-size: var(--text-micro);
   line-height: 1;
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: #fff;
+  color: var(--color-blush-300);
 }
 
 .now-tag-accent {
@@ -107,19 +107,19 @@
 
 .now-tag-quiet {
   border-color: transparent;
-  background-color: var(--color-paper-300);
+  background-color: var(--color-blush-300);
   color: var(--color-ink-900);
 }
 
 .now-title {
   margin: 0;
   width: 100%;
-  font-family: var(--font-display);
+  font-family: var(--font-editorial);
   font-weight: 400;
   font-size: clamp(28px, 2.2917vw, 44px);
   line-height: 0.92;
   text-transform: uppercase;
-  color: #fff;
+  color: var(--color-blush-300);
 }
 
 .now-list {
@@ -146,8 +146,7 @@
   font-size: var(--text-label);
   line-height: 1.25;
   letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-  color: #fff;
+  color: var(--color-blush-300);
 }
 
 .now-note {
@@ -157,8 +156,7 @@
   font-family: var(--font-mono);
   font-size: var(--text-body-sm);
   line-height: 1.55;
-  text-transform: uppercase;
-  color: #fff;
+  color: var(--color-blush-300);
 }
 
 @media (width < 44rem) {

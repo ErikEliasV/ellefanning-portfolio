@@ -170,14 +170,11 @@ export function useCursor() {
 
       const next = from?.closest(PICK);
       const hit = next instanceof HTMLElement ? next : null;
+      retag(hit);
       if (hit === hot) return;
 
       hot = hit;
       snap = hit ? hit.dataset.cursorSnap !== "off" && fits(hit) : false;
-
-      const tag = hit?.dataset.cursor ?? "";
-      const slot = label.current;
-      if (slot) slot.textContent = tag;
 
       if (hit) node.dataset.hot = "";
       else delete node.dataset.hot;
@@ -185,10 +182,18 @@ export function useCursor() {
       if (snap) node.dataset.snap = "";
       else delete node.dataset.snap;
 
+      wake();
+    }
+
+    function retag(hit: HTMLElement | null) {
+      if (!node) return;
+
+      const tag = hit?.dataset.cursor ?? "";
+      const slot = label.current;
+      if (slot && slot.textContent !== tag) slot.textContent = tag;
+
       if (tag) node.dataset.tag = "";
       else delete node.dataset.tag;
-
-      wake();
     }
 
     function press() {
@@ -202,6 +207,7 @@ export function useCursor() {
       if (!node) return;
       down = false;
       delete node.dataset.down;
+      requestAnimationFrame(() => retag(hot));
       wake();
     }
 
