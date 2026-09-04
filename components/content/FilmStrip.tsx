@@ -14,6 +14,9 @@ type FilmStripProps = {
 
 // Scroll held after the reel lands, so the last frame settles instead of stopping short.
 const TAIL = 32;
+// Handoff to Characters, in stage heights: the bar climbs, then it goes dark.
+const RISE = 0.85;
+const DARK = 0.45;
 
 function two(value: number) {
   return String(value).padStart(2, "0");
@@ -23,13 +26,24 @@ function clamp01(value: number) {
   return value < 0 ? 0 : value > 1 ? 1 : value;
 }
 
+function readInk(name: string) {
+  const hex = getComputedStyle(document.documentElement)
+    .getPropertyValue(name)
+    .trim()
+    .replace("#", "");
+  if (hex.length !== 6) return [0, 0, 0];
+  return [0, 2, 4].map((at) => parseInt(hex.slice(at, at + 2), 16));
+}
+
 export function FilmStrip({ films, heading, span, pace = 1.6 }: FilmStripProps) {
   const track = useRef<HTMLDivElement>(null);
   const stage = useRef<HTMLDivElement>(null);
   const rail = useRef<HTMLElement>(null);
   const strip = useRef<HTMLDivElement>(null);
+  const bar = useRef<HTMLDivElement>(null);
   const meter = useRef<HTMLSpanElement>(null);
   const boxes = useRef<{ left: number; width: number }[]>([]);
+  const field = useRef<number[][]>([]);
   const ticket = useRef(0);
   const cursor = useRef(0);
 
@@ -38,20 +52,37 @@ export function FilmStrip({ films, heading, span, pace = 1.6 }: FilmStripProps) 
   useEffect(() => {
     let travel = 0;
     let run = 0;
+    let rise = 0;
+    let dark = 0;
 
     function paint() {
       ticket.current = 0;
 
       const trackEl = track.current;
+      const stageEl = stage.current;
       const stripEl = strip.current;
       const railEl = rail.current;
-      if (!trackEl || !stripEl || !railEl || run <= 0) return;
+      if (!trackEl || !stageEl || !stripEl || !railEl) return;
 
-      const progress = clamp01(-trackEl.getBoundingClientRect().top / run);
-      const shift = progress * travel;
+      const passed = -trackEl.getBoundingClientRect().top;
+      const reeled = run > 0 ? clamp01(passed / run) : 1;
+      const shift = reeled * travel;
 
       stripEl.style.transform = `translate3d(${-shift}px, 0, 0)`;
-      if (meter.current) meter.current.style.transform = `scaleX(${progress})`;
+      if (meter.current) meter.current.style.transform = `scaleX(${reeled})`;
+
+      const risen = rise > 0 ? clamp01((passed - run) / rise) : 0;
+      const burnt = dark > 0 ? clamp01((passed - run - rise) / dark) : 0;
+      const [from, to] = field.current;
+
+      stageEl.style.setProperty("--rise", risen.toFixed(4));
+      stageEl.style.setProperty("--burn", burnt.toFixed(4));
+      if (from && to) {
+        const wash = from.map((channel, index) =>
+          Math.round(channel + (to[index] - channel) * burnt),
+        );
+        stageEl.style.setProperty("--wash", `rgb(${wash.join(" ")})`);
+      }
 
       const read = railEl.offsetWidth;
       let current = films.length - 1;
@@ -75,7 +106,10 @@ export function FilmStrip({ films, heading, span, pace = 1.6 }: FilmStripProps) 
       const stageEl = stage.current;
       const stripEl = strip.current;
       const railEl = rail.current;
-      if (!trackEl || !stageEl || !stripEl || !railEl) return;
+      const barEl = bar.current;
+      if (!trackEl || !stageEl || !stripEl || !railEl || !barEl) return;
+
+      field.current = [readInk("--color-rose-400"), readInk("--color-ink-900")];
 
       boxes.current = Array.from(stripEl.children, (node) => ({
         left: (node as HTMLElement).offsetLeft,
@@ -91,7 +125,12 @@ export function FilmStrip({ films, heading, span, pace = 1.6 }: FilmStripProps) 
       const rest = railEl.offsetWidth + gap - 2;
       travel = last && lead ? Math.max(last.left - rest, 0) : 0;
       run = travel / pace;
-      trackEl.style.height = `${stageEl.offsetHeight + run + TAIL}px`;
+
+      const stageH = stageEl.offsetHeight;
+      rise = stageH * RISE;
+      dark = stageH * DARK;
+      stageEl.style.setProperty("--bar-h", `${barEl.offsetHeight}px`);
+      trackEl.style.height = `${stageH + run + rise + dark + TAIL}px`;
       paint();
     }
 
@@ -165,8 +204,11 @@ export function FilmStrip({ films, heading, span, pace = 1.6 }: FilmStripProps) 
           </aside>
         </div>
 
-        <div className="film-bar">
-          <span ref={meter} aria-hidden className="film-meter" />
+        <div aria-hidden className="film-wash">
+          <span ref={meter} className="film-meter" />
+        </div>
+
+        <div ref={bar} className="film-bar">
           <span className="film-bar-name">Elle Fanning</span>
           <span className="film-bar-span">{span}</span>
         </div>
