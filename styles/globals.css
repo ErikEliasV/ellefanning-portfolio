@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 @theme {
+  --color-paper-000: #fffbfc;
   --color-paper-100: #f6f3e9;
   --color-paper-200: #efeadc;
   --color-paper-300: #e4decc;
@@ -12,8 +13,10 @@
   --color-ink-300: #8e8981;
 
   --color-rose-500: #c4617f;
-  --color-rose-400: #db7a97;
+  --color-rose-400: #e07295;
   --color-rose-300: #e9a0b5;
+
+  --color-periwinkle-400: #8d9ac4;
 
   --color-blush-100: #f8f1f3;
   --color-blush-200: #f2e6ea;
