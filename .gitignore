@@ -45,3 +45,6 @@ next-env.d.ts
 
 # originais das imagens (fontes pra reconverter, nao versionadas)
 /originais/
+
+# documentacao de branch (referencia local, nao versionada)
+/docs/
