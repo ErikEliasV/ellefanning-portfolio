@@ -10,8 +10,11 @@
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
+  /* The ratio is a floor, not a cap: with overflow hidden the frame kept its
+     poster height and clipped the heading and the credits off the top on
+     phones and tablets. The video is already clipped by .now-stage. */
   aspect-ratio: 1762 / 771;
-  overflow: hidden;
+  overflow: visible;
   isolation: isolate;
   padding-inline: clamp(22px, 4.3229vw, 83px);
   padding-block: clamp(20px, 1.6667vw, 32px);
