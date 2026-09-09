@@ -101,6 +101,18 @@ export function usePreloader() {
       frame = requestAnimationFrame(tick);
     }
 
+    // The gate spans from the lockup's baseline down to the footer rule, so the
+    // footer's real height has to reach CSS.
+    function measure() {
+      if (!node) return;
+      const foot = node.querySelector<HTMLElement>(".pre-foot");
+      if (foot) node.style.setProperty("--pre-foot", `${foot.offsetHeight}px`);
+    }
+
+    measure();
+    const sizer = new ResizeObserver(measure);
+    sizer.observe(node);
+
     document.fonts.ready.then(typeset, typeset);
 
     const portrait = document.createElement("img");
@@ -123,6 +135,7 @@ export function usePreloader() {
 
     return () => {
       live = false;
+      sizer.disconnect();
       cancelAnimationFrame(frame);
       timers.forEach((id) => clearTimeout(id));
       window.removeEventListener("load", land);

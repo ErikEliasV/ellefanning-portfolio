@@ -60,24 +60,21 @@ export function Preloader() {
           ))}
         </div>
 
-        <div className="pre-foot">
-          <span className="pre-gate">
-            <span aria-hidden className="pre-word">
-              Loading
-            </span>
+        <div className="pre-gate">
+          <button
+            ref={gate}
+            type="button"
+            className="pre-enter"
+            disabled={!open}
+            onClick={enter}
+          >
+            Enter
+          </button>
+        </div>
 
-            <button
-              ref={gate}
-              type="button"
-              className="pre-enter"
-              disabled={!open}
-              onClick={enter}
-            >
-              Enter
-            </button>
-          </span>
-
-          <span aria-hidden className="pre-count">
+        <div aria-hidden className="pre-foot">
+          <span>{open ? "Ready" : "Loading"}</span>
+          <span>
             <span ref={readout} className="pre-num">
               000
             </span>{" "}

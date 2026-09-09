@@ -12,6 +12,13 @@
   container-type: inline-size;
   background-color: var(--color-paper-100);
   transition: transform var(--duration-slow) var(--ease-out);
+
+  /* The gate is centred in the band under the lockup, so it needs the same
+     figure the title is sized from. --pre-foot is measured on mount. */
+  --pre-fs: min(
+    calc((100cqw - var(--gutter-page) * 2) / 3.54),
+    calc((100svh - 144px) / 2.34)
+  );
 }
 
 .pre[data-exit] {
@@ -31,10 +38,7 @@
   margin: 0;
   font-family: var(--font-editorial);
   font-weight: 400;
-  font-size: min(
-    calc((100cqw - var(--gutter-page) * 2) / 3.54),
-    calc((100svh - 144px) / 2.34)
-  );
+  font-size: var(--pre-fs);
   line-height: 0.96;
   letter-spacing: -0.01em;
   text-transform: uppercase;
@@ -121,7 +125,7 @@
 
 .pre-foot {
   bottom: 0;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
   border-top: 1px solid var(--color-line-rule);
 }
@@ -130,36 +134,42 @@
   color: var(--color-ink-500);
 }
 
-/* The word and the gate share one cell, so the bar keeps its height through
-   the swap and the title above it goes on measuring against the same chrome. */
+/* The lockup is two lines tall at 0.96, so its bottom edge lands at
+   50% + 0.96em of the title size. The gate takes the band from there down to
+   the footer rule and centres itself in it. */
 .pre-gate {
+  position: absolute;
+  right: 0;
+  left: 0;
+  top: calc(50% + var(--pre-fs) * 0.96);
+  bottom: var(--pre-foot, 54px);
+  z-index: 25;
   display: grid;
-  align-items: center;
-}
-
-.pre-gate > * {
-  grid-area: 1 / 1;
-  justify-self: start;
-  transition: opacity var(--duration-base) var(--ease-out);
-}
-
-.pre[data-ready] .pre-word {
-  opacity: 0;
+  place-items: center;
+  padding: clamp(10px, 1.6svh, 26px) var(--gutter-page);
+  pointer-events: none;
 }
 
 .pre-enter {
-  position: relative;
-  margin: -6px 0;
-  border: 1px solid var(--color-line-rule);
-  padding: 5px 16px;
+  width: min(100%, 300px);
+  /* Fills the band on a phone and gives way on a short desktop window, never
+     below the 44px floor. */
+  height: clamp(44px, 100%, 76px);
+  margin: 0;
+  border: 1px solid var(--color-ink-900);
+  padding: 0;
   background-color: var(--color-ink-900);
-  font: inherit;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: clamp(13px, 1.1cqw, 17px);
+  line-height: 1;
   letter-spacing: var(--tracking-label-wide);
   text-transform: uppercase;
   color: var(--color-paper-100);
   cursor: pointer;
   opacity: 0;
   visibility: hidden;
+  pointer-events: auto;
   transition:
     opacity var(--duration-base) var(--ease-out),
     visibility var(--duration-base) var(--ease-out),
@@ -172,26 +182,16 @@
   visibility: visible;
 }
 
-/* Compact box, generous target: the hit area reaches 48px without the border
-   box growing and pushing the footer around. */
-.pre-enter::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: max(100%, 132px);
-  height: max(100%, 48px);
-  transform: translate(-50%, -50%);
-}
-
 .pre-enter:focus-visible {
-  outline: 2px solid var(--color-rose-400);
-  outline-offset: 3px;
+  outline: 2px solid var(--color-paper-100);
+  outline-offset: 4px;
 }
 
+/* At 100% the rose layer has swept the whole plate, so the hover state has to
+   leave rose rather than land on it. */
 @media (hover: hover) {
   .pre-enter:hover {
-    background-color: var(--color-rose-400);
+    background-color: var(--color-paper-100);
     color: var(--color-ink-900);
   }
 }
