@@ -27,8 +27,10 @@
   transition: --lens-r var(--duration-slow) var(--ease-out);
 }
 
-.footer-mark:hover {
-  --lens-r: clamp(78px, 9.4vw, 180px);
+@media (hover: hover) {
+  .footer-mark:hover {
+    --lens-r: clamp(78px, 9.4vw, 180px);
+  }
 }
 
 .footer-line {

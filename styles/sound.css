@@ -74,6 +74,24 @@
   display: block;
 }
 
+@media (hover: none) {
+  .score {
+    font-size: var(--text-label-sm);
+  }
+
+  /* The pill floats over the filmography bar, so it earns its 44px target
+     from an invisible extension instead of growing over more of the bar. */
+  .score::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    transform: translate(-50%, -50%);
+  }
+}
+
 @keyframes score-dance {
   from {
     transform: scaleY(0.24);

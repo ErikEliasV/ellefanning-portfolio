@@ -29,6 +29,21 @@ const POINTER_RIPPLE = 3.4;
 const POINTER_REVEAL = 0.62;
 const POINTER_EASE = 0.09;
 
+// Without a cursor the field would only breathe on its base wave, so a virtual
+// pointer walks the canvas on its own. Touch runs it as the resting state;
+// a mouse only hands it over after a long stillness, and takes it back on move.
+const DRIFT_WAIT_COARSE = 1200;
+const DRIFT_WAIT_FINE = 6000;
+const DRIFT_FADE = 1400;
+const DRIFT_AMP_COARSE = 1;
+const DRIFT_AMP_FINE = 0.45;
+const DRIFT_SPEED = 0.055;
+const DRIFT_SKEW = 0.79;
+const DRIFT_PHASE = 1.7;
+const DRIFT_SPAN_X = 0.34;
+const DRIFT_SPAN_Y = 0.26;
+const TAU = Math.PI * 2;
+
 const glsl = (n: number) => n.toFixed(5);
 
 const VERTEX = `
@@ -195,6 +210,10 @@ export function useHeroField() {
     let atY = 0.5;
     let atA = 0;
 
+    let coarse = window.matchMedia("(pointer: coarse)").matches;
+    let lastInput = 0;
+    let drift = 0;
+
     const draw = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
       const width = Math.max(Math.round(node.clientWidth * dpr), 1);
@@ -234,6 +253,22 @@ export function useHeroField() {
       const step = last ? Math.min((now - last) / 1000, 0.1) : 0;
       last = now;
       clock += step * WAVE_SPEED * Math.PI * 2;
+
+      if (!lastInput) lastInput = now;
+      const wait = coarse ? DRIFT_WAIT_COARSE : DRIFT_WAIT_FINE;
+      const ceiling = coarse ? DRIFT_AMP_COARSE : DRIFT_AMP_FINE;
+      const held = Math.min(Math.max((now - lastInput - wait) / DRIFT_FADE, 0), 1);
+
+      if (held > 0) {
+        drift += step;
+        const turn = drift * DRIFT_SPEED * TAU;
+        aimX = 0.5 + DRIFT_SPAN_X * Math.sin(turn);
+        aimY = 0.5 + DRIFT_SPAN_Y * Math.sin(turn * DRIFT_SKEW + DRIFT_PHASE);
+        aimA = held * ceiling;
+        atCol = -1;
+        atRow = -1;
+      }
+
       atX += (aimX - atX) * POINTER_EASE;
       atY += (aimY - atY) * POINTER_EASE;
       atA += (aimA - atA) * POINTER_EASE;
@@ -243,6 +278,7 @@ export function useHeroField() {
     const run = () => {
       if (raf || !ready) return;
       last = 0;
+      lastInput = 0;
       raf = requestAnimationFrame(frame);
     };
 
@@ -254,6 +290,8 @@ export function useHeroField() {
     const onMove = (event: PointerEvent) => {
       const box = node.getBoundingClientRect();
       if (!box.width || !box.height) return;
+      coarse = event.pointerType !== "mouse";
+      lastInput = performance.now();
       const x = (event.clientX - box.left) / box.width;
       const y = (event.clientY - box.top) / box.height;
       const inside = x >= 0 && x <= 1 && y >= 0 && y <= 1;

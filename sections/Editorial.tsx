@@ -38,6 +38,7 @@ export function Editorial() {
     armed,
     leaving,
     open,
+    close,
   } = useEditorialReel(FRAMES);
 
   const item = EDITORIAL_SHOTS[shown];
@@ -151,11 +152,23 @@ export function Editorial() {
           </div>
         </div>
 
-        <span aria-hidden className="ed-hint">
-          {isOpen
-            ? "Scroll to read · Click or Esc to close"
-            : "Scroll to run the reel · Click a frame to open it"}
-        </span>
+        {isOpen ? (
+          <button
+            type="button"
+            className="ed-close"
+            data-cursor="Close"
+            onClick={close}
+          >
+            Close
+          </button>
+        ) : (
+          <span aria-hidden className="ed-hint">
+            <span className="ed-hint-fine">
+              Scroll to run the reel · Click a frame to open it
+            </span>
+            <span className="ed-hint-touch">Tap a frame to open it</span>
+          </span>
+        )}
       </section>
     </div>
   );

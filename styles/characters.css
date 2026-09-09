@@ -1,4 +1,8 @@
 .character-section {
+  /* The heading is meant to bleed past the header padding, and at phone widths
+     the tail of the word reached past the viewport and opened a sideways
+     scroll. Clip rather than hide, so nothing here becomes a scrollport. */
+  overflow-x: clip;
   background-color: var(--color-ink-900);
   color: var(--color-paper-000);
 }
@@ -75,8 +79,43 @@
   transition: filter var(--duration-base) var(--ease-out);
 }
 
-.character-card:hover .character-image {
-  filter: grayscale(0) contrast(1.16) brightness(1.04);
+@media (hover: hover) {
+  .character-card:hover .character-image {
+    filter: grayscale(0) contrast(1.16) brightness(1.04);
+  }
+}
+
+.character-card:focus-visible {
+  outline: 2px solid var(--color-rose-400);
+  outline-offset: -2px;
+}
+
+/* On desktop the invitation is the cursor label; without a pointer the card
+   has to say it out loud. */
+.character-cue {
+  position: absolute;
+  right: clamp(10px, 0.833vw, 16px);
+  bottom: clamp(10px, 0.833vw, 16px);
+  z-index: 2;
+  display: none;
+  align-items: center;
+  min-height: 32px;
+  border: 1px solid var(--color-rose-400);
+  padding-inline: 14px;
+  background-color: rgba(19, 19, 19, 0.72);
+  font-family: var(--font-grotesk);
+  font-weight: 700;
+  font-size: var(--text-micro);
+  line-height: 1;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--color-rose-400);
+}
+
+@media (hover: none) {
+  .character-cue {
+    display: inline-flex;
+  }
 }
 
 .character-plate {
@@ -94,8 +133,10 @@
     transform var(--duration-base) var(--ease-out);
 }
 
-.character-card:hover .character-plate {
-  transform: translateY(calc(-1 * clamp(9px, 0.729vw, 14px)));
+@media (hover: hover) {
+  .character-card:hover .character-plate {
+    transform: translateY(calc(-1 * clamp(9px, 0.729vw, 14px)));
+  }
 }
 
 .character-card.is-open .character-plate {
@@ -111,8 +152,10 @@
     transform var(--duration-base) var(--ease-out);
 }
 
-.character-card:hover .character-lead {
-  transform: translateY(calc(-1 * clamp(3px, 0.26vw, 5px)));
+@media (hover: hover) {
+  .character-card:hover .character-lead {
+    transform: translateY(calc(-1 * clamp(3px, 0.26vw, 5px)));
+  }
 }
 
 .character-card.is-open .character-lead {
@@ -173,6 +216,43 @@
 @media (width < 64rem) {
   .character-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* The card was a fixed-ratio box whose plate got a fixed share of the height.
+     That share only fits the credit line at desktop column widths; narrower
+     than that it cut the film and year off. Below 64rem the photo keeps the
+     ratio and the plate sizes to what it holds. */
+  .character-card {
+    aspect-ratio: auto;
+  }
+
+  .character-shot {
+    height: auto;
+    aspect-ratio: 604.667 / 553.4;
+  }
+
+  .character-card.is-open .character-shot {
+    height: auto;
+    aspect-ratio: 604.667 / 260.5;
+  }
+
+  .character-plate {
+    flex: 1 0 auto;
+  }
+
+  .character-story {
+    flex: 0 0 auto;
+    height: 0;
+    font-size: var(--text-body-sm);
+    letter-spacing: 0.08em;
+  }
+
+  .character-card.is-open .character-story {
+    height: auto;
+  }
+
+  .character-cue {
+    font-size: var(--text-label-sm);
   }
 }
 
