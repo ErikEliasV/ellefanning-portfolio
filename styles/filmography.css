@@ -86,9 +86,22 @@
   transition: transform var(--duration-base) var(--ease-out);
 }
 
-.film-card:hover .film-card-plate,
 .film-card:focus-within .film-card-plate {
   transform: translateY(0);
+}
+
+@media (hover: hover) {
+  .film-card:hover .film-card-plate {
+    transform: translateY(0);
+  }
+}
+
+/* Nothing to hover with on touch, so the plate rides whichever poster the
+   counter is already reading. */
+@media (hover: none) {
+  .film-card[data-active] .film-card-plate {
+    transform: translateY(0);
+  }
 }
 
 .film-card-title {
@@ -230,5 +243,10 @@
 @media (width < 64rem) {
   .film-card {
     height: min(74%, 84vw);
+  }
+
+  .film-card-role {
+    font-size: var(--text-label-sm);
+    letter-spacing: 0.1em;
   }
 }

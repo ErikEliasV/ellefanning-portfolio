@@ -176,8 +176,12 @@ export function FilmStrip({ films, heading, span, pace = 1.6 }: FilmStripProps) 
         <div className="film-reel">
           <div className="film-gate">
             <div ref={strip} className="film-strip">
-              {films.map((film) => (
-                <article key={film.id} className="film-card">
+              {films.map((film, index) => (
+                <article
+                  key={film.id}
+                  className="film-card"
+                  data-active={index === active ? "" : undefined}
+                >
                   {film.poster ? (
                     <Image
                       src={asset(film.poster)}

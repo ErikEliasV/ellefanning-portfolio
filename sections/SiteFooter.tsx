@@ -47,17 +47,17 @@ export function SiteFooter() {
             ))}
           </ul>
 
-          <div className="flex flex-col justify-end gap-2 font-mono text-micro uppercase tracking-label text-periwinkle-400 md:text-right">
+          <div className="flex flex-col justify-end gap-2 font-mono text-label-sm uppercase tracking-label text-periwinkle-400 md:text-micro md:text-right">
             {MARKS.map((mark) => (
               <span key={mark}>{mark}</span>
             ))}
           </div>
         </div>
 
-        <div className="flex items-baseline justify-between gap-4 font-mono text-micro uppercase tracking-label-wide text-ink-500">
+        <div className="flex items-center justify-between gap-4 font-mono text-label-sm uppercase tracking-label-wide text-ink-500 md:text-micro">
           <a
             href="#hero"
-            className="transition-colors duration-[140ms] ease-[var(--ease-out)] hover:text-rose-400"
+            className="inline-flex min-h-[44px] items-center transition-colors duration-[140ms] ease-[var(--ease-out)] hover:text-rose-400"
           >
             &uarr; Back to top
           </a>
