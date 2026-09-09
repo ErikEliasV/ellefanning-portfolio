@@ -1,4 +1,8 @@
 .character-section {
+  /* The heading is meant to bleed past the header padding, and at phone widths
+     the tail of the word reached past the viewport and opened a sideways
+     scroll. Clip rather than hide, so nothing here becomes a scrollport. */
+  overflow-x: clip;
   background-color: var(--color-ink-900);
   color: var(--color-paper-000);
 }
