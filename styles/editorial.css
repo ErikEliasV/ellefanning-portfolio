@@ -394,6 +394,11 @@
     width: 52vw;
   }
 
+  .ed-hint,
+  .ed-close {
+    font-size: var(--text-label-sm);
+  }
+
   .ed-hint {
     max-width: calc(100% - 44px);
   }

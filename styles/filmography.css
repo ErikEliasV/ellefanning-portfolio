@@ -245,3 +245,10 @@
     height: min(74%, 84vw);
   }
 }
+
+@media (width < 48rem) {
+  .film-card-role {
+    font-size: var(--text-label-sm);
+    letter-spacing: 0.1em;
+  }
+}

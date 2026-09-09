@@ -74,6 +74,14 @@
   display: block;
 }
 
+@media (hover: none) {
+  .score {
+    min-height: 44px;
+    padding-inline: 14px;
+    font-size: var(--text-label-sm);
+  }
+}
+
 @keyframes score-dance {
   from {
     transform: scaleY(0.24);

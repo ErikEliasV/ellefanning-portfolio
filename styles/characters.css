@@ -215,6 +215,17 @@
   }
 }
 
+@media (width < 48rem) {
+  .character-story {
+    font-size: var(--text-body-sm);
+    letter-spacing: 0.08em;
+  }
+
+  .character-cue {
+    font-size: var(--text-label-sm);
+  }
+}
+
 @media (width < 40rem) {
   .character-list {
     grid-template-columns: minmax(0, 1fr);

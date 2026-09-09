@@ -119,6 +119,15 @@
   display: block;
 }
 
+@media (hover: none) {
+  .now-sound {
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    font-size: var(--text-label-sm);
+  }
+}
+
 .now-row {
   position: relative;
   z-index: 2;
