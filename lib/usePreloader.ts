@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { asset } from "@/lib/asset";
 import { release as openSound } from "@/lib/audio";
 
@@ -12,12 +12,16 @@ const EXIT_MS = 420;
 const CHASE = 0.11;
 const PORTRAIT = "/images/ellefanning-hero-portrait.webp";
 
-export type PreloaderPhase = "loading" | "exit" | "done";
+export type PreloaderPhase = "loading" | "ready" | "exit" | "done";
 
 export function usePreloader() {
   const plate = useRef<HTMLDivElement>(null);
   const readout = useRef<HTMLSpanElement>(null);
+  const gate = useRef<HTMLButtonElement>(null);
+  const leave = useRef(() => {});
   const [phase, setPhase] = useState<PreloaderPhase>("loading");
+
+  const enter = useCallback(() => leave.current(), []);
 
   useEffect(() => {
     const node = plate.current;
@@ -37,6 +41,7 @@ export function usePreloader() {
     let frame = 0;
     let landed = 0;
     let shown = 0;
+    let left = false;
 
     function release() {
       root.style.overflow = overflow;
@@ -59,23 +64,30 @@ export function usePreloader() {
       if (slot && slot.textContent !== text) slot.textContent = text;
     }
 
-    function leave() {
+    // The plate now waits on the reader instead of dismissing itself, so the
+    // click doubles as the gesture that lets the score start.
+    function arm() {
       timers.push(
         window.setTimeout(() => {
-          if (!live) return;
-          setPhase("exit");
-          timers.push(
-            window.setTimeout(() => {
-              if (!live) return;
-              window.scrollTo(0, 0);
-              release();
-              openSound();
-              setPhase("done");
-            }, EXIT_MS),
-          );
+          if (live) setPhase("ready");
         }, HOLD_MS),
       );
     }
+
+    leave.current = () => {
+      if (!live || left) return;
+      left = true;
+      openSound();
+      setPhase("exit");
+      timers.push(
+        window.setTimeout(() => {
+          if (!live) return;
+          window.scrollTo(0, 0);
+          release();
+          setPhase("done");
+        }, EXIT_MS),
+      );
+    };
 
     function tick(now: number) {
       const goal = Math.min(landed / SIGNALS, (now - start) / MIN_MS, 1);
@@ -83,7 +95,7 @@ export function usePreloader() {
       if (goal - shown < 0.002) shown = goal;
       paint();
       if (shown >= 1) {
-        leave();
+        arm();
         return;
       }
       frame = requestAnimationFrame(tick);
@@ -118,5 +130,9 @@ export function usePreloader() {
     };
   }, []);
 
-  return { plate, readout, phase };
+  useEffect(() => {
+    if (phase === "ready") gate.current?.focus();
+  }, [phase]);
+
+  return { plate, readout, gate, phase, enter };
 }

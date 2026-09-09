@@ -16,9 +16,11 @@ function TitleLines() {
 }
 
 export function Preloader() {
-  const { plate, readout, phase } = usePreloader();
+  const { plate, readout, gate, phase, enter } = usePreloader();
 
   if (phase === "done") return null;
+
+  const open = phase === "ready";
 
   return (
     <>
@@ -27,28 +29,28 @@ export function Preloader() {
       </noscript>
 
       <p role="status" className="sr-only">
-        Loading
+        {open ? "Ready" : "Loading"}
       </p>
 
       <div
         ref={plate}
-        aria-hidden
         className="pre"
+        data-ready={open ? "" : undefined}
         data-exit={phase === "exit" ? "" : undefined}
       >
-        <p className="pre-title pre-title-ink">
+        <p aria-hidden className="pre-title pre-title-ink">
           <TitleLines />
         </p>
 
-        <div className="pre-rose">
+        <div aria-hidden className="pre-rose">
           <p className="pre-title pre-title-paper">
             <TitleLines />
           </p>
         </div>
 
-        <div className="pre-edge" />
+        <div aria-hidden className="pre-edge" />
 
-        <div className="pre-band">
+        <div aria-hidden className="pre-band">
           {MARKS.map((mark) => (
             <div key={mark.id} className="pre-mark">
               {mark.lines.map((line) => (
@@ -59,8 +61,23 @@ export function Preloader() {
         </div>
 
         <div className="pre-foot">
-          <span>Loading</span>
-          <span>
+          <span className="pre-gate">
+            <span aria-hidden className="pre-word">
+              Loading
+            </span>
+
+            <button
+              ref={gate}
+              type="button"
+              className="pre-enter"
+              disabled={!open}
+              onClick={enter}
+            >
+              Enter
+            </button>
+          </span>
+
+          <span aria-hidden className="pre-count">
             <span ref={readout} className="pre-num">
               000
             </span>{" "}
