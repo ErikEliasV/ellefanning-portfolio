@@ -80,17 +80,27 @@
 }
 
 .ed-pin:not([data-open]):not([data-scrolling])
-  .ed-reel:has(.ed-cell:hover)
-  .ed-cell:not(:hover),
-.ed-pin:not([data-open]):not([data-scrolling])
   .ed-reel:has(.ed-cell:focus-visible)
   .ed-cell:not(:focus-visible) {
   --squeeze: 1;
 }
 
-.ed-pin:not([data-open]):not([data-scrolling]) .ed-cell:hover,
 .ed-pin:not([data-open]):not([data-scrolling]) .ed-cell:focus-visible {
   --grow: 1;
+}
+
+/* Touch browsers keep :hover stuck on the last tapped cell, so the reel would
+   stay lopsided after a tap. Only a real pointer gets to grow a frame. */
+@media (hover: hover) {
+  .ed-pin:not([data-open]):not([data-scrolling])
+    .ed-reel:has(.ed-cell:hover)
+    .ed-cell:not(:hover) {
+    --squeeze: 1;
+  }
+
+  .ed-pin:not([data-open]):not([data-scrolling]) .ed-cell:hover {
+    --grow: 1;
+  }
 }
 
 .ed-cell[data-active] {
@@ -113,10 +123,15 @@
   transition: filter var(--duration-base) var(--ease-out);
 }
 
-.ed-cell:hover .ed-cell-img,
 .ed-cell:focus-visible .ed-cell-img,
 .ed-cell[data-active] .ed-cell-img {
   filter: var(--filter-image-color);
+}
+
+@media (hover: hover) {
+  .ed-cell:hover .ed-cell-img {
+    filter: var(--filter-image-color);
+  }
 }
 
 .ed-cell-tag {
@@ -288,6 +303,58 @@
   color: var(--color-rose-400);
 }
 
+.ed-hint-touch {
+  display: none;
+}
+
+@media (hover: none) {
+  .ed-hint-fine {
+    display: none;
+  }
+
+  .ed-hint-touch {
+    display: inline;
+  }
+}
+
+/* Replaces the hint while a frame is open: an actual target beats a sentence
+   telling you to press Esc, which no phone has. */
+.ed-close {
+  position: absolute;
+  z-index: 25;
+  top: 12.03svh;
+  right: 5.573vw;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  border: 1px solid var(--color-rose-400);
+  padding-inline: 18px;
+  background-color: var(--scrim-plate);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: var(--text-micro);
+  line-height: 1;
+  letter-spacing: var(--tracking-label-wide);
+  text-transform: uppercase;
+  color: var(--color-rose-400);
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.ed-close:focus-visible {
+  outline: 2px solid var(--color-rose-400);
+  outline-offset: 3px;
+}
+
+@media (hover: hover) {
+  .ed-close:hover {
+    background-color: var(--color-rose-400);
+    color: var(--color-ink-900);
+  }
+}
+
 .ed-hint {
   position: absolute;
   z-index: 20;
@@ -328,6 +395,12 @@
   }
 
   .ed-hint {
-    display: none;
+    max-width: calc(100% - 44px);
+  }
+
+  .ed-close {
+    top: auto;
+    bottom: 3.5svh;
+    right: 22px;
   }
 }
