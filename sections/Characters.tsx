@@ -49,6 +49,10 @@ export function Characters() {
                         className="character-image"
                       />
                     ) : null}
+
+                    <span aria-hidden className="character-cue">
+                      {isOpen ? "Close" : "Read more"}
+                    </span>
                   </span>
 
                   <span className="character-plate">

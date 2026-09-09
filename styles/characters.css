@@ -75,8 +75,43 @@
   transition: filter var(--duration-base) var(--ease-out);
 }
 
-.character-card:hover .character-image {
-  filter: grayscale(0) contrast(1.16) brightness(1.04);
+@media (hover: hover) {
+  .character-card:hover .character-image {
+    filter: grayscale(0) contrast(1.16) brightness(1.04);
+  }
+}
+
+.character-card:focus-visible {
+  outline: 2px solid var(--color-rose-400);
+  outline-offset: -2px;
+}
+
+/* On desktop the invitation is the cursor label; without a pointer the card
+   has to say it out loud. */
+.character-cue {
+  position: absolute;
+  right: clamp(10px, 0.833vw, 16px);
+  bottom: clamp(10px, 0.833vw, 16px);
+  z-index: 2;
+  display: none;
+  align-items: center;
+  min-height: 32px;
+  border: 1px solid var(--color-rose-400);
+  padding-inline: 14px;
+  background-color: rgba(19, 19, 19, 0.72);
+  font-family: var(--font-grotesk);
+  font-weight: 700;
+  font-size: var(--text-micro);
+  line-height: 1;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--color-rose-400);
+}
+
+@media (hover: none) {
+  .character-cue {
+    display: inline-flex;
+  }
 }
 
 .character-plate {
@@ -94,8 +129,10 @@
     transform var(--duration-base) var(--ease-out);
 }
 
-.character-card:hover .character-plate {
-  transform: translateY(calc(-1 * clamp(9px, 0.729vw, 14px)));
+@media (hover: hover) {
+  .character-card:hover .character-plate {
+    transform: translateY(calc(-1 * clamp(9px, 0.729vw, 14px)));
+  }
 }
 
 .character-card.is-open .character-plate {
@@ -111,8 +148,10 @@
     transform var(--duration-base) var(--ease-out);
 }
 
-.character-card:hover .character-lead {
-  transform: translateY(calc(-1 * clamp(3px, 0.26vw, 5px)));
+@media (hover: hover) {
+  .character-card:hover .character-lead {
+    transform: translateY(calc(-1 * clamp(3px, 0.26vw, 5px)));
+  }
 }
 
 .character-card.is-open .character-lead {
