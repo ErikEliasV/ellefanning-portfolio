@@ -138,8 +138,28 @@
     line-height: 1.55;
   }
 
+  /* The yellow was left over from before the rose redesign and only survived
+     here, so selecting text lit up in a colour the site no longer uses. */
   ::selection {
-    background-color: var(--color-yellow-400);
+    background-color: var(--color-rose-400);
+    color: var(--color-ink-900);
+  }
+
+  /* Over the rose header and the rose sweep of the preloader that highlight
+     would be rose on rose, so it flips instead of disappearing. */
+  header::selection,
+  header *::selection,
+  .pre-rose::selection,
+  .pre-rose *::selection {
+    background-color: var(--color-ink-900);
+    color: var(--color-rose-400);
+  }
+
+  /* The filmography bar washes from rose to ink as it hands the section over,
+     so its highlight has to read against both ends of that fade. */
+  .film-bar::selection,
+  .film-bar *::selection {
+    background-color: var(--color-paper-100);
     color: var(--color-ink-900);
   }
 }
