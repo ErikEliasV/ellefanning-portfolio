@@ -202,8 +202,15 @@
 }
 
 .film-bar {
+  /* The handoff already publishes its own progress: --rise climbs as the bar
+     takes over and --burn eats it away, so the difference is the triangle the
+     split needs. No second scroll listener for something the reel knows. */
+  --split: clamp(0, calc(var(--rise, 0) - var(--burn, 0)), 1);
   position: relative;
   z-index: 30;
+  filter:
+    drop-shadow(calc(var(--split) * 6px) 0 0 rgba(224, 114, 149, 0.6))
+    drop-shadow(calc(var(--split) * -6px) 0 0 rgba(141, 154, 196, 0.6));
   display: flex;
   align-items: center;
   justify-content: space-between;

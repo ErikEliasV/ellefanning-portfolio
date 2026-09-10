@@ -1,13 +1,21 @@
 "use client";
 
+import { useEffect } from "react";
 import type { CSSProperties } from "react";
 import { asset } from "@/lib/asset";
+import { maskReveal } from "@/lib/reveal";
 import { useFooterMark } from "@/lib/useFooterMark";
 
 const PHOTO = "/images/ellefanning-footer-mark.webp";
 
 export function FooterMark() {
   const mark = useFooterMark();
+
+  useEffect(() => {
+    const node = mark.current;
+    if (!node) return;
+    return maskReveal(node, [node], 0);
+  }, [mark]);
 
   return (
     <h2

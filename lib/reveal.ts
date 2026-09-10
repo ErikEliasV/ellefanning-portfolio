@@ -48,15 +48,23 @@ function once(tl: gsap.core.Timeline, vars: ScrollTrigger.StaticVars): Kill {
   };
 }
 
+// The layer travels around its resting place rather than away from it, and
+// the zoom buys the margin that keeps its edge out of frame.
 export function depthParallax(
   trigger: Element,
   layers: { el: Element; rate: number }[],
+  zoom = 1.1,
 ): Kill {
   if (!layers.length) return NOOP;
 
   const tl = gsap.timeline({ paused: true });
   layers.forEach(({ el, rate }) => {
-    tl.fromTo(el, { yPercent: 0 }, { yPercent: -rate * 100, ease: "none" }, 0);
+    tl.fromTo(
+      el,
+      { yPercent: -rate * 50, scale: zoom },
+      { yPercent: rate * 50, scale: zoom, ease: "none" },
+      0,
+    );
   });
 
   return bind(tl, { trigger, start: "top bottom", end: "bottom top" });
@@ -96,21 +104,6 @@ export function maskReveal(
   );
 
   return once(tl, { trigger });
-}
-
-export function rgbSplit(trigger: Element, el: Element, amount = 7): Kill {
-  const clear =
-    "drop-shadow(0 0 0 rgba(224,114,149,0)) drop-shadow(0 0 0 rgba(141,154,196,0))";
-  const split =
-    `drop-shadow(${amount}px 0 0 rgba(224,114,149,0.55))` +
-    ` drop-shadow(${-amount}px 0 0 rgba(141,154,196,0.55))`;
-
-  const tl = gsap
-    .timeline({ paused: true })
-    .fromTo(el, { filter: clear }, { filter: split, ease: "none", duration: 0.5 })
-    .to(el, { filter: clear, ease: "none", duration: 0.5 });
-
-  return bind(tl, { trigger, start: "top bottom", end: "bottom top" });
 }
 
 export function grainPulse(trigger: Element, el: Element): Kill {

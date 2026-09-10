@@ -1,9 +1,11 @@
 "use client";
 
 import Image from "next/image";
+import { useEffect } from "react";
 import type { CSSProperties } from "react";
 import { asset } from "@/lib/asset";
 import { EDITORIAL_NOTE, EDITORIAL_SHOTS } from "@/lib/editorial";
+import { maskReveal } from "@/lib/reveal";
 import { useEditorialReel } from "@/lib/useEditorialReel";
 import "@/styles/editorial.css";
 
@@ -40,6 +42,16 @@ export function Editorial() {
     open,
     close,
   } = useEditorialReel(FRAMES);
+
+  useEffect(() => {
+    const node = pin.current;
+    if (!node) return;
+
+    const cells = Array.from(node.querySelectorAll(".ed-cell"));
+    const kill = maskReveal(node, cells, 0.06);
+
+    return kill;
+  }, [pin]);
 
   const item = EDITORIAL_SHOTS[shown];
   const isOpen = active !== null;

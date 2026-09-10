@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
 import { CURRENT_WORK } from "@/lib/films";
+import { paperWipe } from "@/lib/reveal";
 import { useNowTrailer } from "@/lib/useNowTrailer";
 import "@/styles/now.css";
 
@@ -21,6 +23,16 @@ const TRAILER = `https://www.youtube-nocookie.com/embed/${CURRENT_WORK.youtubeId
 
 export function Now() {
   const { frame, stage, ready, sound, toggleSound } = useNowTrailer();
+
+  useEffect(() => {
+    const node = frame.current;
+    const shell = node?.querySelector(".now-stage");
+    if (!node || !shell) return;
+
+    // The clip lands on the stage, never on the frame: the frame has to stay
+    // overflow-visible so the credits are not cropped on a phone.
+    return paperWipe(node, shell, "up");
+  }, [frame]);
 
   return (
     <section id="current" className="now">
