@@ -6,7 +6,7 @@
 }
 
 .cur {
-  --cur-line: 3px;
+  --cur-line: 2px;
   --cur-mark: var(--color-ink-900);
 
   position: fixed;
@@ -25,54 +25,43 @@
 }
 
 .cur[data-hot] {
-  --cur-line: 4px;
+  --cur-line: 3px;
 }
 
 .cur[data-skin="invert"] {
   --cur-mark: var(--color-paper-100);
 }
 
-.cur-corner {
+.cur-blob {
   position: absolute;
   top: 0;
   left: 0;
   box-sizing: border-box;
-  width: 24px;
-  height: 24px;
-  border: 0 solid var(--cur-mark);
-  will-change: transform;
+  width: 80px;
+  height: 80px;
+  border: var(--cur-line) solid var(--cur-mark);
+  border-radius: 50%;
+  will-change: transform, width, height;
   transition:
     border-width var(--duration-fast) var(--ease-out),
-    border-color var(--duration-fast) var(--ease-out);
+    border-color var(--duration-fast) var(--ease-out),
+    border-radius var(--duration-base) var(--ease-out);
 }
 
-.cur-tl {
-  border-top-width: var(--cur-line);
-  border-left-width: var(--cur-line);
-}
-
-.cur-tr {
-  border-top-width: var(--cur-line);
-  border-right-width: var(--cur-line);
-}
-
-.cur-br {
-  border-bottom-width: var(--cur-line);
-  border-right-width: var(--cur-line);
-}
-
-.cur-bl {
-  border-bottom-width: var(--cur-line);
-  border-left-width: var(--cur-line);
+/* Wrapping an element the shape goes rectangular, but never sharp: the corners
+   stay soft so it still reads as the same blob that was chasing the pointer. */
+.cur[data-snap] .cur-blob {
+  border-radius: 14px;
 }
 
 .cur-dot {
   position: absolute;
   top: 0;
   left: 0;
-  width: 8px;
-  height: 8px;
-  margin: -4px 0 0 -4px;
+  width: 7px;
+  height: 7px;
+  margin: -3.5px 0 0 -3.5px;
+  border-radius: 50%;
   background-color: var(--cur-mark);
   will-change: transform;
   transition: background-color var(--duration-fast) var(--ease-out);
@@ -83,6 +72,7 @@
   top: 0;
   left: 0;
   padding: 7px 10px 6px;
+  border-radius: 11px;
   background-color: var(--color-rose-400);
   font-family: var(--font-mono);
   font-size: var(--text-label-sm);
@@ -93,11 +83,11 @@
   text-transform: uppercase;
   color: var(--color-ink-900);
   white-space: nowrap;
-  clip-path: inset(0 100% 0 0);
+  clip-path: inset(0 100% 0 0 round 11px);
   will-change: transform, clip-path;
   transition: clip-path var(--duration-base) var(--ease-out);
 }
 
 .cur[data-tag] .cur-label {
-  clip-path: inset(0 0 0 0);
+  clip-path: inset(0 0 0 0 round 11px);
 }

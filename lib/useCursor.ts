@@ -1,18 +1,28 @@
 "use client";
 
+import gsap from "gsap";
 import { useEffect, useRef, useState } from "react";
 
 import { onTick } from "@/lib/scroll";
 
-const CHASE = 0.2;
+const CHASE = 0.42;
+const CHASE_EASE = "power3";
+const SQUASH = 0.34;
+const SQUASH_EASE = "power2";
 const SETTLED = 0.4;
 const IDLE = 80;
 const HOT = 148;
 const OUTSET = 10;
 const PRESS = 6;
-const ARM = 24;
 const AREA = 0.34;
 const TALL = 0.82;
+// Pixels of pointer travel per frame that already read as full stretch.
+const VELOCITY_FULL = 46;
+const VELOCITY_EASE = 0.2;
+const VELOCITY_DECAY = 0.86;
+const VELOCITY_REST = 0.4;
+const STRETCH_MAX = 0.55;
+const SQUEEZE_K = 0.64;
 const PICK =
   'a[href], button, summary, label, [role="button"], [role="link"], [data-cursor]';
 
@@ -42,9 +52,8 @@ export function useCursor() {
     const point = { x: 0, y: 0 };
     const box: Box = { x: 0, y: 0, w: IDLE, h: IDLE };
     const goal: Box = { x: 0, y: 0, w: IDLE, h: IDLE };
-    const corners = Array.from(
-      node.querySelectorAll<HTMLElement>(".cur-corner"),
-    );
+    const vel = { x: 0, y: 0 };
+    const blob = node.querySelector<HTMLElement>(".cur-blob");
 
     let untick: (() => void) | null = null;
     let pendingRetag = false;
@@ -52,6 +61,21 @@ export function useCursor() {
     let snap = false;
     let down = false;
     let live = false;
+
+    // The chase used to be a per-frame lerp, which ran twice as fast on a 120Hz
+    // screen as on a 60Hz one. A tween is measured in seconds, so it does not.
+    const chase = { duration: CHASE, ease: CHASE_EASE };
+    const toX = gsap.quickTo(box, "x", chase);
+    const toY = gsap.quickTo(box, "y", chase);
+    const toW = gsap.quickTo(box, "w", chase);
+    const toH = gsap.quickTo(box, "h", chase);
+
+    const squash = { duration: SQUASH, ease: SQUASH_EASE };
+    const toStretch = blob ? gsap.quickTo(blob, "scaleX", squash) : null;
+    const toSqueeze = blob ? gsap.quickTo(blob, "scaleY", squash) : null;
+    const toTilt = blob ? gsap.quickTo(blob, "rotation", squash) : null;
+
+    if (blob) gsap.set(blob, { xPercent: -50, yPercent: -50 });
 
     function aim() {
       const tight = down ? PRESS : 0;
@@ -78,22 +102,12 @@ export function useCursor() {
       const y = Math.round(box.y);
       const half = Math.round(box.w / 2);
       const rise = Math.round(box.h / 2);
-      const near = half - ARM;
-      const deep = rise - ARM;
 
       node.style.transform = `translate3d(${x}px, ${y}px, 0)`;
 
-      if (corners[0]) {
-        corners[0].style.transform = `translate3d(${-half}px, ${-rise}px, 0)`;
-      }
-      if (corners[1]) {
-        corners[1].style.transform = `translate3d(${near}px, ${-rise}px, 0)`;
-      }
-      if (corners[2]) {
-        corners[2].style.transform = `translate3d(${near}px, ${deep}px, 0)`;
-      }
-      if (corners[3]) {
-        corners[3].style.transform = `translate3d(${-half}px, ${deep}px, 0)`;
+      if (blob) {
+        blob.style.width = `${Math.round(box.w)}px`;
+        blob.style.height = `${Math.round(box.h)}px`;
       }
 
       const mark = dot.current;
@@ -107,34 +121,47 @@ export function useCursor() {
       }
     }
 
+    function shape() {
+      if (!blob) return;
+
+      const speed = Math.hypot(vel.x, vel.y);
+      const stretch = snap
+        ? 0
+        : Math.min(speed / VELOCITY_FULL, 1) * STRETCH_MAX;
+
+      toStretch?.(1 + stretch);
+      toSqueeze?.(1 - stretch * SQUEEZE_K);
+      if (!snap && speed > VELOCITY_REST) {
+        toTilt?.((Math.atan2(vel.y, vel.x) * 180) / Math.PI);
+      }
+    }
+
     function tick() {
       aim();
 
-      box.x += (goal.x - box.x) * CHASE;
-      box.y += (goal.y - box.y) * CHASE;
-      box.w += (goal.w - box.w) * CHASE;
-      box.h += (goal.h - box.h) * CHASE;
+      toX(goal.x);
+      toY(goal.y);
+      toW(goal.w);
+      toH(goal.h);
 
-      const rest =
-        !snap &&
-        Math.abs(goal.x - box.x) < SETTLED &&
-        Math.abs(goal.y - box.y) < SETTLED &&
-        Math.abs(goal.w - box.w) < SETTLED &&
-        Math.abs(goal.h - box.h) < SETTLED;
+      vel.x *= VELOCITY_DECAY;
+      vel.y *= VELOCITY_DECAY;
 
-      if (rest) {
-        box.x = goal.x;
-        box.y = goal.y;
-        box.w = goal.w;
-        box.h = goal.h;
-      }
-
+      shape();
       paint();
 
       if (pendingRetag) {
         pendingRetag = false;
         retag(hot);
       }
+
+      const rest =
+        !snap &&
+        Math.abs(goal.x - box.x) < SETTLED &&
+        Math.abs(goal.y - box.y) < SETTLED &&
+        Math.abs(goal.w - box.w) < SETTLED &&
+        Math.abs(goal.h - box.h) < SETTLED &&
+        Math.hypot(vel.x, vel.y) < VELOCITY_REST;
 
       if (rest) {
         untick?.();
@@ -157,6 +184,10 @@ export function useCursor() {
 
     function move(event: PointerEvent) {
       if (!node) return;
+
+      const dx = event.clientX - point.x;
+      const dy = event.clientY - point.y;
+
       point.x = event.clientX;
       point.y = event.clientY;
 
@@ -164,8 +195,13 @@ export function useCursor() {
         live = true;
         box.x = point.x;
         box.y = point.y;
+        toX(point.x, point.x);
+        toY(point.y, point.y);
         node.dataset.live = "";
         root.dataset.cursorOn = "";
+      } else {
+        vel.x += (dx - vel.x) * VELOCITY_EASE;
+        vel.y += (dy - vel.y) * VELOCITY_EASE;
       }
 
       wake();
@@ -191,8 +227,14 @@ export function useCursor() {
       if (hit) node.dataset.hot = "";
       else delete node.dataset.hot;
 
-      if (snap) node.dataset.snap = "";
-      else delete node.dataset.snap;
+      if (snap) {
+        node.dataset.snap = "";
+        toTilt?.(0);
+        toStretch?.(1);
+        toSqueeze?.(1);
+      } else {
+        delete node.dataset.snap;
+      }
 
       wake();
     }
