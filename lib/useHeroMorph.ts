@@ -2,6 +2,8 @@
 
 import { useEffect, useRef } from "react";
 
+import { onTick } from "@/lib/scroll";
+
 const IMG_RATIO = 1900 / 1140;
 const SIL_RATIO = 1490 / 1054;
 const SIL_LEFT = 224 / 1900;
@@ -150,22 +152,16 @@ export function useHeroMorph(onProgress?: (value: number) => void) {
     const trackNode = track.current;
     if (!trackNode) return;
 
-    let ticket = 0;
     let morph = 1;
     let live = true;
     let faces: { lockup: Face; entry: { g: EntryFace; e: EntryFace } } | null = null;
 
     function progress() {
-      ticket = 0;
       if (!trackNode) return;
       const value = Math.min(Math.max(-trackNode.getBoundingClientRect().top / morph, 0), 1);
       trackNode.style.setProperty("--p", value.toFixed(4));
       trackNode.style.setProperty("--inv", (1 - value).toFixed(4));
       onProgress?.(value);
-    }
-
-    function schedule() {
-      if (!ticket) ticket = requestAnimationFrame(progress);
     }
 
     function measure() {
@@ -261,14 +257,13 @@ export function useHeroMorph(onProgress?: (value: number) => void) {
     const observer = new ResizeObserver(measure);
     observer.observe(document.documentElement);
     window.addEventListener("resize", measure);
-    window.addEventListener("scroll", schedule, { passive: true });
+    const untick = onTick(progress);
 
     return () => {
       live = false;
-      cancelAnimationFrame(ticket);
+      untick();
       observer.disconnect();
       window.removeEventListener("resize", measure);
-      window.removeEventListener("scroll", schedule);
     };
   }, [onProgress]);
 
