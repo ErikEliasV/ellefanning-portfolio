@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { asset } from "@/lib/asset";
 import { release as openSound } from "@/lib/audio";
-import { lockScroll, onTick } from "@/lib/scroll";
+import { lockScroll, onTick, scrollTo } from "@/lib/scroll";
 
 const SIGNALS = 3;
 const MIN_MS = 900;
@@ -30,7 +30,8 @@ export function usePreloader() {
 
     lockScroll(true);
     history.scrollRestoration = "manual";
-    window.scrollTo(0, 0);
+    // force, because the lock has already stopped Lenis by this point.
+    scrollTo(0, { immediate: true, force: true });
 
     const start = performance.now();
     const timers: number[] = [];
@@ -91,7 +92,7 @@ export function usePreloader() {
       timers.push(
         window.setTimeout(() => {
           if (!live) return;
-          window.scrollTo(0, 0);
+          scrollTo(0, { immediate: true, force: true });
           release();
           setPhase("done");
         }, EXIT_MS),

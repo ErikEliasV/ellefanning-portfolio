@@ -5,7 +5,6 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 
 type Tick = (now: number) => void;
-type Watcher = (reduced: boolean) => void;
 
 const REDUCED = "(prefers-reduced-motion: reduce)";
 const LERP = 0.085;
@@ -15,7 +14,6 @@ let booted = false;
 let reduced = false;
 
 const ticks = new Set<Tick>();
-const watchers = new Set<Watcher>();
 
 // The ticker counts from its own start, but everything downstream was written
 // against rAF timestamps and compares them to performance.now(). Handing out
@@ -28,13 +26,6 @@ function drive() {
 
 export function isReduced() {
   return reduced;
-}
-
-export function onReducedChange(fn: Watcher) {
-  watchers.add(fn);
-  return () => {
-    watchers.delete(fn);
-  };
 }
 
 export function onTick(fn: Tick) {
@@ -95,7 +86,6 @@ export function bootScroll() {
     reduced = query.matches;
     if (reduced) tear();
     else build();
-    watchers.forEach((fn) => fn(reduced));
     ScrollTrigger.refresh();
   };
 

@@ -1,4 +1,5 @@
 import { FooterMark } from "@/components/content/FooterMark";
+import { BackToTop } from "@/components/core/BackToTop";
 import { Rule } from "@/components/core/Rule";
 import { LINKS } from "@/lib/links";
 import "@/styles/footer.css";
@@ -55,12 +56,9 @@ export function SiteFooter() {
         </div>
 
         <div className="flex items-center justify-between gap-4 font-text text-label-sm uppercase tracking-label-wide text-ink-500 md:text-micro">
-          <a
-            href="#hero"
-            className="inline-flex min-h-[44px] items-center transition-colors duration-[140ms] ease-[var(--ease-out)] hover:text-rose-400"
-          >
+          <BackToTop className="inline-flex min-h-[44px] items-center transition-colors duration-[140ms] ease-[var(--ease-out)] hover:text-rose-400">
             &uarr; Back to top
-          </a>
+          </BackToTop>
           <span>End</span>
         </div>
       </div>
