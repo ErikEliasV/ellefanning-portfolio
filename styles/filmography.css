@@ -66,7 +66,7 @@
   place-items: center;
   padding: 12px;
   text-align: center;
-  font-family: var(--font-mono);
+  font-family: var(--font-text);
   font-size: var(--text-label-sm);
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
@@ -105,7 +105,7 @@
 }
 
 .film-card-title {
-  font-family: var(--font-mono);
+  font-family: var(--font-text);
   font-weight: 700;
   font-size: var(--text-label-sm);
   line-height: 1.25;
@@ -115,7 +115,7 @@
 }
 
 .film-card-role {
-  font-family: var(--font-mono);
+  font-family: var(--font-text);
   font-size: var(--text-micro);
   line-height: 1.6;
   letter-spacing: var(--tracking-label);
@@ -164,7 +164,7 @@
 
 .film-index-now {
   width: clamp(34px, 6.861vw, 131.74px);
-  font-family: var(--font-grotesk);
+  font-family: var(--font-text);
   font-weight: 400;
   font-size: clamp(22px, 5.242vw, 100.65px);
   line-height: 1;
@@ -173,7 +173,7 @@
 
 .film-index-total {
   padding-top: clamp(3px, 0.7148vw, 13.72px);
-  font-family: var(--font-grotesk);
+  font-family: var(--font-text);
   font-weight: 700;
   font-size: clamp(9px, 1.3105vw, 25.16px);
   line-height: 1.25;
@@ -183,7 +183,7 @@
 }
 
 .film-index-year {
-  font-family: var(--font-grotesk);
+  font-family: var(--font-text);
   font-weight: 500;
   font-size: clamp(22px, 5.176vw, 99.38px);
   line-height: 1.25;
@@ -238,12 +238,12 @@
 }
 
 .film-bar-name {
-  font-family: var(--font-mono);
+  font-family: var(--font-text);
   font-weight: 700;
 }
 
 .film-bar-span {
-  font-family: var(--font-grotesk);
+  font-family: var(--font-text);
   font-weight: 500;
 }
 

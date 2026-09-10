@@ -74,7 +74,7 @@
   padding: 7px 10px 6px;
   border-radius: 11px;
   background-color: var(--color-rose-400);
-  font-family: var(--font-mono);
+  font-family: var(--font-text);
   font-size: var(--text-label-sm);
   font-weight: 700;
   line-height: 1;

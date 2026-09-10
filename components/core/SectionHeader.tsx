@@ -40,7 +40,7 @@ export function SectionHeader({
         {lead ? (
           <p
             className={cn(
-              "max-w-[44ch] font-mono text-body-sm uppercase",
+              "max-w-[44ch] font-text text-body-sm uppercase",
               invert ? "text-ink-300" : "text-ink-500",
             )}
           >

@@ -44,9 +44,8 @@
   --color-line-invert: #3a3833;
 
   --font-display: var(--font-anton), Impact, "Haettenschweiler", "Arial Narrow", sans-serif;
-  --font-mono: var(--font-space-mono), ui-monospace, "Courier New", monospace;
   --font-sans: var(--font-archivo), "Helvetica Neue", Arial, sans-serif;
-  --font-grotesk: var(--font-nature), "Helvetica Neue", Arial, sans-serif;
+  --font-text: var(--font-nature), "Helvetica Neue", Arial, sans-serif;
   --font-editorial: var(--font-oskon), "Times New Roman", Georgia, serif;
 
   --text-poster: clamp(64px, 11vw, 168px);
@@ -132,6 +131,15 @@
 }
 
 @layer base {
+  /* ZT Nature has no tabular figures and its digits differ by up to 28% in
+     width, so anything that counts gets one fixed cell per digit. 1ch is the
+     zero, which is the widest of the ten. */
+  .num-cell {
+    display: inline-block;
+    width: 1ch;
+    text-align: center;
+  }
+
   html {
     -webkit-font-smoothing: antialiased;
   }
@@ -139,7 +147,7 @@
   body {
     background-color: var(--color-paper-100);
     color: var(--color-ink-800);
-    font-family: var(--font-mono);
+    font-family: var(--font-text);
     font-size: var(--text-body);
     line-height: 1.55;
   }

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Anton, Space_Mono, Archivo } from "next/font/google";
+import { Anton, Archivo } from "next/font/google";
 import localFont from "next/font/local";
 import { Cursor } from "@/components/core/Cursor";
 import { ScrollBoot } from "@/components/core/ScrollBoot";
@@ -11,14 +11,6 @@ const anton = Anton({
   variable: "--font-anton",
   subsets: ["latin"],
   weight: "400",
-  display: "swap",
-});
-
-const spaceMono = Space_Mono({
-  variable: "--font-space-mono",
-  subsets: ["latin"],
-  weight: ["400", "700"],
-  style: ["normal", "italic"],
   display: "swap",
 });
 
@@ -56,7 +48,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${anton.variable} ${spaceMono.variable} ${archivo.variable} ${nature.variable} ${oskon.variable} h-full`}
+      className={`${anton.variable} ${archivo.variable} ${nature.variable} ${oskon.variable} h-full`}
     >
       <body className="min-h-full flex flex-col">
         <ScrollBoot />

@@ -103,7 +103,7 @@
   border: 1px solid var(--color-rose-400);
   padding-inline: 14px;
   background-color: rgba(19, 19, 19, 0.72);
-  font-family: var(--font-grotesk);
+  font-family: var(--font-text);
   font-weight: 700;
   font-size: var(--text-micro);
   line-height: 1;
@@ -163,7 +163,7 @@
 }
 
 .character-index {
-  font-family: var(--font-grotesk);
+  font-family: var(--font-text);
   font-weight: 700;
   font-size: var(--text-micro);
   line-height: 1.6;
@@ -173,7 +173,7 @@
 }
 
 .character-name {
-  font-family: var(--font-grotesk);
+  font-family: var(--font-text);
   font-weight: 400;
   font-size: clamp(20px, 1.667vw, 32px);
   line-height: 0.92;
@@ -182,7 +182,7 @@
 }
 
 .character-credit {
-  font-family: var(--font-grotesk);
+  font-family: var(--font-text);
   font-weight: 300;
   font-size: var(--text-micro);
   line-height: 1.6;
@@ -196,7 +196,7 @@
   min-height: 0;
   margin-top: 0;
   overflow: hidden;
-  font-family: var(--font-mono);
+  font-family: var(--font-text);
   font-size: var(--text-micro);
   line-height: 1.6;
   letter-spacing: var(--tracking-label);

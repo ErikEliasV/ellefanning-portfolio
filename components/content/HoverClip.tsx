@@ -49,7 +49,7 @@ export function HoverClip({
             className={cn("object-cover", revealClass[reveal])}
           />
         ) : (
-          <span className="absolute inset-0 grid place-items-center whitespace-pre-line p-3 text-center font-mono text-label-sm tracking-label text-ink-300">
+          <span className="absolute inset-0 grid place-items-center whitespace-pre-line p-3 text-center font-text text-label-sm tracking-label text-ink-300">
             {placeholder}
           </span>
         )}
@@ -57,11 +57,11 @@ export function HoverClip({
         {summary ? (
           <div className="pointer-events-none absolute inset-x-0 bottom-0 translate-y-full bg-[var(--scrim-plate)] px-3 py-3 transition-transform duration-[220ms] ease-[var(--ease-out)] group-hover:translate-y-0">
             {meta ? (
-              <div className="font-mono text-micro font-bold uppercase tracking-label text-yellow-400">
+              <div className="font-text text-micro font-bold uppercase tracking-label text-yellow-400">
                 {meta}
               </div>
             ) : null}
-            <p className="mt-1 font-mono text-micro leading-[1.55] text-paper-100">
+            <p className="mt-1 font-text text-micro leading-[1.55] text-paper-100">
               {summary}
             </p>
           </div>

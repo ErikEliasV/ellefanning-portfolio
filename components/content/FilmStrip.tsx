@@ -25,6 +25,16 @@ function two(value: number) {
   return String(value).padStart(2, "0");
 }
 
+function digits(value: string) {
+  return value
+    .split("")
+    .map((glyph, at) => (
+      <span key={at} className="num-cell">
+        {glyph}
+      </span>
+    ));
+}
+
 function clamp01(value: number) {
   return value < 0 ? 0 : value > 1 ? 1 : value;
 }
@@ -211,8 +221,8 @@ export function FilmStrip({ films, heading, span, pace = 1.6 }: FilmStripProps) 
 
             <div className="film-index">
               <div className="film-index-row">
-                <span className="film-index-now">{two(active + 1)}</span>
-                <span className="film-index-total">/ {two(films.length)}</span>
+                <span className="film-index-now">{digits(two(active + 1))}</span>
+                <span className="film-index-total">/ {digits(two(films.length))}</span>
               </div>
               <span className="film-index-year">{now.year}</span>
             </div>

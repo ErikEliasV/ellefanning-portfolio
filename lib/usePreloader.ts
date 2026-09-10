@@ -59,7 +59,18 @@ export function usePreloader() {
       node.style.setProperty("--pre-p", shown.toFixed(4));
       const text = String(Math.round(shown * 100)).padStart(3, "0");
       const slot = readout.current;
-      if (slot && slot.textContent !== text) slot.textContent = text;
+      if (!slot) return;
+
+      const cells = slot.children;
+      if (cells.length !== text.length) {
+        slot.textContent = text;
+        return;
+      }
+
+      for (let at = 0; at < text.length; at += 1) {
+        const cell = cells[at];
+        if (cell.textContent !== text[at]) cell.textContent = text[at];
+      }
     }
 
     // The plate now waits on the reader instead of dismissing itself, so the
