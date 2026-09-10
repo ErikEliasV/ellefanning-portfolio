@@ -55,7 +55,10 @@ export function depthParallax(
   layers: { el: Element; rate: number }[],
   zoom = 1.1,
 ): Kill {
-  if (!layers.length) return NOOP;
+  // Unlike the other primitives, this one has no useful end state: settling it
+  // at progress 1 would leave every layer parked at the far end of its travel.
+  // With reduced motion it simply does not exist.
+  if (!layers.length || isReduced()) return NOOP;
 
   const tl = gsap.timeline({ paused: true });
   layers.forEach(({ el, rate }) => {

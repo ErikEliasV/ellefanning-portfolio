@@ -178,6 +178,16 @@
   }
 }
 
+/* This media query was deliberately removed in August, when the project ran
+   every animation regardless. The decision was revised: inertia and parallax
+   now step aside, and what is left just gets shorter. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-base: 120ms;
+    --duration-slow: 120ms;
+  }
+}
+
 @utility frame {
   width: 100%;
   max-width: var(--container-page);
