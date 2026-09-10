@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { onTick } from "@/lib/scroll";
+
 const CELL_VW = 0.3;
 const CELL_HOVER_VW = 0.7;
 const CELL_VW_NARROW = 0.8;
@@ -110,14 +112,27 @@ export function useEditorialReel(frames: readonly number[]) {
     const trackNode = track.current;
     if (!trackNode) return;
 
-    let ticket = 0;
+    let lastTop = Number.NaN;
 
     function progress() {
-      ticket = 0;
       const node = track.current;
       if (!node) return;
 
       const rect = node.getBoundingClientRect();
+
+      // The pin used to learn it was moving from the scroll event itself; on a
+      // shared tick it has to notice the movement on its own.
+      const pinNode = pin.current;
+      if (pinNode && rect.top !== lastTop) {
+        lastTop = rect.top;
+        pinNode.setAttribute("data-scrolling", "");
+        window.clearTimeout(idle.current);
+        idle.current = window.setTimeout(
+          () => pinNode.removeAttribute("data-scrolling"),
+          IDLE_MS,
+        );
+      }
+
       if (!armedRef.current && rect.top < window.innerHeight * 2) {
         armedRef.current = true;
         setArmed(true);
@@ -146,19 +161,6 @@ export function useEditorialReel(frames: readonly number[]) {
         "--track-h",
         `${(view + panScroll + spent.current + live).toFixed(2)}px`,
       );
-    }
-
-    function schedule() {
-      const pinNode = pin.current;
-      if (pinNode) {
-        pinNode.setAttribute("data-scrolling", "");
-        window.clearTimeout(idle.current);
-        idle.current = window.setTimeout(
-          () => pinNode.removeAttribute("data-scrolling"),
-          IDLE_MS,
-        );
-      }
-      if (!ticket) ticket = requestAnimationFrame(progress);
     }
 
     repaint.current = progress;
@@ -223,16 +225,15 @@ export function useEditorialReel(frames: readonly number[]) {
     observer.observe(document.documentElement);
     if (capBlock.current) observer.observe(capBlock.current);
     window.addEventListener("resize", measure);
-    window.addEventListener("scroll", schedule, { passive: true });
+    const untick = onTick(progress);
     window.addEventListener("keydown", onKey);
 
     return () => {
-      cancelAnimationFrame(ticket);
+      untick();
       window.clearTimeout(idle.current);
       window.clearTimeout(exit.current);
       observer.disconnect();
       window.removeEventListener("resize", measure);
-      window.removeEventListener("scroll", schedule);
       window.removeEventListener("keydown", onKey);
     };
   }, [count, close, readFor, frames]);

@@ -15,7 +15,7 @@ export function ScrollCue({
 }: ScrollCueProps) {
   return (
     <div className={cn("border-t border-line-rule", className)}>
-      <div className="bleed flex items-center justify-between gap-4 py-2 font-mono text-label-sm font-bold uppercase tracking-label-wide">
+      <div className="bleed flex items-center justify-between gap-4 py-2 font-text text-label-sm font-bold uppercase tracking-label-wide">
         <a
           href={href}
           className="group flex items-center gap-2 py-1 text-ink-800 transition-colors duration-[140ms] ease-[var(--ease-out)] hover:text-yellow-600"

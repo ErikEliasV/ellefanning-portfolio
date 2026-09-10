@@ -136,7 +136,7 @@
 }
 
 .hero-face-g {
-  font-family: var(--font-grotesk);
+  font-family: var(--font-text);
 }
 
 .hero-face-e {
@@ -211,4 +211,96 @@
   width: 100%;
   height: 100%;
   max-width: none;
+}
+
+/* The mosaic used to run straight into the header. It now dissolves into the
+   frame colour at the top, which follows the same rose wash as everything else. */
+.hero-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background-image: linear-gradient(
+    to bottom,
+    color-mix(
+        in srgb,
+        var(--color-blush-100),
+        var(--color-rose-400) calc(var(--p) * 100%)
+      )
+      0%,
+    transparent 24%
+  );
+}
+
+.hero-field-cloud {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity var(--duration-slow) var(--ease-out);
+}
+
+.hero-field[data-cloud] .hero-field-cloud {
+  opacity: 1;
+}
+
+.hero-field[data-cloud] .hero-field-gl {
+  opacity: 0;
+}
+
+/* The entry, in three beats that overlap. The soft copy resolves out of the
+   field first, the sharp one settles a beat later, and the portrait opens on a
+   blind as that settle lands. All three ride properties the morph does not
+   own — the wipe wrapper's transform is the morph's, so the title beats use
+   filter, opacity and a translate on the faces inside it, and the portrait,
+   whose transform is also the morph's, opens on clip-path alone. Nothing is
+   pre-set: with no entry signal the hero simply stands there, dressed. */
+@keyframes hero-soft {
+  from {
+    opacity: 0;
+    filter: blur(14px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+@keyframes hero-sharp {
+  from {
+    transform: translateY(0.06em);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes hero-blind {
+  from {
+    clip-path: inset(100% 0 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+html[data-entered] .hero-track[data-ready] .hero-title-entry .hero-wipe {
+  animation: hero-soft var(--duration-anchor) var(--ease-out) both;
+}
+
+html[data-entered] .hero-track[data-ready] .hero-title-entry .hero-face {
+  animation: hero-sharp var(--duration-reveal) var(--ease-out) 260ms both;
+}
+
+html[data-entered] .hero-track[data-ready] .hero-portrait {
+  animation: hero-blind var(--duration-anchor) var(--ease-out) 500ms both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-entered] .hero-track[data-ready] .hero-title-entry .hero-face,
+  html[data-entered] .hero-track[data-ready] .hero-portrait {
+    animation-delay: 0s;
+  }
 }

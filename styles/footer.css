@@ -11,6 +11,7 @@
 .footer-mark {
   --mark-ratio: 3.536;
   --lens-r: 0px;
+  --lens-glow: 0;
   --mx: 50%;
   --my: 50%;
   position: relative;
@@ -24,13 +25,6 @@
   text-transform: uppercase;
   color: var(--color-ink-950);
   white-space: nowrap;
-  transition: --lens-r var(--duration-slow) var(--ease-out);
-}
-
-@media (hover: hover) {
-  .footer-mark:hover {
-    --lens-r: clamp(78px, 9.4vw, 180px);
-  }
 }
 
 .footer-line {
@@ -45,7 +39,8 @@
   mask-image: radial-gradient(
     circle var(--lens-r) at var(--mx) var(--my),
     #000 0%,
-    #000 44%,
+    #000 38%,
+    rgba(0, 0, 0, 0.35) 72%,
     transparent 100%
   );
   background-image: var(--mark-photo);
@@ -55,6 +50,20 @@
   background-clip: text;
   -webkit-background-clip: text;
   pointer-events: none;
+}
+
+.footer-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: var(--lens-glow);
+  background: radial-gradient(
+    circle calc(var(--lens-r) * 1.35) at var(--mx) var(--my),
+    rgba(224, 114, 149, 0.42) 0%,
+    rgba(224, 114, 149, 0.12) 46%,
+    transparent 78%
+  );
+  mix-blend-mode: screen;
 }
 
 .footer-dot {

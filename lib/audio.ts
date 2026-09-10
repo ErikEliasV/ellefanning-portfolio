@@ -1,6 +1,7 @@
 "use client";
 
 import { asset } from "@/lib/asset";
+import { onTick } from "@/lib/scroll";
 
 const TRACK = "/audio/falling-mizlo.mp3";
 const GRAINS = [
@@ -33,6 +34,12 @@ const GAP = 0.06;
 const VOICES = 6;
 const WIDTH = 0.6;
 
+const IR_SECONDS = 2.2;
+const IR_DECAY = 3.4;
+const WET_MUSIC = 0.12;
+const WET_GRAIN = 0.22;
+const WIDTH_MUSIC = 1.4;
+
 const TEC = 0.5;
 const TEC_GAP = 0.045;
 const TEC_VOICES = 5;
@@ -42,6 +49,9 @@ export type SoundState = { on: boolean; live: boolean };
 
 let ctx: AudioContext | null = null;
 let bus: GainNode | null = null;
+let master: GainNode | null = null;
+let send: GainNode | null = null;
+let musicSource: MediaElementAudioSourceNode | null = null;
 let grains: (AudioBuffer | null)[] = [];
 let loading: Promise<void> | null = null;
 let music: HTMLAudioElement | null = null;
@@ -58,7 +68,7 @@ let voices = 0;
 let lastHit = 0;
 let tecVoices = 0;
 let lastTec = 0;
-let ramp = 0;
+let rampOff: (() => void) | null = null;
 let settle = 0;
 let stopper = 0;
 
@@ -97,9 +107,9 @@ function slide(to: number, ms: number) {
   const el = music;
   if (!el) return;
 
-  cancelAnimationFrame(ramp);
+  rampOff?.();
+  rampOff = null;
   window.clearTimeout(settle);
-  ramp = 0;
 
   const from = el.volume;
   const span = to - from;
@@ -111,16 +121,19 @@ function slide(to: number, ms: number) {
   const step = (now: number) => {
     const k = ms > 0 ? Math.min((now - start) / ms, 1) : 1;
     el.volume = Math.min(Math.max(from + span * k, 0), 1);
-    ramp = k < 1 ? requestAnimationFrame(step) : 0;
+    if (k >= 1) {
+      rampOff?.();
+      rampOff = null;
+    }
   };
 
   settle = window.setTimeout(() => {
-    cancelAnimationFrame(ramp);
-    ramp = 0;
+    rampOff?.();
+    rampOff = null;
     el.volume = land;
   }, ms + 120);
 
-  ramp = requestAnimationFrame(step);
+  rampOff = onTick(step);
 }
 
 function build() {
@@ -158,21 +171,110 @@ function grind() {
     });
 }
 
+// A decaying burst of noise is a room. Generating it costs nothing to
+// download, which matters more here than the accuracy of a sampled hall.
+function impulse(live: AudioContext) {
+  const length = Math.floor(live.sampleRate * IR_SECONDS);
+  const buffer = live.createBuffer(2, length, live.sampleRate);
+
+  for (let channel = 0; channel < 2; channel += 1) {
+    const data = buffer.getChannelData(channel);
+    for (let at = 0; at < length; at += 1) {
+      data[at] = (Math.random() * 2 - 1) * Math.pow(1 - at / length, IR_DECAY);
+    }
+  }
+
+  return buffer;
+}
+
+// Mid/side: the two mid gains rebuild the centre in both channels and the two
+// side gains add the difference with opposite signs, so L = M + wS and
+// R = M - wS without a separate inverter.
+function widen(live: AudioContext, width: number) {
+  const input = live.createGain();
+  const output = live.createGain();
+  const split = live.createChannelSplitter(2);
+  const merge = live.createChannelMerger(2);
+
+  const midL = live.createGain();
+  const midR = live.createGain();
+  const sideL = live.createGain();
+  const sideR = live.createGain();
+
+  midL.gain.value = 0.5;
+  midR.gain.value = 0.5;
+  sideL.gain.value = width * 0.5;
+  sideR.gain.value = -width * 0.5;
+
+  input.connect(split);
+  split.connect(midL, 0);
+  split.connect(midR, 1);
+  split.connect(sideL, 0);
+  split.connect(sideR, 1);
+
+  midL.connect(merge, 0, 0);
+  sideL.connect(merge, 0, 0);
+  midR.connect(merge, 0, 1);
+  sideR.connect(merge, 0, 1);
+
+  merge.connect(output);
+
+  return { input, output };
+}
+
 function open() {
   if (ctx) return ctx;
 
   ctx = new AudioContext();
+
+  master = ctx.createGain();
+  master.connect(ctx.destination);
+
+  const room = ctx.createConvolver();
+  room.buffer = impulse(ctx);
+  room.connect(master);
+
+  send = ctx.createGain();
+  send.connect(room);
+
   bus = ctx.createGain();
   bus.gain.value = PIXEL;
-  bus.connect(ctx.destination);
+  bus.connect(master);
+
+  const grainWet = ctx.createGain();
+  grainWet.gain.value = WET_GRAIN;
+  bus.connect(grainWet);
+  grainWet.connect(send);
 
   tecBus = ctx.createGain();
   tecBus.gain.value = TEC;
-  tecBus.connect(ctx.destination);
+  tecBus.connect(master);
+
+  const tecWet = ctx.createGain();
+  tecWet.gain.value = WET_GRAIN;
+  tecBus.connect(tecWet);
+  tecWet.connect(send);
 
   grind();
 
   return ctx;
+}
+
+// Routing is deferred until the context is actually running: connecting a media
+// element to a suspended context hands back silence.
+function route(el: HTMLAudioElement) {
+  if (musicSource || !ctx || !master || !send || ctx.state !== "running") return;
+
+  musicSource = ctx.createMediaElementSource(el);
+
+  const wide = widen(ctx, WIDTH_MUSIC);
+  musicSource.connect(wide.input);
+  wide.output.connect(master);
+
+  const wet = ctx.createGain();
+  wet.gain.value = WET_MUSIC;
+  wide.output.connect(wet);
+  wet.connect(send);
 }
 
 function arm() {
@@ -184,6 +286,7 @@ function arm() {
   if (!wanted || hushed) return;
 
   const el = build();
+  route(el);
   if (gated) return;
 
   window.clearTimeout(stopper);

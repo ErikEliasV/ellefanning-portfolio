@@ -66,7 +66,7 @@
   place-items: center;
   padding: 12px;
   text-align: center;
-  font-family: var(--font-mono);
+  font-family: var(--font-text);
   font-size: var(--text-label-sm);
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
@@ -105,7 +105,7 @@
 }
 
 .film-card-title {
-  font-family: var(--font-mono);
+  font-family: var(--font-text);
   font-weight: 700;
   font-size: var(--text-label-sm);
   line-height: 1.25;
@@ -115,7 +115,7 @@
 }
 
 .film-card-role {
-  font-family: var(--font-mono);
+  font-family: var(--font-text);
   font-size: var(--text-micro);
   line-height: 1.6;
   letter-spacing: var(--tracking-label);
@@ -163,17 +163,29 @@
 }
 
 .film-index-now {
+  /* The slot was measured for the old face. Two ZT Nature digit cells are a
+     couple of pixels wider than it, and as separate spans they had somewhere
+     to wrap to, which doubled the height of the counter. Splitting the slot
+     between them keeps the width the design asked for and the digits equal. */
+  display: flex;
   width: clamp(34px, 6.861vw, 131.74px);
-  font-family: var(--font-grotesk);
+  font-family: var(--font-text);
   font-weight: 400;
   font-size: clamp(22px, 5.242vw, 100.65px);
   line-height: 1;
   color: var(--color-ink-900);
 }
 
+.film-index-now .num-cell {
+  flex: 1 1 0;
+  min-width: 0;
+  width: auto;
+}
+
 .film-index-total {
+  white-space: nowrap;
   padding-top: clamp(3px, 0.7148vw, 13.72px);
-  font-family: var(--font-grotesk);
+  font-family: var(--font-text);
   font-weight: 700;
   font-size: clamp(9px, 1.3105vw, 25.16px);
   line-height: 1.25;
@@ -183,7 +195,7 @@
 }
 
 .film-index-year {
-  font-family: var(--font-grotesk);
+  font-family: var(--font-text);
   font-weight: 500;
   font-size: clamp(22px, 5.176vw, 99.38px);
   line-height: 1.25;
@@ -202,8 +214,15 @@
 }
 
 .film-bar {
+  /* The handoff already publishes its own progress: --rise climbs as the bar
+     takes over and --burn eats it away, so the difference is the triangle the
+     split needs. No second scroll listener for something the reel knows. */
+  --split: clamp(0, calc(var(--rise, 0) - var(--burn, 0)), 1);
   position: relative;
   z-index: 30;
+  filter:
+    drop-shadow(calc(var(--split) * 6px) 0 0 rgba(224, 114, 149, 0.6))
+    drop-shadow(calc(var(--split) * -6px) 0 0 rgba(141, 154, 196, 0.6));
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -231,12 +250,12 @@
 }
 
 .film-bar-name {
-  font-family: var(--font-mono);
+  font-family: var(--font-text);
   font-weight: 700;
 }
 
 .film-bar-span {
-  font-family: var(--font-grotesk);
+  font-family: var(--font-text);
   font-weight: 500;
 }
 
@@ -249,4 +268,26 @@
     font-size: var(--text-label-sm);
     letter-spacing: 0.1em;
   }
+}
+
+/* The counter never cuts from one number to the next: the new figure resolves
+   out of a short blur as the poster takes the centre. The origin stays at the
+   left edge so the fixed slot the design asked for does not breathe. */
+@keyframes film-tick {
+  from {
+    opacity: 0.35;
+    filter: blur(5px);
+    transform: scale(1.06);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: scale(1);
+  }
+}
+
+.film-index-now,
+.film-index-year {
+  transform-origin: 0 50%;
+  animation: film-tick var(--duration-micro) var(--ease-out) both;
 }

@@ -73,15 +73,32 @@
   height: 40.2%;
 }
 
+@property --sat {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+
+/* Hover has to be able to overrule the scroll, so it rides its own scalar
+   instead of the filter: --sat is written every frame by the scrub and must
+   not carry a transition, --lift is the one that eases. */
+@property --lift {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
 .character-image {
   object-fit: cover;
-  filter: var(--filter-image-color);
-  transition: filter var(--duration-base) var(--ease-out);
+  filter: grayscale(clamp(0, calc(1 - var(--sat) - var(--lift)), 1))
+    contrast(calc(1.06 + var(--lift) * 0.1))
+    brightness(calc(1 + var(--lift) * 0.04));
+  transition: --lift var(--duration-base) var(--ease-out);
 }
 
 @media (hover: hover) {
   .character-card:hover .character-image {
-    filter: grayscale(0) contrast(1.16) brightness(1.04);
+    --lift: 1;
   }
 }
 
@@ -103,7 +120,7 @@
   border: 1px solid var(--color-rose-400);
   padding-inline: 14px;
   background-color: rgba(19, 19, 19, 0.72);
-  font-family: var(--font-grotesk);
+  font-family: var(--font-text);
   font-weight: 700;
   font-size: var(--text-micro);
   line-height: 1;
@@ -163,17 +180,25 @@
 }
 
 .character-index {
-  font-family: var(--font-grotesk);
+  font-family: var(--font-text);
   font-weight: 700;
   font-size: var(--text-micro);
   line-height: 1.6;
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
   color: var(--color-rose-400);
+  transition:
+    transform var(--duration-reveal) var(--ease-out),
+    opacity var(--duration-base) var(--ease-out);
+}
+
+.character-card.is-open .character-index {
+  transform: translateY(-120%);
+  opacity: 0;
 }
 
 .character-name {
-  font-family: var(--font-grotesk);
+  font-family: var(--font-text);
   font-weight: 400;
   font-size: clamp(20px, 1.667vw, 32px);
   line-height: 0.92;
@@ -182,7 +207,7 @@
 }
 
 .character-credit {
-  font-family: var(--font-grotesk);
+  font-family: var(--font-text);
   font-weight: 300;
   font-size: var(--text-micro);
   line-height: 1.6;
@@ -196,21 +221,21 @@
   min-height: 0;
   margin-top: 0;
   overflow: hidden;
-  font-family: var(--font-mono);
+  font-family: var(--font-text);
   font-size: var(--text-micro);
   line-height: 1.6;
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
   color: var(--color-paper-000);
-  opacity: 0;
+  clip-path: inset(0 0 100% 0);
   transition:
-    opacity var(--duration-base) var(--ease-out),
+    clip-path var(--duration-reveal) var(--ease-out),
     margin-top var(--duration-slow) var(--ease-out);
 }
 
 .character-card.is-open .character-story {
   margin-top: clamp(14px, 1.615vw, 31px);
-  opacity: 1;
+  clip-path: inset(0 0 0 0);
 }
 
 @media (width < 64rem) {

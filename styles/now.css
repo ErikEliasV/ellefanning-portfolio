@@ -21,6 +21,17 @@
   background-color: var(--color-ink-900);
 }
 
+/* Everything that is picture lives in here, so the card can grow and round
+   off as one object while the credits stay exactly where they are. */
+.now-media {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+  will-change: transform, border-radius;
+}
+
 .now-stage {
   position: absolute;
   inset: 0;
@@ -30,7 +41,10 @@
   pointer-events: none;
 }
 
-.now-embed {
+/* The IFrame API swaps the div it is given for an iframe of its own, so the
+   sizing has to reach whichever of the two is currently in the tree. */
+.now-embed,
+.now-stage iframe {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -45,10 +59,31 @@
   user-select: none;
 }
 
-.now-scrim {
+/* Scrolling out pauses the player, and a paused YouTube embed draws its own
+   play button and title bar on top. This hides both, and also covers the
+   poster frame before playback has started. */
+.now-cover {
   position: absolute;
   inset: 0;
   z-index: 1;
+  pointer-events: none;
+  background-color: var(--color-ink-900);
+  background-image: var(--now-poster), var(--now-poster-alt);
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  opacity: 1;
+  transition: opacity var(--duration-base) var(--ease-out);
+}
+
+.now-cover[data-playing] {
+  opacity: 0;
+}
+
+.now-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
   pointer-events: none;
   background-image: linear-gradient(
     to top,
@@ -69,7 +104,7 @@
   border: 1px solid var(--color-blush-300);
   padding: 5px 10px;
   background-color: rgba(19, 19, 19, 0.42);
-  font-family: var(--font-grotesk);
+  font-family: var(--font-text);
   font-weight: 700;
   font-size: var(--text-micro);
   line-height: 1;
@@ -143,7 +178,7 @@
 
 .now-word {
   margin: 0;
-  font-family: var(--font-grotesk);
+  font-family: var(--font-text);
   font-weight: 400;
   font-size: clamp(64px, 12.7474vw, 245px);
   line-height: 0.78;
@@ -173,7 +208,7 @@
   align-items: center;
   border: 1px solid var(--color-blush-300);
   padding: 5px 10px;
-  font-family: var(--font-grotesk);
+  font-family: var(--font-text);
   font-weight: 700;
   font-size: var(--text-micro);
   line-height: 1;
@@ -223,7 +258,7 @@
 .now-list dt,
 .now-list dd {
   margin: 0;
-  font-family: var(--font-mono);
+  font-family: var(--font-text);
   font-size: var(--text-label);
   line-height: 1.25;
   letter-spacing: var(--tracking-label);
@@ -234,7 +269,7 @@
   margin: 0;
   width: 351px;
   max-width: 100%;
-  font-family: var(--font-mono);
+  font-family: var(--font-text);
   font-size: var(--text-body-sm);
   line-height: 1.55;
   color: var(--color-blush-300);
