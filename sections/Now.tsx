@@ -7,14 +7,17 @@ import { paperWipe } from "@/lib/reveal";
 import { useNowTrailer } from "@/lib/useNowTrailer";
 import "@/styles/now.css";
 
+// No loop=1/playlist here on purpose. That pair is the usual trick for making
+// one video repeat, but it also makes YouTube treat the embed as a playlist and
+// draw its own previous/pause/next chips, which controls=0 does not suppress.
+// The repeat is handled in onStateChange instead.
 const PARAMS = [
   "mute=1",
-  "loop=1",
-  `playlist=${CURRENT_WORK.youtubeId}`,
   "controls=0",
   "disablekb=1",
   "modestbranding=1",
   "rel=0",
+  "fs=0",
   "iv_load_policy=3",
   "playsinline=1",
   "enablejsapi=1",

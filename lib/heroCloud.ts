@@ -42,12 +42,11 @@ uniform float uTime;
 uniform vec2 uPointer;
 uniform float uPointerA;
 uniform float uPointPx;
-attribute vec2 aCell;
 varying vec3 vColor;
 varying float vHalo;
 
 void main() {
-  vec2 block = (floor(aCell * uGrid) + 0.5) / uGrid;
+  vec2 block = (floor(position.xy * uGrid) + 0.5) / uGrid;
 
   vec2 uv = block;
   if (uAspect > uTexRatio) {
@@ -165,6 +164,7 @@ export function createCloud({ canvas, image, onBlock }: CloudOptions): Cloud | n
 
   let geometry = new THREE.BufferGeometry();
   const points = new THREE.Points(geometry, material);
+  points.frustumCulled = false;
   scene.add(points);
 
   const line = LINE_PAPER.clone();
@@ -185,19 +185,23 @@ export function createCloud({ canvas, image, onBlock }: CloudOptions): Cloud | n
   let atY = 0.5;
   let atA = 0;
 
+  // The cell coordinates ride in `position` rather than an attribute of their
+  // own: Three reads the vertex count from `position`, and without it
+  // renderBufferDirect returns early and draws nothing, silently.
   function build(gridCols: number, count: number) {
-    const cells = new Float32Array(gridCols * count * 2);
+    const cells = new Float32Array(gridCols * count * 3);
     let at = 0;
     for (let row = 0; row < count; row += 1) {
       for (let col = 0; col < gridCols; col += 1) {
         cells[at] = (col + 0.5) / gridCols;
         cells[at + 1] = (row + 0.5) / count;
-        at += 2;
+        cells[at + 2] = 0;
+        at += 3;
       }
     }
     geometry.dispose();
     geometry = new THREE.BufferGeometry();
-    geometry.setAttribute("aCell", new THREE.BufferAttribute(cells, 2));
+    geometry.setAttribute("position", new THREE.BufferAttribute(cells, 3));
     points.geometry = geometry;
   }
 
@@ -292,6 +296,7 @@ export function createCloud({ canvas, image, onBlock }: CloudOptions): Cloud | n
   }
 
   resize();
+  frame(0);
 
   return { setProgress, setPointer, frame, resize, dispose };
 }
