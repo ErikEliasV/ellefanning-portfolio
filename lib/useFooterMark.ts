@@ -2,6 +2,8 @@
 
 import { useEffect, useRef } from "react";
 
+import { onTick } from "@/lib/scroll";
+
 // The lantern used to need a cursor to exist. It now walks the lockup on its
 // own whenever the footer is on screen, and steps aside the moment a real
 // pointer takes over.
@@ -25,14 +27,13 @@ export function useFooterMark() {
     const point = { x: 0, y: 0 };
     const size = { w: node.offsetWidth, h: node.offsetHeight };
 
-    let raf = 0;
+    let untick: (() => void) | null = null;
     let last = 0;
     let cycle = 0;
     let lastInput = 0;
     let auto = true;
 
     function frame(now: number) {
-      raf = requestAnimationFrame(frame);
       if (!node) return;
 
       const step = last ? Math.min(now - last, 100) : 0;
@@ -71,14 +72,14 @@ export function useFooterMark() {
     }
 
     function run() {
-      if (raf) return;
+      if (untick) return;
       last = 0;
-      raf = requestAnimationFrame(frame);
+      untick = onTick(frame);
     }
 
     function halt() {
-      cancelAnimationFrame(raf);
-      raf = 0;
+      untick?.();
+      untick = null;
     }
 
     function aim(event: PointerEvent) {

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { asset } from "@/lib/asset";
 import { pixel } from "@/lib/audio";
+import { onTick } from "@/lib/scroll";
 
 export const HERO_FIELD = "/images/ellefanning-hero-field.webp";
 
@@ -194,7 +195,7 @@ export function useHeroField() {
 
     let ratio = 16 / 9;
     let ready = false;
-    let raf = 0;
+    let untick: (() => void) | null = null;
     let clock = 0;
     let last = 0;
 
@@ -249,7 +250,6 @@ export function useHeroField() {
     };
 
     const frame = (now: number) => {
-      raf = requestAnimationFrame(frame);
       const step = last ? Math.min((now - last) / 1000, 0.1) : 0;
       last = now;
       clock += step * WAVE_SPEED * Math.PI * 2;
@@ -276,15 +276,15 @@ export function useHeroField() {
     };
 
     const run = () => {
-      if (raf || !ready) return;
+      if (untick || !ready) return;
       last = 0;
       lastInput = 0;
-      raf = requestAnimationFrame(frame);
+      untick = onTick(frame);
     };
 
     const halt = () => {
-      cancelAnimationFrame(raf);
-      raf = 0;
+      untick?.();
+      untick = null;
     };
 
     const onMove = (event: PointerEvent) => {
@@ -312,7 +312,7 @@ export function useHeroField() {
 
       atCol = col;
       atRow = row;
-      if (raf) pixel(col, row, aimX);
+      if (untick) pixel(col, row, aimX);
     };
 
     const onLeave = () => {

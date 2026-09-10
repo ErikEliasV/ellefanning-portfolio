@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { onTick } from "@/lib/scroll";
+
 const CHASE = 0.2;
 const SETTLED = 0.4;
 const IDLE = 80;
@@ -44,7 +46,8 @@ export function useCursor() {
       node.querySelectorAll<HTMLElement>(".cur-corner"),
     );
 
-    let frame = 0;
+    let untick: (() => void) | null = null;
+    let pendingRetag = false;
     let hot: HTMLElement | null = null;
     let snap = false;
     let down = false;
@@ -127,11 +130,20 @@ export function useCursor() {
       }
 
       paint();
-      frame = rest ? 0 : requestAnimationFrame(tick);
+
+      if (pendingRetag) {
+        pendingRetag = false;
+        retag(hot);
+      }
+
+      if (rest) {
+        untick?.();
+        untick = null;
+      }
     }
 
     function wake() {
-      if (!frame) frame = requestAnimationFrame(tick);
+      if (!untick) untick = onTick(tick);
     }
 
     function fits(hit: HTMLElement) {
@@ -207,7 +219,7 @@ export function useCursor() {
       if (!node) return;
       down = false;
       delete node.dataset.down;
-      requestAnimationFrame(() => retag(hot));
+      pendingRetag = true;
       wake();
     }
 
@@ -232,7 +244,7 @@ export function useCursor() {
     document.addEventListener("pointerleave", hide);
 
     return () => {
-      cancelAnimationFrame(frame);
+      untick?.();
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerover", over);
       window.removeEventListener("pointerdown", press);

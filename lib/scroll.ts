@@ -4,7 +4,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 
-type Tick = (time: number) => void;
+type Tick = (now: number) => void;
 type Watcher = (reduced: boolean) => void;
 
 const REDUCED = "(prefers-reduced-motion: reduce)";
@@ -17,9 +17,13 @@ let reduced = false;
 const ticks = new Set<Tick>();
 const watchers = new Set<Watcher>();
 
-function drive(time: number) {
-  lenis?.raf(time * 1000);
-  ticks.forEach((fn) => fn(time));
+// The ticker counts from its own start, but everything downstream was written
+// against rAF timestamps and compares them to performance.now(). Handing out
+// that same clock keeps both epochs identical.
+function drive() {
+  const now = performance.now();
+  lenis?.raf(now);
+  ticks.forEach((fn) => fn(now));
 }
 
 export function isReduced() {
