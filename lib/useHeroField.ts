@@ -118,7 +118,9 @@ function blend(a: [number, number, number], b: [number, number, number], k: numb
   return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k];
 }
 
-export function useHeroField() {
+// `off` is handed over once the point cloud has finished crossfading in, so
+// this renderer stops burning GPU and releases its WebGL context.
+export function useHeroField(off = false) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const [failed, setFailed] = useState(false);
   const value = useRef(0);
@@ -128,6 +130,8 @@ export function useHeroField() {
   }, []);
 
   useEffect(() => {
+    if (off) return;
+
     const node = canvas.current;
     if (!node) return;
 
@@ -361,7 +365,7 @@ export function useHeroField() {
       gl.deleteShader(vertex);
       gl.deleteShader(fragment);
     };
-  }, []);
+  }, [off]);
 
   return { canvas, progress, failed };
 }

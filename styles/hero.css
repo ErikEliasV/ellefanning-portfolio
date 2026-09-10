@@ -212,3 +212,21 @@
   height: 100%;
   max-width: none;
 }
+
+.hero-field-cloud {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity var(--duration-slow) var(--ease-out);
+}
+
+.hero-field[data-cloud] .hero-field-cloud {
+  opacity: 1;
+}
+
+.hero-field[data-cloud] .hero-field-gl {
+  opacity: 0;
+}
