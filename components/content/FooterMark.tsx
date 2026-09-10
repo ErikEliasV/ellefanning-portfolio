@@ -28,6 +28,8 @@ export function FooterMark() {
         Fanning<span className="footer-dot">.</span>
       </span>
 
+      <span aria-hidden className="footer-glow" />
+
       <span aria-hidden className="footer-lens">
         <span className="footer-line">Elle</span>
         <span className="footer-line">
