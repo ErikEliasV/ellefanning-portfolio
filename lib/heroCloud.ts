@@ -14,6 +14,13 @@ const WASH_HOLD = 0.08;
 const MAX_DPR = 2;
 const MAX_ROWS = 220;
 
+// The camera dollies with scroll and sways with the pointer, and the moment it
+// moves it can see past the edge of the grid. The grid is built wider than the
+// frame so there is always another cube out there.
+const OVER = 1.2;
+const SIDE_DIM = 0.74;
+const KEY_FRONT = 0.904;
+
 const THICK = 0.55;
 const FOV = 38;
 const DOLLY = 0.14;
@@ -49,6 +56,7 @@ uniform float uTime;
 uniform vec2 uPointer;
 uniform float uPointerA;
 uniform float uGap;
+uniform float uOver;
 attribute vec2 aCell;
 varying vec3 vColor;
 varying float vLight;
@@ -65,7 +73,11 @@ void main() {
   vec2 self = floor(aCell * uBase);
   float mine = all(equal(owner, self)) ? 1.0 : 0.0;
 
-  vec2 uv = center;
+  // The grid runs wider than the frame, so the visible coordinate is the cell
+  // pushed back out from the middle.
+  vec2 vis = (center - 0.5) * uOver + 0.5;
+
+  vec2 uv = vis;
   if (uAspect > uTexRatio) {
     uv.y = (uv.y - 0.5) * (uTexRatio / uAspect) + 0.5;
   } else {
@@ -73,27 +85,30 @@ void main() {
   }
   vec3 tex = texture2D(uTex, clamp(uv, 0.0, 1.0)).rgb;
 
-  vec2 here = vec2((center.x - 0.5) * 2.0 * uAspect, (center.y - 0.5) * 2.0);
+  vec2 here = vec2((vis.x - 0.5) * 2.0 * uAspect, (vis.y - 0.5) * 2.0);
   vec2 hit = vec2((uPointer.x - 0.5) * 2.0 * uAspect, (uPointer.y - 0.5) * 2.0);
 
   float reach = distance(here, hit);
   float ring = sin(reach * ${glsl(RING_FREQ)} - uTime * ${glsl(RING_SPEED)})
     * exp(-reach * ${glsl(RING_FALL)});
-  float idle = sin(center.x * ${glsl(IDLE_FREQ)} + center.y * ${glsl(IDLE_SKEW)}
+  float idle = sin(vis.x * ${glsl(IDLE_FREQ)} + vis.y * ${glsl(IDLE_SKEW)}
     + uTime * ${glsl(IDLE_SPEED)});
 
   float lift = ring * ${glsl(RING_AMP)} * uPointerA + idle * ${glsl(IDLE_AMP)};
 
   vHalo = exp(-reach * reach / ${glsl(REVEAL_R2)}) * uPointerA;
 
-  float span = 2.0 * uAspect / uGrid.x;
+  float span = 2.0 * uAspect * uOver / uGrid.x;
   float side = max(span - uGap, 0.0001);
   vec3 body = position * vec3(side, side, side * ${glsl(THICK)}) * mine;
 
   vec3 place = vec3(here.x, here.y, lift) + body;
 
+  // The face turned toward the camera has to stay at full strength: dimming it
+  // darkened the whole field, and on a pale rose darker reads as more rose.
   vec3 face = normalize(normalMatrix * normal);
-  vLight = 0.6 + 0.4 * max(dot(face, normalize(vec3(0.32, 0.5, 1.0))), 0.0);
+  float key = max(dot(face, normalize(vec3(0.25, 0.4, 1.0))), 0.0);
+  vLight = mix(${glsl(SIDE_DIM)}, 1.0, min(key / ${glsl(KEY_FRONT)}, 1.0));
   vColor = tex;
 
   gl_Position = projectionMatrix * modelViewMatrix * vec4(place, 1.0);
@@ -173,6 +188,7 @@ export function createCloud({
     uPointer: { value: new THREE.Vector2(0.5, 0.5) },
     uPointerA: { value: 0 },
     uGap: { value: 0.01 },
+    uOver: { value: OVER },
     uWash: { value: WASH_PAPER },
     uTint: { value: PAPER.clone() },
   };
@@ -194,6 +210,7 @@ export function createCloud({
   let progress = 0;
   let clock = 0;
   let cols = BLOCKS_A;
+  let visCols = BLOCKS_A;
   let rows = 0;
   let gridRows = BLOCKS_A;
   let atCol = -1;
@@ -246,10 +263,11 @@ export function createCloud({
     camera.updateProjectionMatrix();
     uniforms.uAspect.value = aspect;
 
-    const next = Math.min(Math.max(Math.ceil(BLOCKS_A / aspect), 1), MAX_ROWS);
-    if (next !== rows) {
-      rows = next;
-      build(BLOCKS_A, rows);
+    const wide = Math.ceil(BLOCKS_A * OVER);
+    const tall = Math.min(Math.max(Math.ceil(wide / aspect), 1), MAX_ROWS);
+    if (tall !== rows) {
+      rows = tall;
+      build(wide, rows);
     }
 
     if (rows) frame(0);
@@ -271,8 +289,8 @@ export function createCloud({
     aimX = x;
     aimY = y;
 
-    const col = Math.floor(x * cols);
-    const row = Math.floor(y * gridRows);
+    const col = Math.floor(x * visCols);
+    const row = Math.floor(y * visCols / Math.max(uniforms.uAspect.value, 0.001));
     if (col === atCol && row === atRow) return;
 
     atCol = col;
@@ -292,7 +310,8 @@ export function createCloud({
     const wash = ramp * ramp * (3 - 2 * ramp);
     const aspect = uniforms.uAspect.value;
 
-    cols = BLOCKS_A + (BLOCKS_B - BLOCKS_A) * progress;
+    visCols = BLOCKS_A + (BLOCKS_B - BLOCKS_A) * progress;
+    cols = visCols * OVER;
     gridRows = Math.max(cols / aspect, 1);
     uniforms.uGrid.value.set(cols, gridRows);
 

@@ -8,6 +8,9 @@ const API_SRC = "https://www.youtube.com/iframe_api";
 const ENDED = 0;
 const PLAYING = 1;
 const SYNC = 500;
+// YouTube flashes a control overlay of its own at the moment playback starts,
+// so the cover outstays it rather than lifting on the state change itself.
+const COVER_GRACE = 1400;
 const GESTURES = ["pointerdown", "keydown", "touchstart"] as const;
 
 type Player = {
@@ -84,6 +87,7 @@ export function useNowTrailer() {
   const built = useRef<Player | null>(null);
   const player = useRef<Player | null>(null);
   const onScreen = useRef(false);
+  const grace = useRef(0);
   const wanted = useRef(true);
   const [ready, setReady] = useState(false);
   const [playing, setPlaying] = useState(false);
@@ -148,7 +152,15 @@ export function useNowTrailer() {
           onStateChange: (event) => {
             // Anything but PLAYING means YouTube is free to paint its own big play
             // button over the embed, so the cover has to be up for all of them.
-            setPlaying(event.data === PLAYING);
+            window.clearTimeout(grace.current);
+            if (event.data === PLAYING) {
+              grace.current = window.setTimeout(
+                () => setPlaying(true),
+                COVER_GRACE,
+              );
+            } else {
+              setPlaying(false);
+            }
             if (event.data !== ENDED) return;
             event.target.seekTo(0, true);
             event.target.playVideo();
@@ -199,6 +211,7 @@ export function useNowTrailer() {
       document.removeEventListener("visibilitychange", onVisibility);
       GESTURES.forEach((name) => window.removeEventListener(name, onGesture));
       window.clearInterval(mirror);
+      window.clearTimeout(grace.current);
       halt();
     };
   }, [raise]);

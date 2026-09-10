@@ -213,6 +213,25 @@
   max-width: none;
 }
 
+/* The mosaic used to run straight into the header. It now dissolves into the
+   frame colour at the top, which follows the same rose wash as everything else. */
+.hero-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background-image: linear-gradient(
+    to bottom,
+    color-mix(
+        in srgb,
+        var(--color-blush-100),
+        var(--color-rose-400) calc(var(--p) * 100%)
+      )
+      0%,
+    transparent 24%
+  );
+}
+
 .hero-field-cloud {
   position: absolute;
   inset: 0;

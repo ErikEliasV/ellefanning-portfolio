@@ -58,6 +58,7 @@ export function Hero() {
             <canvas ref={flatCanvas} className="hero-field-gl" />
           )}
           <canvas ref={cloudCanvas} className="hero-field-cloud" />
+          <span aria-hidden className="hero-veil" />
         </div>
 
         <h1 className="hero-title hero-title-entry">
