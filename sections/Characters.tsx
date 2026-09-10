@@ -1,10 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { asset } from "@/lib/asset";
 import { CHARACTERS } from "@/lib/characters";
 import { cn } from "@/lib/cn";
+import { depthParallax, grainPulse, maskReveal } from "@/lib/reveal";
 import "@/styles/characters.css";
 
 function two(value: number) {
@@ -13,11 +14,28 @@ function two(value: number) {
 
 export function Characters() {
   const [open, setOpen] = useState<string | null>(null);
+  const section = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const node = section.current;
+    if (!node) return;
+
+    const cells = Array.from(node.querySelectorAll(".character-cell"));
+    const kills = [grainPulse(node, node), maskReveal(node, cells, 0.09)];
+
+    cells.forEach((cell) => {
+      const still = cell.querySelector(".character-image");
+      if (still) kills.push(depthParallax(cell, [{ el: still, rate: 0.08 }]));
+    });
+
+    return () => kills.forEach((kill) => kill());
+  }, []);
 
   return (
     <section
+      ref={section}
       id="characters"
-      className="character-section"
+      className="character-section grain"
       data-cursor-skin="invert"
     >
       <div className="character-shell">

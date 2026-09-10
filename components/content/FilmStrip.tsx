@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { asset } from "@/lib/asset";
 import { reelTick } from "@/lib/audio";
+import { onTick } from "@/lib/scroll";
 import type { Film } from "@/lib/films";
 
 type FilmStripProps = {
@@ -22,6 +23,16 @@ const STRIDE = 80;
 
 function two(value: number) {
   return String(value).padStart(2, "0");
+}
+
+function digits(value: string) {
+  return value
+    .split("")
+    .map((glyph, at) => (
+      <span key={at} className="num-cell">
+        {glyph}
+      </span>
+    ));
 }
 
 function clamp01(value: number) {
@@ -46,7 +57,6 @@ export function FilmStrip({ films, heading, span, pace = 1.6 }: FilmStripProps) 
   const meter = useRef<HTMLSpanElement>(null);
   const boxes = useRef<{ left: number; width: number }[]>([]);
   const field = useRef<number[][]>([]);
-  const ticket = useRef(0);
   const cursor = useRef(0);
 
   const [active, setActive] = useState(0);
@@ -59,8 +69,6 @@ export function FilmStrip({ films, heading, span, pace = 1.6 }: FilmStripProps) 
     let atNotch = -1;
 
     function paint() {
-      ticket.current = 0;
-
       const trackEl = track.current;
       const stageEl = stage.current;
       const stripEl = strip.current;
@@ -145,26 +153,28 @@ export function FilmStrip({ films, heading, span, pace = 1.6 }: FilmStripProps) 
       paint();
     }
 
-    function schedule() {
-      if (!ticket.current) ticket.current = requestAnimationFrame(paint);
-    }
-
     const observer = new ResizeObserver(measure);
     if (stage.current) observer.observe(stage.current);
     if (strip.current) observer.observe(strip.current);
 
     measure();
-    const settle = requestAnimationFrame(measure);
-    window.addEventListener("scroll", schedule, { passive: true });
+
+    // One more pass after layout settles, then the tick is handed over to paint.
+    let settle: (() => void) | null = null;
+    settle = onTick(() => {
+      settle?.();
+      settle = null;
+      measure();
+    });
+
+    const untick = onTick(paint);
     window.addEventListener("resize", measure);
 
     return () => {
       observer.disconnect();
-      cancelAnimationFrame(settle);
-      window.removeEventListener("scroll", schedule);
+      settle?.();
+      untick();
       window.removeEventListener("resize", measure);
-      cancelAnimationFrame(ticket.current);
-      ticket.current = 0;
     };
   }, [pace, films.length]);
 
@@ -211,8 +221,8 @@ export function FilmStrip({ films, heading, span, pace = 1.6 }: FilmStripProps) 
 
             <div className="film-index">
               <div className="film-index-row">
-                <span className="film-index-now">{two(active + 1)}</span>
-                <span className="film-index-total">/ {two(films.length)}</span>
+                <span className="film-index-now">{digits(two(active + 1))}</span>
+                <span className="film-index-total">/ {digits(two(films.length))}</span>
               </div>
               <span className="film-index-year">{now.year}</span>
             </div>

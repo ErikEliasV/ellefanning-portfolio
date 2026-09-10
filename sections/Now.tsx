@@ -1,43 +1,91 @@
 "use client";
 
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useEffect } from "react";
+import type { CSSProperties } from "react";
 import { CURRENT_WORK } from "@/lib/films";
+import { isReduced } from "@/lib/scroll";
 import { useNowTrailer } from "@/lib/useNowTrailer";
 import "@/styles/now.css";
 
-const PARAMS = [
-  "mute=1",
-  "loop=1",
-  `playlist=${CURRENT_WORK.youtubeId}`,
-  "controls=0",
-  "disablekb=1",
-  "modestbranding=1",
-  "rel=0",
-  "iv_load_policy=3",
-  "playsinline=1",
-  "enablejsapi=1",
-].join("&");
-
-const TRAILER = `https://www.youtube-nocookie.com/embed/${CURRENT_WORK.youtubeId}?${PARAMS}`;
+// How small the card starts, and how far the leading corner is rounded before
+// it seats. The corner is deliberately larger than anything else on the site.
+const SMALL = 0.62;
+const CORNER = 220;
 
 export function Now() {
-  const { frame, stage, ready, sound, toggleSound } = useNowTrailer();
+  const { frame, stage, ready, playing, sound, toggleSound } = useNowTrailer();
+
+  useEffect(() => {
+    const node = frame.current;
+    const media = node?.querySelector<HTMLElement>(".now-media");
+    if (!node || !media) return;
+
+    // The card arrives as an object, not as an effect: small, held off the
+    // frame, with one corner rounded far past anything else on the site. It
+    // grows into the frame and the corner resolves to the hard editorial edge.
+    const state = { p: 0 };
+
+    const seat = () => {
+      const k = state.p * state.p * (3 - 2 * state.p);
+      const radius = Math.round(CORNER * (1 - k));
+      media.style.transform = `scale(${(SMALL + (1 - SMALL) * k).toFixed(4)})`;
+      media.style.borderRadius = `${radius}px 0 ${radius}px 0`;
+    };
+
+    const tl = gsap
+      .timeline({ paused: true })
+      .to(state, { p: 1, ease: "none", duration: 1, onUpdate: seat });
+
+    // The timeline is driven straight from the trigger rather than scrubbed:
+    // Lenis already smooths the scroll position, so a second layer of easing
+    // only adds lag, and this way the card is exactly where the scroll says.
+    const trigger = ScrollTrigger.create({
+      trigger: node,
+      start: "top bottom",
+      end: "top 32%",
+      invalidateOnRefresh: true,
+      // Both hooks, because a refresh recomputes the geometry without firing
+      // onUpdate: after a resize the card would otherwise keep the shape it had
+      // at a scroll position that no longer exists.
+      onUpdate: (self) => tl.progress(isReduced() ? 1 : self.progress),
+      onRefresh: (self) => tl.progress(isReduced() ? 1 : self.progress),
+    });
+
+    tl.progress(isReduced() ? 1 : 0);
+    seat();
+
+    return () => {
+      trigger.kill();
+      tl.kill();
+      media.style.transform = "";
+      media.style.borderRadius = "";
+    };
+  }, [frame]);
 
   return (
     <section id="current" className="now">
-      <div ref={frame} className="now-frame" data-cursor-skin="invert">
-        <div aria-hidden className="now-stage">
-          <iframe
-            ref={stage}
-            src={TRAILER}
-            title={`${CURRENT_WORK.title} trailer`}
-            className="now-embed"
-            tabIndex={-1}
-            allow="autoplay; encrypted-media"
-            referrerPolicy="strict-origin-when-cross-origin"
-          />
-        </div>
+      <div
+        ref={frame}
+        className="now-frame"
+        data-cursor-skin="invert"
+        style={
+          {
+            "--now-poster": `url(https://i.ytimg.com/vi/${CURRENT_WORK.youtubeId}/maxresdefault.jpg)`,
+            "--now-poster-alt": `url(https://i.ytimg.com/vi/${CURRENT_WORK.youtubeId}/hqdefault.jpg)`,
+          } as CSSProperties
+        }
+      >
+<div aria-hidden className="now-media">
+          <div className="now-stage">
+            <div ref={stage} className="now-embed" />
+          </div>
 
-        <div aria-hidden className="now-scrim" />
+          <div className="now-cover" data-playing={playing ? "" : undefined} />
+
+          <div className="now-scrim" />
+        </div>
 
         <button
           type="button"

@@ -2,10 +2,15 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { hush } from "@/lib/audio";
+import { CURRENT_WORK } from "@/lib/films";
 
 const API_SRC = "https://www.youtube.com/iframe_api";
 const ENDED = 0;
+const PLAYING = 1;
 const SYNC = 500;
+// YouTube flashes a control overlay of its own at the moment playback starts,
+// so the cover outstays it rather than lifting on the state change itself.
+const COVER_GRACE = 1400;
 const GESTURES = ["pointerdown", "keydown", "touchstart"] as const;
 
 type Player = {
@@ -21,6 +26,9 @@ type Player = {
 type PlayerEvent = { target: Player; data: number };
 
 type PlayerOptions = {
+  host?: string;
+  videoId: string;
+  playerVars: Record<string, string | number>;
   events: {
     onReady: (event: PlayerEvent) => void;
     onStateChange: (event: PlayerEvent) => void;
@@ -28,7 +36,7 @@ type PlayerOptions = {
 };
 
 type YouTubeApi = {
-  Player: new (host: HTMLIFrameElement, options: PlayerOptions) => Player;
+  Player: new (host: HTMLElement, options: PlayerOptions) => Player;
 };
 
 declare global {
@@ -75,12 +83,14 @@ function loadApi() {
 
 export function useNowTrailer() {
   const frame = useRef<HTMLDivElement>(null);
-  const stage = useRef<HTMLIFrameElement>(null);
+  const stage = useRef<HTMLDivElement>(null);
   const built = useRef<Player | null>(null);
   const player = useRef<Player | null>(null);
   const onScreen = useRef(false);
+  const grace = useRef(0);
   const wanted = useRef(true);
   const [ready, setReady] = useState(false);
+  const [playing, setPlaying] = useState(false);
   const [sound, setSound] = useState(false);
   const [near, setNear] = useState(false);
 
@@ -116,7 +126,23 @@ export function useNowTrailer() {
         return;
       }
 
+      // Handing the API a div and declaring the vars here, rather than letting
+      // it adopt an iframe and inherit whatever is on the src, is the path that
+      // actually honours controls: 0.
       built.current = new api.Player(node, {
+        host: "https://www.youtube-nocookie.com",
+        videoId: CURRENT_WORK.youtubeId,
+        playerVars: {
+          mute: 1,
+          controls: 0,
+          disablekb: 1,
+          modestbranding: 1,
+          rel: 0,
+          fs: 0,
+          iv_load_policy: 3,
+          playsinline: 1,
+          origin: window.location.origin,
+        },
         events: {
           onReady: (event) => {
             player.current = event.target;
@@ -124,6 +150,17 @@ export function useNowTrailer() {
             play();
           },
           onStateChange: (event) => {
+            // Anything but PLAYING means YouTube is free to paint its own big play
+            // button over the embed, so the cover has to be up for all of them.
+            window.clearTimeout(grace.current);
+            if (event.data === PLAYING) {
+              grace.current = window.setTimeout(
+                () => setPlaying(true),
+                COVER_GRACE,
+              );
+            } else {
+              setPlaying(false);
+            }
             if (event.data !== ENDED) return;
             event.target.seekTo(0, true);
             event.target.playVideo();
@@ -174,6 +211,7 @@ export function useNowTrailer() {
       document.removeEventListener("visibilitychange", onVisibility);
       GESTURES.forEach((name) => window.removeEventListener(name, onGesture));
       window.clearInterval(mirror);
+      window.clearTimeout(grace.current);
       halt();
     };
   }, [raise]);
@@ -196,5 +234,5 @@ export function useNowTrailer() {
     setSound(next);
   }, [raise, sound]);
 
-  return { frame, stage, ready, sound, toggleSound };
+  return { frame, stage, ready, playing, sound, toggleSound };
 }

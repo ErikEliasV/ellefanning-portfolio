@@ -76,7 +76,9 @@ export function Preloader() {
           <span>{open ? "Ready" : "Loading"}</span>
           <span>
             <span ref={readout} className="pre-num">
-              000
+              <span className="num-cell">0</span>
+              <span className="num-cell">0</span>
+              <span className="num-cell">0</span>
             </span>{" "}
             <span className="pre-pct">%</span>
           </span>

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { asset } from "@/lib/asset";
 import { release as openSound } from "@/lib/audio";
+import { lockScroll, onTick, scrollTo } from "@/lib/scroll";
 
 const SIGNALS = 3;
 const MIN_MS = 900;
@@ -27,24 +28,22 @@ export function usePreloader() {
     const node = plate.current;
     if (!node) return;
 
-    const root = document.documentElement;
-    const overflow = root.style.overflow;
-
-    root.style.overflow = "hidden";
+    lockScroll(true);
     history.scrollRestoration = "manual";
-    window.scrollTo(0, 0);
+    // force, because the lock has already stopped Lenis by this point.
+    scrollTo(0, { immediate: true, force: true });
 
     const start = performance.now();
     const timers: number[] = [];
 
     let live = true;
-    let frame = 0;
+    let untick: (() => void) | null = null;
     let landed = 0;
     let shown = 0;
     let left = false;
 
     function release() {
-      root.style.overflow = overflow;
+      lockScroll(false);
     }
 
     function land() {
@@ -61,7 +60,18 @@ export function usePreloader() {
       node.style.setProperty("--pre-p", shown.toFixed(4));
       const text = String(Math.round(shown * 100)).padStart(3, "0");
       const slot = readout.current;
-      if (slot && slot.textContent !== text) slot.textContent = text;
+      if (!slot) return;
+
+      const cells = slot.children;
+      if (cells.length !== text.length) {
+        slot.textContent = text;
+        return;
+      }
+
+      for (let at = 0; at < text.length; at += 1) {
+        const cell = cells[at];
+        if (cell.textContent !== text[at]) cell.textContent = text[at];
+      }
     }
 
     // The plate now waits on the reader instead of dismissing itself, so the
@@ -82,7 +92,7 @@ export function usePreloader() {
       timers.push(
         window.setTimeout(() => {
           if (!live) return;
-          window.scrollTo(0, 0);
+          scrollTo(0, { immediate: true, force: true });
           release();
           setPhase("done");
         }, EXIT_MS),
@@ -95,10 +105,10 @@ export function usePreloader() {
       if (goal - shown < 0.002) shown = goal;
       paint();
       if (shown >= 1) {
+        untick?.();
+        untick = null;
         arm();
-        return;
       }
-      frame = requestAnimationFrame(tick);
     }
 
     // The gate spans from the lockup's baseline down to the footer rule, so the
@@ -131,12 +141,12 @@ export function usePreloader() {
       }, CEIL_MS),
     );
 
-    frame = requestAnimationFrame(tick);
+    untick = onTick(tick);
 
     return () => {
       live = false;
       sizer.disconnect();
-      cancelAnimationFrame(frame);
+      untick?.();
       timers.forEach((id) => clearTimeout(id));
       window.removeEventListener("load", land);
       release();

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { asset } from "@/lib/asset";
 import { pixel } from "@/lib/audio";
+import { onTick } from "@/lib/scroll";
 
 export const HERO_FIELD = "/images/ellefanning-hero-field.webp";
 
@@ -117,7 +118,9 @@ function blend(a: [number, number, number], b: [number, number, number], k: numb
   return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k];
 }
 
-export function useHeroField() {
+// `off` is handed over once the point cloud has finished crossfading in, so
+// this renderer stops burning GPU and releases its WebGL context.
+export function useHeroField(off = false) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const [failed, setFailed] = useState(false);
   const value = useRef(0);
@@ -127,6 +130,8 @@ export function useHeroField() {
   }, []);
 
   useEffect(() => {
+    if (off) return;
+
     const node = canvas.current;
     if (!node) return;
 
@@ -194,7 +199,7 @@ export function useHeroField() {
 
     let ratio = 16 / 9;
     let ready = false;
-    let raf = 0;
+    let untick: (() => void) | null = null;
     let clock = 0;
     let last = 0;
 
@@ -249,7 +254,6 @@ export function useHeroField() {
     };
 
     const frame = (now: number) => {
-      raf = requestAnimationFrame(frame);
       const step = last ? Math.min((now - last) / 1000, 0.1) : 0;
       last = now;
       clock += step * WAVE_SPEED * Math.PI * 2;
@@ -276,15 +280,15 @@ export function useHeroField() {
     };
 
     const run = () => {
-      if (raf || !ready) return;
+      if (untick || !ready) return;
       last = 0;
       lastInput = 0;
-      raf = requestAnimationFrame(frame);
+      untick = onTick(frame);
     };
 
     const halt = () => {
-      cancelAnimationFrame(raf);
-      raf = 0;
+      untick?.();
+      untick = null;
     };
 
     const onMove = (event: PointerEvent) => {
@@ -312,7 +316,7 @@ export function useHeroField() {
 
       atCol = col;
       atRow = row;
-      if (raf) pixel(col, row, aimX);
+      if (untick) pixel(col, row, aimX);
     };
 
     const onLeave = () => {
@@ -361,7 +365,7 @@ export function useHeroField() {
       gl.deleteShader(vertex);
       gl.deleteShader(fragment);
     };
-  }, []);
+  }, [off]);
 
   return { canvas, progress, failed };
 }

@@ -1,4 +1,5 @@
 import { FooterMark } from "@/components/content/FooterMark";
+import { BackToTop } from "@/components/core/BackToTop";
 import { Rule } from "@/components/core/Rule";
 import { LINKS } from "@/lib/links";
 import "@/styles/footer.css";
@@ -30,7 +31,7 @@ export function SiteFooter() {
                   target="_blank"
                   rel="noreferrer noopener"
                   data-cursor="Visit"
-                  className="group flex items-baseline justify-between gap-6 border-b border-periwinkle-400 py-3 font-mono text-label font-bold uppercase tracking-label-wide text-paper-000 transition-colors duration-[140ms] ease-[var(--ease-out)] hover:text-rose-400"
+                  className="group flex items-baseline justify-between gap-6 border-b border-periwinkle-400 py-3 font-text text-label font-bold uppercase tracking-label-wide text-paper-000 transition-colors duration-[140ms] ease-[var(--ease-out)] hover:text-rose-400"
                 >
                   <span className="flex items-center gap-3">
                     <span
@@ -47,20 +48,17 @@ export function SiteFooter() {
             ))}
           </ul>
 
-          <div className="flex flex-col justify-end gap-2 font-mono text-label-sm uppercase tracking-label text-periwinkle-400 md:text-micro md:text-right">
+          <div className="flex flex-col justify-end gap-2 font-text text-label-sm uppercase tracking-label text-periwinkle-400 md:text-micro md:text-right">
             {MARKS.map((mark) => (
               <span key={mark}>{mark}</span>
             ))}
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-4 font-mono text-label-sm uppercase tracking-label-wide text-ink-500 md:text-micro">
-          <a
-            href="#hero"
-            className="inline-flex min-h-[44px] items-center transition-colors duration-[140ms] ease-[var(--ease-out)] hover:text-rose-400"
-          >
+        <div className="flex items-center justify-between gap-4 font-text text-label-sm uppercase tracking-label-wide text-ink-500 md:text-micro">
+          <BackToTop className="inline-flex min-h-[44px] items-center transition-colors duration-[140ms] ease-[var(--ease-out)] hover:text-rose-400">
             &uarr; Back to top
-          </a>
+          </BackToTop>
           <span>End</span>
         </div>
       </div>

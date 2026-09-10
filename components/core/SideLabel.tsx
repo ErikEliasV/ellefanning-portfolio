@@ -28,7 +28,7 @@ export function SideLabel({
         className,
       )}
     >
-      <span className="[writing-mode:vertical-rl] rotate-180 font-mono text-label font-bold uppercase leading-none tracking-label-wide">
+      <span className="[writing-mode:vertical-rl] rotate-180 font-text text-label font-bold uppercase leading-none tracking-label-wide">
         {children}
       </span>
     </div>
