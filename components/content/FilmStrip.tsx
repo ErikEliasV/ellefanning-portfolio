@@ -5,6 +5,8 @@ import { useEffect, useRef, useState } from "react";
 import { asset } from "@/lib/asset";
 import { reelTick } from "@/lib/audio";
 import { onTick } from "@/lib/scroll";
+import { INK_TIDE } from "@/lib/seams";
+import { createSeam } from "@/lib/sectionShader";
 import type { Film } from "@/lib/films";
 
 type FilmStripProps = {
@@ -55,6 +57,7 @@ export function FilmStrip({ films, heading, span, pace = 1.6 }: FilmStripProps) 
   const strip = useRef<HTMLDivElement>(null);
   const bar = useRef<HTMLDivElement>(null);
   const meter = useRef<HTMLSpanElement>(null);
+  const seam = useRef<HTMLCanvasElement>(null);
   const boxes = useRef<{ left: number; width: number }[]>([]);
   const field = useRef<number[][]>([]);
   const cursor = useRef(0);
@@ -67,8 +70,13 @@ export function FilmStrip({ films, heading, span, pace = 1.6 }: FilmStripProps) 
     let rise = 0;
     let dark = 0;
     let atNotch = -1;
+    let barFrac = 0.08;
 
-    function paint() {
+    const tide = seam.current ? createSeam(seam.current, INK_TIDE) : null;
+    const ink = readInk("--color-ink-900").map((c) => c / 255);
+    tide?.set("uInk", ink);
+
+    function paint(now = performance.now()) {
       const trackEl = track.current;
       const stageEl = stage.current;
       const stripEl = strip.current;
@@ -111,6 +119,21 @@ export function FilmStrip({ films, heading, span, pace = 1.6 }: FilmStripProps) 
         setActive(current);
       }
 
+      if (tide) {
+        const live = risen > 0.001 || burnt > 0.001;
+        // delete, not = undefined: assigning it writes the string "undefined"
+        // and the attribute selector goes on matching.
+        if (live) stageEl.dataset.tide = "";
+        else delete stageEl.dataset.tide;
+        if (live) {
+          tide.set("uRise", risen);
+          tide.set("uBurn", burnt);
+          tide.set("uBar", barFrac);
+          tide.set("uWash", from && to ? from.map((channel, index) => (channel + (to[index] - channel) * burnt) / 255) : ink);
+          tide.frame(now);
+        }
+      }
+
       const reeling = run > 0 && passed > 0 && passed < run;
       const notch = reeling ? Math.floor(shift / STRIDE) : -1;
 
@@ -148,6 +171,7 @@ export function FilmStrip({ films, heading, span, pace = 1.6 }: FilmStripProps) 
       const stageH = stageEl.offsetHeight;
       rise = stageH * RISE;
       dark = stageH * DARK;
+      barFrac = stageH > 0 ? barEl.offsetHeight / stageH : 0.08;
       stageEl.style.setProperty("--bar-h", `${barEl.offsetHeight}px`);
       trackEl.style.height = `${stageH + run + rise + dark + TAIL}px`;
       paint();
@@ -172,6 +196,7 @@ export function FilmStrip({ films, heading, span, pace = 1.6 }: FilmStripProps) 
 
     return () => {
       observer.disconnect();
+      tide?.dispose();
       settle?.();
       untick();
       window.removeEventListener("resize", measure);
@@ -228,6 +253,8 @@ export function FilmStrip({ films, heading, span, pace = 1.6 }: FilmStripProps) 
             </div>
           </aside>
         </div>
+
+        <canvas ref={seam} aria-hidden className="film-seam" />
 
         <div aria-hidden className="film-wash">
           <span ref={meter} className="film-meter" />

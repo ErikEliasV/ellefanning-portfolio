@@ -1,23 +1,90 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import type { CSSProperties } from "react";
 import { CURRENT_WORK } from "@/lib/films";
-import { paperWipe } from "@/lib/reveal";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { isReduced, onTick } from "@/lib/scroll";
+import { INK_MELT } from "@/lib/seams";
+import { createSeam } from "@/lib/sectionShader";
 import { useNowTrailer } from "@/lib/useNowTrailer";
 import "@/styles/now.css";
 
 export function Now() {
   const { frame, stage, ready, playing, sound, toggleSound } = useNowTrailer();
+  const melt = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     const node = frame.current;
-    const shell = node?.querySelector(".now-stage");
-    if (!node || !shell) return;
+    const canvas = melt.current;
+    if (!node || !canvas) return;
 
-    // The clip lands on the stage, never on the frame: the frame has to stay
-    // overflow-visible so the credits are not cropped on a phone.
-    return paperWipe(node, shell, "up");
+    const sheet = createSeam(canvas, INK_MELT);
+    if (!sheet) return;
+
+    const ink = getComputedStyle(document.documentElement)
+      .getPropertyValue("--color-ink-900")
+      .trim()
+      .replace("#", "");
+    sheet.set(
+      "uInk",
+      [0, 2, 4].map((at) => parseInt(ink.slice(at, at + 2), 16) / 255),
+    );
+
+    // A GSAP timeline holds the progress and ScrollTrigger scrubs it; the
+    // shader only ever reads the number.
+    const state = { open: 0 };
+    const tl = gsap
+      .timeline({ paused: true })
+      .to(state, { open: 1, ease: "none", duration: 1 });
+
+    const trigger = ScrollTrigger.create({
+      trigger: node,
+      start: "top bottom",
+      end: "top 25%",
+      scrub: isReduced() ? false : 0.5,
+      invalidateOnRefresh: true,
+      animation: tl,
+    });
+
+    if (isReduced()) tl.progress(1);
+
+    // Off screen there is nothing to melt, and a sheet that has finished
+    // melting is a full-frame shader drawing nothing anyone can see.
+    let near = false;
+
+    const untick = onTick((now) => {
+      const idle = !near || state.open >= 0.999;
+      canvas.style.opacity = idle ? "0" : "1";
+      if (idle) return;
+      sheet.set("uOpen", state.open);
+      sheet.frame(now);
+    });
+
+    const watcher = new IntersectionObserver(
+      ([entry]) => {
+        near = entry.isIntersecting;
+      },
+      { rootMargin: "40% 0px" },
+    );
+    watcher.observe(node);
+
+    // A resize should repaint even when nothing is scrolling.
+    const sizer = new ResizeObserver(() => {
+      sheet.resize();
+      if (state.open < 0.999) sheet.frame(performance.now());
+    });
+    sizer.observe(canvas);
+
+    return () => {
+      untick();
+      watcher.disconnect();
+      sizer.disconnect();
+      trigger.kill();
+      tl.kill();
+      sheet.dispose();
+    };
   }, [frame]);
 
   return (
@@ -42,6 +109,8 @@ export function Now() {
           className="now-cover"
           data-playing={playing ? "" : undefined}
         />
+
+        <canvas ref={melt} aria-hidden className="now-melt" />
 
         <div aria-hidden className="now-scrim" />
 
