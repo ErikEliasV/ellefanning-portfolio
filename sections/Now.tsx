@@ -5,6 +5,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useEffect } from "react";
 import type { CSSProperties } from "react";
 import { CURRENT_WORK } from "@/lib/films";
+import { lineCascade } from "@/lib/reveal";
 import { isReduced } from "@/lib/scroll";
 import { useNowTrailer } from "@/lib/useNowTrailer";
 import "@/styles/now.css";
@@ -56,7 +57,15 @@ export function Now() {
     tl.progress(isReduced() ? 1 : 0);
     seat();
 
+    // This is the cover of the magazine, so the lines are allowed to take
+    // their time: one at a time, on the slowest band the site owns.
+    const lines = Array.from(
+      node.querySelectorAll(".now-tags, .now-title, .now-list-row, .now-note"),
+    );
+    const killLines = lineCascade(node, lines);
+
     return () => {
+      killLines();
       trigger.kill();
       tl.kill();
       media.style.transform = "";
@@ -77,7 +86,7 @@ export function Now() {
           } as CSSProperties
         }
       >
-<div aria-hidden className="now-media">
+        <div aria-hidden className="now-media">
           <div className="now-stage">
             <div ref={stage} className="now-embed" />
           </div>

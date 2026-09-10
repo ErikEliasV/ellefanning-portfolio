@@ -7,12 +7,24 @@ import { isReduced } from "@/lib/scroll";
 
 export type Kill = () => void;
 
+// The shared grammar. Each section plays its own mechanism, but all of them
+// borrow this curve, these duration bands, this stagger and this trigger point,
+// which is what keeps the scroll reading as one piece instead of a stack of
+// blocks that switch on and off. power4.out is the quintic ease-out, the GSAP
+// twin of the CSS --ease-out.
+export const EASE = "power4.out";
+export const DUR_REVEAL = 0.9;
+export const DUR_ANCHOR = 1.6;
+export const STAGGER_GRID = 0.08;
+export const STAGGER_LINE = 0.16;
+export const START = "top 85%";
+
 const SCRUB = 0.6;
 const NOOP: Kill = () => {};
 
 // Anything already carrying a transform from the morph or from a reel is off
 // limits to yPercent: GSAP writes transform inline and the CSS rule loses.
-// clip-path and filter are free everywhere.
+// clip-path, filter and custom properties are free everywhere.
 
 function settle(tl: gsap.core.Timeline): Kill {
   tl.progress(1).pause();
@@ -36,7 +48,7 @@ function bind(tl: gsap.core.Timeline, vars: ScrollTrigger.StaticVars): Kill {
 function once(tl: gsap.core.Timeline, vars: ScrollTrigger.StaticVars): Kill {
   if (isReduced()) return settle(tl);
   const trigger = ScrollTrigger.create({
-    start: "top 78%",
+    start: START,
     once: true,
     invalidateOnRefresh: true,
     animation: tl,
@@ -89,7 +101,7 @@ export function paperWipe(
 export function maskReveal(
   trigger: Element,
   els: Element[],
-  stagger = 0.08,
+  stagger = STAGGER_GRID,
 ): Kill {
   if (!els.length) return NOOP;
 
@@ -102,10 +114,80 @@ export function maskReveal(
     {
       clipPath: "inset(-18% 0 -18% 0)",
       yPercent: 0,
-      ease: "power2.out",
-      duration: isReduced() ? 0.12 : 0.6,
+      ease: EASE,
+      duration: isReduced() ? 0.12 : DUR_REVEAL,
       stagger: isReduced() ? 0 : stagger,
       clearProps: "clipPath,transform",
+    },
+  );
+
+  return once(tl, { trigger });
+}
+
+// The characters do not simply arrive: each still is grey off centre and only
+// resolves to full colour as its cell reaches the middle of the screen, so the
+// role comes to life rather than fading in. The scalar goes to a custom
+// property because the filter itself stays in CSS, where hover can still win.
+export function focusIn(cells: Element[], rise = 2): Kill {
+  if (!cells.length) return NOOP;
+
+  const kills = cells.map((cell) => {
+    const tl = gsap
+      .timeline({ paused: true })
+      .fromTo(
+        cell,
+        { "--sat": 0, yPercent: rise },
+        { "--sat": 1, yPercent: 0, ease: "none" },
+      );
+
+    return bind(tl, {
+      trigger: cell,
+      start: "top bottom",
+      end: "center center",
+    });
+  });
+
+  return () => kills.forEach((kill) => kill());
+}
+
+// Reserved for the anchor moments, where the site is allowed to breathe: the
+// lines land one at a time, slower than anywhere else.
+export function lineCascade(
+  trigger: Element,
+  els: Element[],
+  stagger = STAGGER_LINE,
+): Kill {
+  if (!els.length) return NOOP;
+
+  const tl = gsap.timeline({ paused: true }).fromTo(
+    els,
+    { opacity: 0, y: 24 },
+    {
+      opacity: 1,
+      y: 0,
+      ease: EASE,
+      duration: isReduced() ? 0.12 : DUR_ANCHOR,
+      stagger: isReduced() ? 0 : stagger,
+      clearProps: "opacity,transform",
+    },
+  );
+
+  return once(tl, { trigger });
+}
+
+// The counterpoint of silence. No stagger, no travel, nothing to read as an
+// effect: after the weight of the Now panel the footer only needs to be there.
+export function quietFade(trigger: Element, els: Element[]): Kill {
+  if (!els.length) return NOOP;
+
+  const tl = gsap.timeline({ paused: true }).fromTo(
+    els,
+    { opacity: 0 },
+    {
+      opacity: 1,
+      ease: EASE,
+      duration: isReduced() ? 0.12 : DUR_REVEAL,
+      clearProps: "opacity",
     },
   );
 

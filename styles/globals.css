@@ -86,7 +86,10 @@
   --shadow-offset-accent: 6px 6px 0 #ffcc00;
 
   --ease-flat: linear;
-  --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
+  /* The signature curve, shared by every section so the scroll reads as one
+     piece: quick off the mark, decided into the landing, no bounce. Its GSAP
+     twin is power4.out, the same quintic ease-out. */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
 
   --animate-marquee: marquee 26s linear infinite;
@@ -116,7 +119,10 @@
   --duration-instant: 80ms;
   --duration-fast: 140ms;
   --duration-base: 220ms;
+  --duration-micro: 360ms;
   --duration-slow: 420ms;
+  --duration-reveal: 900ms;
+  --duration-anchor: 1600ms;
   --filter-image: grayscale(1) contrast(1.16) brightness(0.98);
   --filter-image-hover: grayscale(1) contrast(1.28) brightness(1.02);
   --filter-image-color: grayscale(0) contrast(1.06);
@@ -184,7 +190,10 @@
 @media (prefers-reduced-motion: reduce) {
   :root {
     --duration-base: 120ms;
+    --duration-micro: 120ms;
     --duration-slow: 120ms;
+    --duration-reveal: 120ms;
+    --duration-anchor: 120ms;
   }
 }
 

@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { asset } from "@/lib/asset";
 import { CHARACTERS } from "@/lib/characters";
 import { cn } from "@/lib/cn";
-import { depthParallax, grainPulse, maskReveal } from "@/lib/reveal";
+import { depthParallax, focusIn, grainPulse } from "@/lib/reveal";
 import "@/styles/characters.css";
 
 function two(value: number) {
@@ -21,7 +21,7 @@ export function Characters() {
     if (!node) return;
 
     const cells = Array.from(node.querySelectorAll(".character-cell"));
-    const kills = [grainPulse(node, node), maskReveal(node, cells, 0.09)];
+    const kills = [grainPulse(node, node), focusIn(cells)];
 
     cells.forEach((cell) => {
       const still = cell.querySelector(".character-image");

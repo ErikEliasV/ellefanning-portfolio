@@ -1,7 +1,11 @@
+"use client";
+
+import { useEffect, useRef } from "react";
 import { FooterMark } from "@/components/content/FooterMark";
 import { BackToTop } from "@/components/core/BackToTop";
 import { Rule } from "@/components/core/Rule";
 import { LINKS } from "@/lib/links";
+import { quietFade } from "@/lib/reveal";
 import "@/styles/footer.css";
 
 const MARKS = [
@@ -11,8 +15,22 @@ const MARKS = [
 ];
 
 export function SiteFooter() {
+  const root = useRef<HTMLElement>(null);
+
+  // The counterpoint of silence after the Now panel: the links and the way
+  // back up just appear, with no stagger and no travel to notice.
+  useEffect(() => {
+    const node = root.current;
+    if (!node) return;
+    return quietFade(
+      node,
+      Array.from(node.querySelectorAll(".footer-links, .footer-end")),
+    );
+  }, []);
+
   return (
     <footer
+      ref={root}
       id="footer"
       data-cursor-skin="invert"
       className="site-footer grain relative overflow-hidden border-t border-ink-850 bg-ink-850 text-paper-000"
@@ -23,7 +41,7 @@ export function SiteFooter() {
         <Rule tone="periwinkle" />
 
         <div className="grid gap-8 md:grid-cols-[1fr_auto]">
-          <ul className="flex flex-col">
+          <ul className="footer-links flex flex-col">
             {LINKS.map((link) => (
               <li key={link.label}>
                 <a
@@ -55,7 +73,7 @@ export function SiteFooter() {
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-4 font-text text-label-sm uppercase tracking-label-wide text-ink-500 md:text-micro">
+        <div className="footer-end flex items-center justify-between gap-4 font-text text-label-sm uppercase tracking-label-wide text-ink-500 md:text-micro">
           <BackToTop className="inline-flex min-h-[44px] items-center transition-colors duration-[140ms] ease-[var(--ease-out)] hover:text-rose-400">
             &uarr; Back to top
           </BackToTop>

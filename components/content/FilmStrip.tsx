@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { asset } from "@/lib/asset";
 import { reelTick } from "@/lib/audio";
-import { onTick } from "@/lib/scroll";
+import { isReduced, onTick } from "@/lib/scroll";
 import type { Film } from "@/lib/films";
 
 type FilmStripProps = {
@@ -20,6 +20,8 @@ const TAIL = 32;
 const RISE = 0.85;
 const DARK = 0.45;
 const STRIDE = 80;
+// Per-poster lag on the way in, cycling so no two neighbours share a rate.
+const DEPTH = [0.06, 0.12, 0.09];
 
 function two(value: number) {
   return String(value).padStart(2, "0");
@@ -63,6 +65,7 @@ export function FilmStrip({ films, heading, span, pace = 1.6 }: FilmStripProps) 
 
   useEffect(() => {
     let travel = 0;
+    let stageW = 0;
     let run = 0;
     let rise = 0;
     let dark = 0;
@@ -96,6 +99,26 @@ export function FilmStrip({ films, heading, span, pace = 1.6 }: FilmStripProps) 
       }
 
       const read = railEl.offsetWidth;
+
+      // The strip is pulled as one piece, but each poster trails its neighbour
+      // by a slightly different amount on the way in and resolves to zero as it
+      // reaches the rail, so the tape has depth instead of arriving as a block.
+      const drag = isReduced() ? 0 : 1;
+      const room = Math.max(stageW - read, 1);
+
+      for (let index = 0; index < boxes.current.length; index += 1) {
+        const card = stripEl.children[index] as HTMLElement | undefined;
+        if (!card) continue;
+        const box = boxes.current[index];
+        const slip =
+          drag *
+          clamp01((box.left - shift - read) / room) *
+          DEPTH[index % DEPTH.length];
+        const nudge = (slip * box.width).toFixed(2);
+        const shrink = (1 - slip * 0.25).toFixed(4);
+        card.style.transform = `translate3d(${nudge}px, 0, 0) scale(${shrink})`;
+      }
+
       let current = films.length - 1;
 
       for (let index = 0; index < boxes.current.length; index += 1) {
@@ -145,6 +168,7 @@ export function FilmStrip({ films, heading, span, pace = 1.6 }: FilmStripProps) 
       travel = last && lead ? Math.max(last.left - rest, 0) : 0;
       run = travel / pace;
 
+      stageW = stageEl.offsetWidth;
       const stageH = stageEl.offsetHeight;
       rise = stageH * RISE;
       dark = stageH * DARK;
@@ -221,10 +245,14 @@ export function FilmStrip({ films, heading, span, pace = 1.6 }: FilmStripProps) 
 
             <div className="film-index">
               <div className="film-index-row">
-                <span className="film-index-now">{digits(two(active + 1))}</span>
+                <span key={active} className="film-index-now">
+                  {digits(two(active + 1))}
+                </span>
                 <span className="film-index-total">/ {digits(two(films.length))}</span>
               </div>
-              <span className="film-index-year">{now.year}</span>
+              <span key={now.year} className="film-index-year">
+                {now.year}
+              </span>
             </div>
           </aside>
         </div>
