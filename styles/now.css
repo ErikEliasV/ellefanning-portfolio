@@ -30,7 +30,10 @@
   pointer-events: none;
 }
 
-.now-embed {
+/* The IFrame API swaps the div it is given for an iframe of its own, so the
+   sizing has to reach whichever of the two is currently in the tree. */
+.now-embed,
+.now-stage iframe {
   position: absolute;
   top: 50%;
   left: 50%;

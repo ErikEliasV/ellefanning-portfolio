@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { hush } from "@/lib/audio";
+import { CURRENT_WORK } from "@/lib/films";
 
 const API_SRC = "https://www.youtube.com/iframe_api";
 const ENDED = 0;
@@ -22,6 +23,9 @@ type Player = {
 type PlayerEvent = { target: Player; data: number };
 
 type PlayerOptions = {
+  host?: string;
+  videoId: string;
+  playerVars: Record<string, string | number>;
   events: {
     onReady: (event: PlayerEvent) => void;
     onStateChange: (event: PlayerEvent) => void;
@@ -29,7 +33,7 @@ type PlayerOptions = {
 };
 
 type YouTubeApi = {
-  Player: new (host: HTMLIFrameElement, options: PlayerOptions) => Player;
+  Player: new (host: HTMLElement, options: PlayerOptions) => Player;
 };
 
 declare global {
@@ -76,7 +80,7 @@ function loadApi() {
 
 export function useNowTrailer() {
   const frame = useRef<HTMLDivElement>(null);
-  const stage = useRef<HTMLIFrameElement>(null);
+  const stage = useRef<HTMLDivElement>(null);
   const built = useRef<Player | null>(null);
   const player = useRef<Player | null>(null);
   const onScreen = useRef(false);
@@ -118,7 +122,23 @@ export function useNowTrailer() {
         return;
       }
 
+      // Handing the API a div and declaring the vars here, rather than letting
+      // it adopt an iframe and inherit whatever is on the src, is the path that
+      // actually honours controls: 0.
       built.current = new api.Player(node, {
+        host: "https://www.youtube-nocookie.com",
+        videoId: CURRENT_WORK.youtubeId,
+        playerVars: {
+          mute: 1,
+          controls: 0,
+          disablekb: 1,
+          modestbranding: 1,
+          rel: 0,
+          fs: 0,
+          iv_load_policy: 3,
+          playsinline: 1,
+          origin: window.location.origin,
+        },
         events: {
           onReady: (event) => {
             player.current = event.target;

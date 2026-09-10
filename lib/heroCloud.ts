@@ -14,69 +14,89 @@ const WASH_HOLD = 0.08;
 const MAX_DPR = 2;
 const MAX_ROWS = 220;
 
-const WAVE_AMP = 0.019;
-const WAVE_FREQ = 6.4;
-const WAVE_SKEW = 3.1;
-const WAVE_SPEED = 0.5;
-const POINTER_R2 = 0.09;
-const POINTER_AMP = 0.055;
-const POINTER_RIPPLE = 3.4;
-const POINTER_REVEAL = 0.62;
-const POINTER_EASE = 0.09;
-const POINTER_LIFT = 0.35;
-const DEPTH = 0.55;
-const DOLLY = 0.18;
-const SWAY_X = 0.12;
-const SWAY_Y = 0.08;
-const FOV = 50;
-const MAX_GAP = 0.24;
+const THICK = 0.55;
+const FOV = 38;
+const DOLLY = 0.14;
+const SWAY_X = 0.05;
+const SWAY_Y = 0.035;
+
+// The idle grid is nearly flat on purpose: at rest this should read as the same
+// tidy mosaic it always was, and the depth should be something the pointer does.
+const IDLE_AMP = 0.012;
+const IDLE_FREQ = 6.4;
+const IDLE_SKEW = 3.1;
+const IDLE_SPEED = 0.5;
+
+// Rings spreading from the pointer and dying out with distance: struck water,
+// not a bulge that follows the cursor around.
+const RING_AMP = 0.1;
+const RING_FREQ = 8.5;
+const RING_SPEED = 4.6;
+const RING_FALL = 1.4;
+const RING_EASE = 0.12;
+const REVEAL = 0.62;
+const REVEAL_R2 = 0.16;
 
 const glsl = (n: number) => n.toFixed(5);
 
 const VERTEX = `
 uniform sampler2D uTex;
 uniform vec2 uGrid;
+uniform vec2 uBase;
 uniform float uTexRatio;
 uniform float uAspect;
 uniform float uTime;
 uniform vec2 uPointer;
 uniform float uPointerA;
-uniform float uPointPx;
+uniform float uGap;
+attribute vec2 aCell;
 varying vec3 vColor;
+varying float vLight;
 varying float vHalo;
 
 void main() {
-  vec2 block = (floor(position.xy * uGrid) + 0.5) / uGrid;
+  vec2 slot = floor(aCell * uGrid);
+  vec2 center = (slot + 0.5) / uGrid;
 
-  vec2 uv = block;
+  // As the grid coarsens with scroll, several instances land on the same block.
+  // One of them owns it and the rest collapse, so no two cubes ever share a
+  // place and fight over the depth buffer.
+  vec2 owner = floor(center * uBase);
+  vec2 self = floor(aCell * uBase);
+  float mine = all(equal(owner, self)) ? 1.0 : 0.0;
+
+  vec2 uv = center;
   if (uAspect > uTexRatio) {
     uv.y = (uv.y - 0.5) * (uTexRatio / uAspect) + 0.5;
   } else {
     uv.x = (uv.x - 0.5) * (uAspect / uTexRatio) + 0.5;
   }
-
   vec3 tex = texture2D(uTex, clamp(uv, 0.0, 1.0)).rgb;
-  float lum = dot(tex, vec3(0.2126, 0.7152, 0.0722));
 
-  vec2 spread = vec2(block.x * uAspect, block.y) - vec2(uPointer.x * uAspect, uPointer.y);
-  float halo = exp(-dot(spread, spread) / ${glsl(POINTER_R2)}) * uPointerA;
+  vec2 here = vec2((center.x - 0.5) * 2.0 * uAspect, (center.y - 0.5) * 2.0);
+  vec2 hit = vec2((uPointer.x - 0.5) * 2.0 * uAspect, (uPointer.y - 0.5) * 2.0);
 
-  float phase = block.x * ${glsl(WAVE_FREQ)} + block.y * ${glsl(WAVE_SKEW)} + uTime;
-  float wave = sin(phase - halo * ${glsl(POINTER_RIPPLE)});
-  float lift = wave * (${glsl(WAVE_AMP)} + halo * ${glsl(POINTER_AMP)});
+  float reach = distance(here, hit);
+  float ring = sin(reach * ${glsl(RING_FREQ)} - uTime * ${glsl(RING_SPEED)})
+    * exp(-reach * ${glsl(RING_FALL)});
+  float idle = sin(center.x * ${glsl(IDLE_FREQ)} + center.y * ${glsl(IDLE_SKEW)}
+    + uTime * ${glsl(IDLE_SPEED)});
 
-  vec3 pos = vec3(
-    (block.x - 0.5) * 2.0 * uAspect,
-    (block.y - 0.5) * 2.0 + lift * 2.0,
-    (lum - 0.5) * ${glsl(DEPTH)} + halo * ${glsl(POINTER_LIFT)}
-  );
+  float lift = ring * ${glsl(RING_AMP)} * uPointerA + idle * ${glsl(IDLE_AMP)};
 
+  vHalo = exp(-reach * reach / ${glsl(REVEAL_R2)}) * uPointerA;
+
+  float span = 2.0 * uAspect / uGrid.x;
+  float side = max(span - uGap, 0.0001);
+  vec3 body = position * vec3(side, side, side * ${glsl(THICK)}) * mine;
+
+  vec3 place = vec3(here.x, here.y, lift) + body;
+
+  vec3 face = normalize(normalMatrix * normal);
+  vLight = 0.6 + 0.4 * max(dot(face, normalize(vec3(0.32, 0.5, 1.0))), 0.0);
   vColor = tex;
-  vHalo = halo;
 
-  vec4 mv = modelViewMatrix * vec4(pos, 1.0);
-  gl_PointSize = uPointPx / max(-mv.z, 0.001);
-  gl_Position = projectionMatrix * mv;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(place, 1.0);
 }
 `;
 
@@ -84,17 +104,14 @@ const FRAGMENT = `
 precision mediump float;
 uniform float uWash;
 uniform vec3 uTint;
-uniform float uGap;
 varying vec3 vColor;
+varying float vLight;
 varying float vHalo;
 
 void main() {
-  vec2 edge = abs(gl_PointCoord - 0.5);
-  if (max(edge.x, edge.y) > 0.5 - uGap) discard;
-
   vec3 color = clamp((vColor - 0.5) * ${glsl(CONTRAST)} + 0.5, 0.0, 1.0);
-  color = mix(color, uTint, uWash * (1.0 - vHalo * ${glsl(POINTER_REVEAL)}));
-  gl_FragColor = vec4(color, 1.0);
+  color = mix(color, uTint, uWash * (1.0 - vHalo * ${glsl(REVEAL)}));
+  gl_FragColor = vec4(color * vLight, 1.0);
 }
 `;
 
@@ -112,15 +129,19 @@ export type Cloud = {
   dispose(): void;
 };
 
-export function createCloud({ canvas, image, onBlock }: CloudOptions): Cloud | null {
+export function createCloud({
+  canvas,
+  image,
+  onBlock,
+}: CloudOptions): Cloud | null {
   const renderer = new THREE.WebGLRenderer({
     canvas,
     alpha: false,
-    antialias: false,
+    antialias: (window.devicePixelRatio || 1) < 2,
     powerPreference: "low-power",
   });
 
-  // The depth of every point is read from the photo in the vertex shader, so a
+  // Every cube reads its colour from the photo in the vertex shader, so a
   // driver without vertex texture units has nothing to render.
   const gl = renderer.getContext();
   if (gl.getParameter(gl.MAX_VERTEX_TEXTURE_IMAGE_UNITS) < 1) {
@@ -145,15 +166,15 @@ export function createCloud({ canvas, image, onBlock }: CloudOptions): Cloud | n
   const uniforms = {
     uTex: { value: texture },
     uGrid: { value: new THREE.Vector2(BLOCKS_A, BLOCKS_A) },
+    uBase: { value: new THREE.Vector2(BLOCKS_A, BLOCKS_A) },
     uTexRatio: { value: ratio },
     uAspect: { value: 1 },
     uTime: { value: 0 },
     uPointer: { value: new THREE.Vector2(0.5, 0.5) },
     uPointerA: { value: 0 },
-    uPointPx: { value: 1 },
+    uGap: { value: 0.01 },
     uWash: { value: WASH_PAPER },
     uTint: { value: PAPER.clone() },
-    uGap: { value: 0.08 },
   };
 
   const material = new THREE.ShaderMaterial({
@@ -162,10 +183,10 @@ export function createCloud({ canvas, image, onBlock }: CloudOptions): Cloud | n
     uniforms,
   });
 
-  let geometry = new THREE.BufferGeometry();
-  const points = new THREE.Points(geometry, material);
-  points.frustumCulled = false;
-  scene.add(points);
+  let geometry = new THREE.InstancedBufferGeometry();
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.frustumCulled = false;
+  scene.add(mesh);
 
   const line = LINE_PAPER.clone();
   renderer.setClearColor(line, 1);
@@ -185,24 +206,31 @@ export function createCloud({ canvas, image, onBlock }: CloudOptions): Cloud | n
   let atY = 0.5;
   let atA = 0;
 
-  // The cell coordinates ride in `position` rather than an attribute of their
-  // own: Three reads the vertex count from `position`, and without it
-  // renderBufferDirect returns early and draws nothing, silently.
   function build(gridCols: number, count: number) {
-    const cells = new Float32Array(gridCols * count * 3);
+    const cells = new Float32Array(gridCols * count * 2);
     let at = 0;
     for (let row = 0; row < count; row += 1) {
       for (let col = 0; col < gridCols; col += 1) {
         cells[at] = (col + 0.5) / gridCols;
         cells[at + 1] = (row + 0.5) / count;
-        cells[at + 2] = 0;
-        at += 3;
+        at += 2;
       }
     }
+
+    // A fresh box each time: disposing the old geometry would take its buffers
+    // with it, and a shared one would be gone on the next resize.
+    const box = new THREE.BoxGeometry(1, 1, 1);
+
     geometry.dispose();
-    geometry = new THREE.BufferGeometry();
-    geometry.setAttribute("position", new THREE.BufferAttribute(cells, 3));
-    points.geometry = geometry;
+    geometry = new THREE.InstancedBufferGeometry();
+    geometry.index = box.index;
+    geometry.setAttribute("position", box.attributes.position);
+    geometry.setAttribute("normal", box.attributes.normal);
+    geometry.setAttribute("aCell", new THREE.InstancedBufferAttribute(cells, 2));
+    geometry.instanceCount = gridCols * count;
+
+    mesh.geometry = geometry;
+    uniforms.uBase.value.set(gridCols, count);
   }
 
   function resize() {
@@ -223,6 +251,8 @@ export function createCloud({ canvas, image, onBlock }: CloudOptions): Cloud | n
       rows = next;
       build(BLOCKS_A, rows);
     }
+
+    if (rows) frame(0);
   }
 
   function setProgress(p: number) {
@@ -251,11 +281,12 @@ export function createCloud({ canvas, image, onBlock }: CloudOptions): Cloud | n
   }
 
   function frame(step: number) {
-    clock += step * WAVE_SPEED * Math.PI * 2;
+    clock += step;
 
-    atX += (aimX - atX) * POINTER_EASE;
-    atY += (aimY - atY) * POINTER_EASE;
-    atA += (aimA - atA) * POINTER_EASE;
+    const ease = 1 - Math.pow(1 - RING_EASE, step * 60);
+    atX += (aimX - atX) * ease;
+    atY += (aimY - atY) * ease;
+    atA += (aimA - atA) * ease;
 
     const ramp = Math.min(Math.max((progress - WASH_HOLD) / (1 - WASH_HOLD), 0), 1);
     const wash = ramp * ramp * (3 - 2 * ramp);
@@ -265,22 +296,18 @@ export function createCloud({ canvas, image, onBlock }: CloudOptions): Cloud | n
     gridRows = Math.max(cols / aspect, 1);
     uniforms.uGrid.value.set(cols, gridRows);
 
-    const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
-    const cellPx = Math.max(canvas.clientWidth, 1) / cols;
-    camera.position.z = fit * (1 + progress * DOLLY);
-    uniforms.uPointPx.value = cellPx * dpr * camera.position.z;
-    uniforms.uGap.value = Math.min(LINE_PX / cellPx, MAX_GAP);
-
+    uniforms.uGap.value = (2 * aspect * LINE_PX) / Math.max(canvas.clientWidth, 1);
     uniforms.uTime.value = clock;
     uniforms.uPointer.value.set(atX, atY);
     uniforms.uPointerA.value = atA;
     uniforms.uWash.value = WASH_PAPER + (WASH_ROSE - WASH_PAPER) * wash;
     uniforms.uTint.value.copy(PAPER).lerp(ROSE, wash);
 
-    // The gutter between points is not empty in the flat shader either: it is
+    // The gutter between cubes is not empty in the flat shader either: it is
     // the line colour, and it washes toward rose along with everything else.
     renderer.setClearColor(line.copy(LINE_PAPER).lerp(LINE_ROSE, wash), 1);
 
+    camera.position.z = fit * (1 + progress * DOLLY);
     camera.position.x = (atX - 0.5) * SWAY_X;
     camera.position.y = (atY - 0.5) * SWAY_Y;
     camera.lookAt(0, 0, 0);
