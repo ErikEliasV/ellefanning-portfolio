@@ -69,22 +69,10 @@
   opacity: 0;
 }
 
-/* The trailer is not uncovered by a wipe but by a sheet of ink that gives
-   out: holes open where the noise runs thin and the rest runs off downward. */
-.now-melt {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  display: block;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
-
 .now-scrim {
   position: absolute;
   inset: 0;
-  z-index: 3;
+  z-index: 2;
   pointer-events: none;
   background-image: linear-gradient(
     to top,
@@ -98,7 +86,7 @@
   position: absolute;
   top: clamp(20px, 1.6667vw, 32px);
   right: clamp(22px, 4.3229vw, 83px);
-  z-index: 4;
+  z-index: 3;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -169,7 +157,7 @@
 
 .now-row {
   position: relative;
-  z-index: 3;
+  z-index: 2;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;

@@ -269,21 +269,3 @@
     letter-spacing: 0.1em;
   }
 }
-
-/* The straight top edge of the wash is the site's hairline. What boils above
-   it is the shader: a turbulent ink surface that only ever reaches upward. */
-.film-seam {
-  position: absolute;
-  inset: 0;
-  z-index: 19;
-  display: block;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity var(--duration-base) var(--ease-out);
-}
-
-.film-stage[data-tide] .film-seam {
-  opacity: 1;
-}
