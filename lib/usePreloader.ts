@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { asset } from "@/lib/asset";
 import { release as openSound } from "@/lib/audio";
+import { lockScroll, onTick } from "@/lib/scroll";
 
 const SIGNALS = 3;
 const MIN_MS = 900;
@@ -27,10 +28,7 @@ export function usePreloader() {
     const node = plate.current;
     if (!node) return;
 
-    const root = document.documentElement;
-    const overflow = root.style.overflow;
-
-    root.style.overflow = "hidden";
+    lockScroll(true);
     history.scrollRestoration = "manual";
     window.scrollTo(0, 0);
 
@@ -38,13 +36,13 @@ export function usePreloader() {
     const timers: number[] = [];
 
     let live = true;
-    let frame = 0;
+    let untick: (() => void) | null = null;
     let landed = 0;
     let shown = 0;
     let left = false;
 
     function release() {
-      root.style.overflow = overflow;
+      lockScroll(false);
     }
 
     function land() {
@@ -95,10 +93,10 @@ export function usePreloader() {
       if (goal - shown < 0.002) shown = goal;
       paint();
       if (shown >= 1) {
+        untick?.();
+        untick = null;
         arm();
-        return;
       }
-      frame = requestAnimationFrame(tick);
     }
 
     // The gate spans from the lockup's baseline down to the footer rule, so the
@@ -131,12 +129,12 @@ export function usePreloader() {
       }, CEIL_MS),
     );
 
-    frame = requestAnimationFrame(tick);
+    untick = onTick(tick);
 
     return () => {
       live = false;
       sizer.disconnect();
-      cancelAnimationFrame(frame);
+      untick?.();
       timers.forEach((id) => clearTimeout(id));
       window.removeEventListener("load", land);
       release();

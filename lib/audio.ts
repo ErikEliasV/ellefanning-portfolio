@@ -1,6 +1,7 @@
 "use client";
 
 import { asset } from "@/lib/asset";
+import { onTick } from "@/lib/scroll";
 
 const TRACK = "/audio/falling-mizlo.mp3";
 const GRAINS = [
@@ -58,7 +59,7 @@ let voices = 0;
 let lastHit = 0;
 let tecVoices = 0;
 let lastTec = 0;
-let ramp = 0;
+let rampOff: (() => void) | null = null;
 let settle = 0;
 let stopper = 0;
 
@@ -97,9 +98,9 @@ function slide(to: number, ms: number) {
   const el = music;
   if (!el) return;
 
-  cancelAnimationFrame(ramp);
+  rampOff?.();
+  rampOff = null;
   window.clearTimeout(settle);
-  ramp = 0;
 
   const from = el.volume;
   const span = to - from;
@@ -111,16 +112,19 @@ function slide(to: number, ms: number) {
   const step = (now: number) => {
     const k = ms > 0 ? Math.min((now - start) / ms, 1) : 1;
     el.volume = Math.min(Math.max(from + span * k, 0), 1);
-    ramp = k < 1 ? requestAnimationFrame(step) : 0;
+    if (k >= 1) {
+      rampOff?.();
+      rampOff = null;
+    }
   };
 
   settle = window.setTimeout(() => {
-    cancelAnimationFrame(ramp);
-    ramp = 0;
+    rampOff?.();
+    rampOff = null;
     el.volume = land;
   }, ms + 120);
 
-  ramp = requestAnimationFrame(step);
+  rampOff = onTick(step);
 }
 
 function build() {

@@ -5,6 +5,7 @@ import { useEffect, useRef } from "react";
 import type { PointerEvent } from "react";
 import { asset } from "@/lib/asset";
 import { cn } from "@/lib/cn";
+import { onTick } from "@/lib/scroll";
 
 type SpotlightPortraitProps = {
   src: string;
@@ -27,12 +28,13 @@ export function SpotlightPortrait({
 }: SpotlightPortraitProps) {
   const lens = useRef<HTMLDivElement>(null);
   const point = useRef({ x: 0, y: 0 });
-  const ticket = useRef(0);
+  const ticket = useRef<(() => void) | null>(null);
 
-  useEffect(() => () => cancelAnimationFrame(ticket.current), []);
+  useEffect(() => () => ticket.current?.(), []);
 
   function paint() {
-    ticket.current = 0;
+    ticket.current?.();
+    ticket.current = null;
     const { x, y } = point.current;
     if (lens.current) {
       lens.current.style.clipPath = `circle(${radius}px at ${x}px ${y}px)`;
@@ -45,7 +47,7 @@ export function SpotlightPortrait({
       x: event.nativeEvent.offsetX,
       y: event.nativeEvent.offsetY,
     };
-    if (!ticket.current) ticket.current = requestAnimationFrame(paint);
+    if (!ticket.current) ticket.current = onTick(paint);
   }
 
   function open(event: PointerEvent<HTMLDivElement>) {
