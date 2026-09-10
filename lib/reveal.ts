@@ -95,9 +95,12 @@ export function maskReveal(
 
   const tl = gsap.timeline({ paused: true }).fromTo(
     els,
-    { clipPath: "inset(0 0 100% 0)", yPercent: 8 },
+    // The insets end outside the border box rather than on it: the footer
+    // lockup runs its glyphs past its own box, and landing the clip flush
+    // would shave them off right before clearProps drops the clip entirely.
+    { clipPath: "inset(-18% 0 100% 0)", yPercent: 8 },
     {
-      clipPath: "inset(0 0 0% 0)",
+      clipPath: "inset(-18% 0 -18% 0)",
       yPercent: 0,
       ease: "power2.out",
       duration: isReduced() ? 0.12 : 0.6,

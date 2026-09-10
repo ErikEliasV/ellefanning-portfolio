@@ -130,6 +130,11 @@
   border-top: 1px solid var(--color-line-rule);
 }
 
+/* Three digit cells side by side need somewhere to not wrap to. */
+.pre-num {
+  white-space: nowrap;
+}
+
 .pre-pct {
   color: var(--color-ink-500);
 }

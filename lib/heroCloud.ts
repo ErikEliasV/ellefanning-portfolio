@@ -211,6 +211,7 @@ export function createCloud({
   let clock = 0;
   let cols = BLOCKS_A;
   let visCols = BLOCKS_A;
+  let baseCols = BLOCKS_A;
   let rows = 0;
   let gridRows = BLOCKS_A;
   let atCol = -1;
@@ -247,6 +248,7 @@ export function createCloud({
     geometry.instanceCount = gridCols * count;
 
     mesh.geometry = geometry;
+    baseCols = gridCols;
     uniforms.uBase.value.set(gridCols, count);
   }
 
@@ -312,7 +314,10 @@ export function createCloud({
 
     visCols = BLOCKS_A + (BLOCKS_B - BLOCKS_A) * progress;
     cols = visCols * OVER;
-    gridRows = Math.max(cols / aspect, 1);
+    // Rows follow the grid that was actually built, not the aspect: when
+    // MAX_ROWS clamps the build, deriving them again from the aspect would ask
+    // for more blocks than there are cubes and punch holes in the mosaic.
+    gridRows = Math.max((cols / baseCols) * rows, 1);
     uniforms.uGrid.value.set(cols, gridRows);
 
     uniforms.uGap.value = (2 * aspect * LINE_PX) / Math.max(canvas.clientWidth, 1);

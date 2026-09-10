@@ -163,6 +163,11 @@
 }
 
 .film-index-now {
+  /* The slot was measured for the old face. Two ZT Nature digit cells are a
+     couple of pixels wider than it, and as separate spans they had somewhere
+     to wrap to, which doubled the height of the counter. Splitting the slot
+     between them keeps the width the design asked for and the digits equal. */
+  display: flex;
   width: clamp(34px, 6.861vw, 131.74px);
   font-family: var(--font-text);
   font-weight: 400;
@@ -171,7 +176,14 @@
   color: var(--color-ink-900);
 }
 
+.film-index-now .num-cell {
+  flex: 1 1 0;
+  min-width: 0;
+  width: auto;
+}
+
 .film-index-total {
+  white-space: nowrap;
   padding-top: clamp(3px, 0.7148vw, 13.72px);
   font-family: var(--font-text);
   font-weight: 700;
