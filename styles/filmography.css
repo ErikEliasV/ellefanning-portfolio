@@ -269,3 +269,25 @@
     letter-spacing: 0.1em;
   }
 }
+
+/* The counter never cuts from one number to the next: the new figure resolves
+   out of a short blur as the poster takes the centre. The origin stays at the
+   left edge so the fixed slot the design asked for does not breathe. */
+@keyframes film-tick {
+  from {
+    opacity: 0.35;
+    filter: blur(5px);
+    transform: scale(1.06);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: scale(1);
+  }
+}
+
+.film-index-now,
+.film-index-year {
+  transform-origin: 0 50%;
+  animation: film-tick var(--duration-micro) var(--ease-out) both;
+}

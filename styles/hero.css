@@ -249,3 +249,58 @@
 .hero-field[data-cloud] .hero-field-gl {
   opacity: 0;
 }
+
+/* The entry, in three beats that overlap. The soft copy resolves out of the
+   field first, the sharp one settles a beat later, and the portrait opens on a
+   blind as that settle lands. All three ride properties the morph does not
+   own — the wipe wrapper's transform is the morph's, so the title beats use
+   filter, opacity and a translate on the faces inside it, and the portrait,
+   whose transform is also the morph's, opens on clip-path alone. Nothing is
+   pre-set: with no entry signal the hero simply stands there, dressed. */
+@keyframes hero-soft {
+  from {
+    opacity: 0;
+    filter: blur(14px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+@keyframes hero-sharp {
+  from {
+    transform: translateY(0.06em);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes hero-blind {
+  from {
+    clip-path: inset(100% 0 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+html[data-entered] .hero-track[data-ready] .hero-title-entry .hero-wipe {
+  animation: hero-soft var(--duration-anchor) var(--ease-out) both;
+}
+
+html[data-entered] .hero-track[data-ready] .hero-title-entry .hero-face {
+  animation: hero-sharp var(--duration-reveal) var(--ease-out) 260ms both;
+}
+
+html[data-entered] .hero-track[data-ready] .hero-portrait {
+  animation: hero-blind var(--duration-anchor) var(--ease-out) 500ms both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-entered] .hero-track[data-ready] .hero-title-entry .hero-face,
+  html[data-entered] .hero-track[data-ready] .hero-portrait {
+    animation-delay: 0s;
+  }
+}

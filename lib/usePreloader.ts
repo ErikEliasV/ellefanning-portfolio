@@ -88,6 +88,9 @@ export function usePreloader() {
       if (!live || left) return;
       left = true;
       openSound();
+      // The curtain and the hero entry overlap on purpose: the name is already
+      // resolving behind the plate as it lifts, so the two read as one move.
+      document.documentElement.dataset.entered = "";
       setPhase("exit");
       timers.push(
         window.setTimeout(() => {
