@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+@property --grain-a {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0.12;
+}
+
 @theme {
   --color-paper-000: #fffbfc;
   --color-paper-100: #f6f3e9;
@@ -192,7 +198,7 @@
     position: absolute;
     inset: 0;
     background-image: var(--texture-grain);
-    opacity: 0.12;
+    opacity: var(--grain-a);
     pointer-events: none;
     mix-blend-mode: overlay;
   }
