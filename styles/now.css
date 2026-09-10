@@ -45,10 +45,31 @@
   user-select: none;
 }
 
-.now-scrim {
+/* Scrolling out pauses the player, and a paused YouTube embed draws its own
+   play button and title bar on top. This hides both, and also covers the
+   poster frame before playback has started. */
+.now-cover {
   position: absolute;
   inset: 0;
   z-index: 1;
+  pointer-events: none;
+  background-color: var(--color-ink-900);
+  background-image: var(--now-poster), var(--now-poster-alt);
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  opacity: 1;
+  transition: opacity var(--duration-base) var(--ease-out);
+}
+
+.now-cover[data-playing] {
+  opacity: 0;
+}
+
+.now-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
   pointer-events: none;
   background-image: linear-gradient(
     to top,

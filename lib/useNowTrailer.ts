@@ -5,6 +5,7 @@ import { hush } from "@/lib/audio";
 
 const API_SRC = "https://www.youtube.com/iframe_api";
 const ENDED = 0;
+const PLAYING = 1;
 const SYNC = 500;
 const GESTURES = ["pointerdown", "keydown", "touchstart"] as const;
 
@@ -81,6 +82,7 @@ export function useNowTrailer() {
   const onScreen = useRef(false);
   const wanted = useRef(true);
   const [ready, setReady] = useState(false);
+  const [playing, setPlaying] = useState(false);
   const [sound, setSound] = useState(false);
   const [near, setNear] = useState(false);
 
@@ -124,6 +126,9 @@ export function useNowTrailer() {
             play();
           },
           onStateChange: (event) => {
+            // Anything but PLAYING means YouTube is free to paint its own big play
+            // button over the embed, so the cover has to be up for all of them.
+            setPlaying(event.data === PLAYING);
             if (event.data !== ENDED) return;
             event.target.seekTo(0, true);
             event.target.playVideo();
@@ -196,5 +201,5 @@ export function useNowTrailer() {
     setSound(next);
   }, [raise, sound]);
 
-  return { frame, stage, ready, sound, toggleSound };
+  return { frame, stage, ready, playing, sound, toggleSound };
 }

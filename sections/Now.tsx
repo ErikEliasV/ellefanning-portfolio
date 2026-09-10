@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import type { CSSProperties } from "react";
 import { CURRENT_WORK } from "@/lib/films";
 import { paperWipe } from "@/lib/reveal";
 import { useNowTrailer } from "@/lib/useNowTrailer";
@@ -22,7 +23,7 @@ const PARAMS = [
 const TRAILER = `https://www.youtube-nocookie.com/embed/${CURRENT_WORK.youtubeId}?${PARAMS}`;
 
 export function Now() {
-  const { frame, stage, ready, sound, toggleSound } = useNowTrailer();
+  const { frame, stage, ready, playing, sound, toggleSound } = useNowTrailer();
 
   useEffect(() => {
     const node = frame.current;
@@ -36,7 +37,17 @@ export function Now() {
 
   return (
     <section id="current" className="now">
-      <div ref={frame} className="now-frame" data-cursor-skin="invert">
+      <div
+        ref={frame}
+        className="now-frame"
+        data-cursor-skin="invert"
+        style={
+          {
+            "--now-poster": `url(https://i.ytimg.com/vi/${CURRENT_WORK.youtubeId}/maxresdefault.jpg)`,
+            "--now-poster-alt": `url(https://i.ytimg.com/vi/${CURRENT_WORK.youtubeId}/hqdefault.jpg)`,
+          } as CSSProperties
+        }
+      >
         <div aria-hidden className="now-stage">
           <iframe
             ref={stage}
@@ -48,6 +59,12 @@ export function Now() {
             referrerPolicy="strict-origin-when-cross-origin"
           />
         </div>
+
+        <div
+          aria-hidden
+          className="now-cover"
+          data-playing={playing ? "" : undefined}
+        />
 
         <div aria-hidden className="now-scrim" />
 
