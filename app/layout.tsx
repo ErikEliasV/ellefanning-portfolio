@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Anton, Space_Mono, Archivo } from "next/font/google";
 import localFont from "next/font/local";
 import { Cursor } from "@/components/core/Cursor";
+import { ScrollBoot } from "@/components/core/ScrollBoot";
 import { Preloader } from "@/components/core/Preloader";
 import { SoundToggle } from "@/components/core/SoundToggle";
 import "@/styles/globals.css";
@@ -58,6 +59,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${anton.variable} ${spaceMono.variable} ${archivo.variable} ${nature.variable} ${oskon.variable} h-full`}
     >
       <body className="min-h-full flex flex-col">
+        <ScrollBoot />
         <Preloader />
         <Cursor />
         <SoundToggle />
