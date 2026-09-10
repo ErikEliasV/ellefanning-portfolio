@@ -21,6 +21,17 @@
   background-color: var(--color-ink-900);
 }
 
+/* Everything that is picture lives in here, so the card can grow and round
+   off as one object while the credits stay exactly where they are. */
+.now-media {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+  will-change: transform, border-radius;
+}
+
 .now-stage {
   position: absolute;
   inset: 0;

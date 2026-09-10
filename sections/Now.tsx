@@ -1,23 +1,67 @@
 "use client";
 
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useEffect } from "react";
 import type { CSSProperties } from "react";
 import { CURRENT_WORK } from "@/lib/films";
-import { paperWipe } from "@/lib/reveal";
+import { isReduced } from "@/lib/scroll";
 import { useNowTrailer } from "@/lib/useNowTrailer";
 import "@/styles/now.css";
+
+// How small the card starts, and how far the leading corner is rounded before
+// it seats. The corner is deliberately larger than anything else on the site.
+const SMALL = 0.62;
+const CORNER = 220;
 
 export function Now() {
   const { frame, stage, ready, playing, sound, toggleSound } = useNowTrailer();
 
   useEffect(() => {
     const node = frame.current;
-    const shell = node?.querySelector(".now-stage");
-    if (!node || !shell) return;
+    const media = node?.querySelector<HTMLElement>(".now-media");
+    if (!node || !media) return;
 
-    // The clip lands on the stage, never on the frame: the frame has to stay
-    // overflow-visible so the credits are not cropped on a phone.
-    return paperWipe(node, shell, "up");
+    // The card arrives as an object, not as an effect: small, held off the
+    // frame, with one corner rounded far past anything else on the site. It
+    // grows into the frame and the corner resolves to the hard editorial edge.
+    const state = { p: 0 };
+
+    const seat = () => {
+      const k = state.p * state.p * (3 - 2 * state.p);
+      const radius = Math.round(CORNER * (1 - k));
+      media.style.transform = `scale(${(SMALL + (1 - SMALL) * k).toFixed(4)})`;
+      media.style.borderRadius = `${radius}px 0 ${radius}px 0`;
+    };
+
+    const tl = gsap
+      .timeline({ paused: true })
+      .to(state, { p: 1, ease: "none", duration: 1, onUpdate: seat });
+
+    // The timeline is driven straight from the trigger rather than scrubbed:
+    // Lenis already smooths the scroll position, so a second layer of easing
+    // only adds lag, and this way the card is exactly where the scroll says.
+    const trigger = ScrollTrigger.create({
+      trigger: node,
+      start: "top bottom",
+      end: "top 32%",
+      invalidateOnRefresh: true,
+      // Both hooks, because a refresh recomputes the geometry without firing
+      // onUpdate: after a resize the card would otherwise keep the shape it had
+      // at a scroll position that no longer exists.
+      onUpdate: (self) => tl.progress(isReduced() ? 1 : self.progress),
+      onRefresh: (self) => tl.progress(isReduced() ? 1 : self.progress),
+    });
+
+    tl.progress(isReduced() ? 1 : 0);
+    seat();
+
+    return () => {
+      trigger.kill();
+      tl.kill();
+      media.style.transform = "";
+      media.style.borderRadius = "";
+    };
   }, [frame]);
 
   return (
@@ -33,17 +77,15 @@ export function Now() {
           } as CSSProperties
         }
       >
-<div aria-hidden className="now-stage">
-          <div ref={stage} className="now-embed" />
+<div aria-hidden className="now-media">
+          <div className="now-stage">
+            <div ref={stage} className="now-embed" />
+          </div>
+
+          <div className="now-cover" data-playing={playing ? "" : undefined} />
+
+          <div className="now-scrim" />
         </div>
-
-        <div
-          aria-hidden
-          className="now-cover"
-          data-playing={playing ? "" : undefined}
-        />
-
-        <div aria-hidden className="now-scrim" />
 
         <button
           type="button"
