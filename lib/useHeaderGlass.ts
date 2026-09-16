@@ -52,6 +52,9 @@ export function useHeaderGlass() {
   // Num ref, e nao em estado, porque nada renderiza a partir disso e os
   // callbacks nao devem se recriar quando o apontador troca.
   const fine = useRef(false);
+  // Onde o ponteiro entrou. Sem isso o especular comeca em 0,0 e a primeira
+  // coisa que se ve ao entrar no header e um facho vindo do canto.
+  const spot = useRef({ x: 0, y: 0 });
 
   const open = hot !== null;
 
@@ -109,8 +112,15 @@ export function useHeaderGlass() {
     const node = shell.current;
     if (!node) return;
 
-    const arrive = () => {
+    const arrive = (event: PointerEvent) => {
       if (!fine.current) return;
+
+      const box = node.getBoundingClientRect();
+      spot.current = {
+        x: event.clientX - box.left,
+        y: event.clientY - box.top,
+      };
+
       setAwake(true);
     };
 
@@ -193,29 +203,20 @@ export function useHeaderGlass() {
     const node = shell.current;
     if (!node || !awake || isReduced()) return;
 
-    const lens = { x: 0, y: 0 };
+    const lens = { ...spot.current };
     const chase = { duration: FOLLOW, ease: FOLLOW_EASE };
     const toX = gsap.quickTo(lens, "x", chase);
     const toY = gsap.quickTo(lens, "y", chase);
 
-    let first = true;
+    toX(lens.x, lens.x);
+    toY(lens.y, lens.y);
 
     const aimLens = (event: PointerEvent) => {
       if (event.pointerType !== "mouse") return;
 
       const box = node.getBoundingClientRect();
-      const x = event.clientX - box.left;
-      const y = event.clientY - box.top;
-
-      if (first) {
-        first = false;
-        toX(x, x);
-        toY(y, y);
-        return;
-      }
-
-      toX(x);
-      toY(y);
+      toX(event.clientX - box.left);
+      toY(event.clientY - box.top);
     };
 
     const paint = () => {
