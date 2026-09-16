@@ -17,10 +17,10 @@ import type { SectionId } from "@/lib/sections";
 const INTENT = 90;
 const GRACE = 180;
 
-// O mesmo atraso do cursor em lib/useCursor.ts. O atraso e o efeito: sem ele o
-// brilho e uma lanterna, com ele e massa.
-const FOLLOW = 0.42;
-const FOLLOW_EASE = "power3";
+// Mais lento que o atraso do cursor em lib/useCursor.ts, de proposito: o
+// atraso e o efeito, e aqui a massa e pesada.
+const FOLLOW = 0.62;
+const FOLLOW_EASE = "power2";
 
 // Uma faixa fina no meio da tela: a secao que a cobre e a secao que se esta
 // lendo. Com as secoes sendo todas mais altas que a viewport, isso deixa
@@ -33,14 +33,20 @@ const HIDE_AFTER = 160;
 const PEEK = 120;
 
 // A gosma: repouso, painel aberto, e o solavanco que cada transicao injeta.
-const IDLE_AMP = 2.2;
-const OPEN_AMP = 6.5;
-const JOLT_AMP = 24;
-const JOLT_DECAY = 3.4;
-const SHAPE_S = 0.44;
-const SHAPE_EASE = "power4";
-const AMP_S = 0.52;
+// A deformacao e grande e a temporizacao e lenta -- e a combinacao das duas
+// que le como massa em vez de caixa saltando.
+const IDLE_AMP = 6;
+const OPEN_AMP = 16;
+const JOLT_AMP = 46;
+const JOLT_DECAY = 1.15;
+const SHAPE_S = 0.95;
+// power2, e nao power4: a quintica sai rapido demais do lugar, e o pedido e
+// que o movimento seja suave do inicio ao fim.
+const SHAPE_EASE = "power2";
+const AMP_S = 1.15;
 const REST = 0.6;
+const ROOF_SHARE = 0.85;
+const FLOOR_SHARE = 0.9;
 
 type Feed = { media: Media; focus: number; push: number };
 
@@ -81,7 +87,7 @@ export function useHeaderGlass() {
   // Espelhos, para o loop da gosma ler o estado sem remontar a cada mudanca.
   const live = useRef({ open: false, awake: false });
   const jolt = useRef(0);
-  const box = useRef({ bar: 0, tall: 0, width: 0 });
+  const box = useRef({ bar: 0, tall: 0, lip: 0, roof: 0, floor: 0, width: 0 });
 
   // O estado espelhado num ref porque aim() precisa saber se ja esta aberto
   // sem agendar o timer de dentro de um updater, que o StrictMode roda duas
@@ -280,6 +286,13 @@ export function useHeaderGlass() {
         // reserva caso o registro de @property nao esteja disponivel.
         bar: metric(styles, "--hdr-h") || nav?.offsetHeight || 0,
         tall: metric(styles, "--hdr-open-h"),
+        lip: metric(styles, "--hdr-lip"),
+        // O topo so pode inchar ate o menor entre a folga da caixa e o espaco
+        // que sobra ate o alto da viewport; a base tem a folga inteira.
+        roof:
+          Math.min(metric(styles, "--hdr-lip"), metric(styles, "--hdr-top")) *
+          ROOF_SHARE,
+        floor: metric(styles, "--hdr-slack") * FLOOR_SHARE,
         width: node.getBoundingClientRect().width,
       };
     };
@@ -304,7 +317,7 @@ export function useHeaderGlass() {
       node.style.setProperty("--mx", `${Math.round(lens.x)}px`);
       node.style.setProperty("--my", `${Math.round(lens.y)}px`);
 
-      const { bar, tall, width } = box.current;
+      const { bar, tall, lip, roof, floor, width } = box.current;
 
       // Sem medida confiavel o recorte fica com o CSS: escrever um polygon com
       // altura zero apagaria o header inteiro.
@@ -317,12 +330,20 @@ export function useHeaderGlass() {
       // morreria duas vezes mais rapido que a 60Hz.
       jolt.current *= Math.exp(-step * JOLT_DECAY);
 
+      const span = shape.reveal || 1;
+
       node.style.clipPath = gooPath({
         width,
+        roof,
+        floor,
+        lip,
         reveal: shape.reveal,
         amp: shape.amp + jolt.current * JOLT_AMP,
         time: clock,
         at: width ? lens.x / width : 0.5,
+        // Onde o ponteiro esta entre as duas bordas: e isso que decide qual
+        // delas cede quando ele passa raspando.
+        near: Math.min(Math.max((lens.y - lip) / span, 0), 1),
       });
 
       const scene = liquid.current;

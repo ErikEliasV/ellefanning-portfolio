@@ -1,17 +1,17 @@
 import * as THREE from "three";
 
 const RING_FREQ = 9.2;
-const RING_SPEED = 3.0;
+const RING_SPEED = 1.45;
 const RING_FALL = 1.55;
-const RING_AMP = 0.052;
-const DRIFT_AMP = 0.016;
-const DRIFT_SPEED = 0.35;
+const RING_AMP = 0.078;
+const DRIFT_AMP = 0.026;
+const DRIFT_SPEED = 0.17;
 const PUSH_AMP = 0.075;
-const PUSH_DECAY = 7;
-const CA_AMP = 0.0085;
+const PUSH_DECAY = 2.8;
+const CA_AMP = 0.013;
 const SPEC = 0.085;
-const ENTRY_GAIN = 4.2;
-const MIX_SPEED = 3.2;
+const ENTRY_GAIN = 5.0;
+const MIX_SPEED = 1.3;
 const MAX_DPR = 2;
 
 const glsl = (n: number) => n.toFixed(5);
