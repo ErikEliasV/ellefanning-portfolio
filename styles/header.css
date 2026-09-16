@@ -1,0 +1,100 @@
+@property --hdr-reveal {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+.hdr {
+  --hdr-inset-x: clamp(16px, 3.4375vw, 66px);
+  --hdr-top: clamp(12px, 2.29vw, 44px);
+  --hdr-h: clamp(52px, 5vw, 96px);
+  --hdr-open-h: clamp(320px, 34vw, 653px);
+  --hdr-pad-x: clamp(14px, 1.94vw, 37.25px);
+  --hdr-pad-y: clamp(8px, 0.873vw, 16.76px);
+  --hdr-type: clamp(15px, 2.02vw, 38.78px);
+  --hdr-lead: 1.592;
+  --hdr-grow: 1.18;
+  --hdr-blur: 10.15px;
+  --hdr-reveal: var(--hdr-h);
+
+  position: fixed;
+  top: var(--hdr-top);
+  left: var(--hdr-inset-x);
+  right: var(--hdr-inset-x);
+  height: var(--hdr-open-h);
+  z-index: 80;
+  isolation: isolate;
+
+  /* A casca tem sempre a altura aberta e revela por recorte, porque animar
+     height refaria layout a cada frame. O preco e que ela cobriria 653px de
+     area de clique mesmo fechada, entao o ponteiro so volta na barra. */
+  pointer-events: none;
+  clip-path: inset(0 0 calc(100% - var(--hdr-reveal)) 0);
+  -webkit-backdrop-filter: blur(var(--hdr-blur));
+  backdrop-filter: blur(var(--hdr-blur));
+  transition: --hdr-reveal var(--duration-micro) var(--ease-out);
+}
+
+.hdr-tint {
+  position: absolute;
+  inset: 0;
+  background-color: color-mix(
+    in srgb,
+    var(--color-periwinkle-400) 51%,
+    transparent
+  );
+}
+
+/* Sem desfoque atras, 51% nao segura o texto branco sobre a hero clara. */
+@supports not (
+  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
+  .hdr-tint {
+    background-color: color-mix(
+      in srgb,
+      var(--color-periwinkle-400) 78%,
+      transparent
+    );
+  }
+}
+
+.hdr-edge {
+  position: absolute;
+  inset: 0;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.38),
+    inset 0 -1px 0 rgba(19, 19, 19, 0.14);
+}
+
+.hdr-nav {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  height: var(--hdr-h);
+  padding: var(--hdr-pad-y) var(--hdr-pad-x);
+  pointer-events: auto;
+}
+
+.hdr-link {
+  position: relative;
+  display: inline-block;
+  font-family: var(--font-text);
+  font-size: var(--hdr-type);
+  line-height: var(--hdr-lead);
+  white-space: nowrap;
+  text-decoration: none;
+  color: var(--color-paper-000);
+  transform: scale(1);
+  transition:
+    transform var(--duration-base) var(--ease-out),
+    opacity var(--duration-base) var(--ease-out);
+}
+
+.hdr-link:first-child {
+  transform-origin: left center;
+}
+
+.hdr-link:last-child {
+  transform-origin: right center;
+}
