@@ -4,8 +4,10 @@ import gsap from "gsap";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { MouseEvent } from "react";
 
+import { asset } from "@/lib/asset";
 import { isReduced, onTick, scrollTo } from "@/lib/scroll";
 import { SECTIONS } from "@/lib/sections";
+import type { Liquid, Media } from "@/lib/headerLiquid";
 import type { SectionId } from "@/lib/sections";
 
 // Sem os 90ms o painel pisca quando o ponteiro so atravessa a barra a caminho
@@ -24,11 +26,28 @@ const FOLLOW_EASE = "power3";
 // exatamente uma intersecao ativa quase o tempo todo.
 const SPY_BAND = "-45% 0px -45% 0px";
 
+// A mesma banda do CSS: --duration-slow, na curva assinatura do site.
+const OPEN_S = 0.42;
+const OPEN_EASE = "power4.out";
+
+type Feed = { media: Media; focus: number; push: number };
+
 export function useHeaderGlass() {
   const shell = useRef<HTMLElement>(null);
+  const view = useRef<HTMLCanvasElement>(null);
   const [hot, setHot] = useState<SectionId | null>(null);
   const [active, setActive] = useState<SectionId | null>(null);
   const [awake, setAwake] = useState(false);
+  const [painted, setPainted] = useState(false);
+
+  const liquid = useRef<Liquid | null>(null);
+  // O import do three e assincrono, entao a midia pode ficar pronta antes da
+  // cena existir. Fica guardada aqui e e aplicada de qualquer um dos dois lados
+  // que chegue por ultimo.
+  const feed = useRef<Feed | null>(null);
+  const seat = useRef(0);
+
+  const open = hot !== null;
 
   // O estado espelhado num ref porque aim() precisa saber se ja esta aberto
   // sem agendar o timer de dentro de um updater, que o StrictMode roda duas
@@ -178,6 +197,16 @@ export function useHeaderGlass() {
     const paint = () => {
       node.style.setProperty("--mx", `${Math.round(lens.x)}px`);
       node.style.setProperty("--my", `${Math.round(lens.y)}px`);
+
+      const scene = liquid.current;
+      if (!scene) return;
+
+      const box = node.getBoundingClientRect();
+      scene.setPointer(
+        (lens.x / box.width) * 2 - 1,
+        1 - (lens.y / box.height) * 2,
+        1,
+      );
     };
 
     node.addEventListener("pointermove", aimLens, { passive: true });
@@ -192,6 +221,98 @@ export function useHeaderGlass() {
     };
   }, [awake]);
 
+  // A cena nasce na abertura e morre no fechamento: fechada, o header nao tem
+  // contexto WebGL nenhum.
+  useEffect(() => {
+    const node = view.current;
+    if (!node || !open || isReduced()) return;
+
+    let scene: Liquid | null = null;
+    let untick: (() => void) | null = null;
+    let live = true;
+    let last = 0;
+
+    const entry = { p: 0 };
+
+    const tick = (now: number) => {
+      if (!scene) return;
+      const step = last ? Math.min((now - last) / 1000, 0.1) : 0;
+      last = now;
+      scene.setOpen(entry.p);
+      scene.frame(step);
+    };
+
+    const lost = (event: Event) => {
+      event.preventDefault();
+      setPainted(false);
+    };
+
+    node.addEventListener("webglcontextlost", lost);
+
+    void import("@/lib/headerLiquid")
+      .then(({ createLiquid }) => {
+        if (!live) return;
+
+        scene = createLiquid({ canvas: node });
+        if (!scene) return;
+
+        liquid.current = scene;
+        scene.resize();
+
+        const waiting = feed.current;
+        if (waiting) scene.setMedia(waiting.media, waiting.focus, waiting.push);
+
+        gsap.to(entry, { p: 1, duration: OPEN_S, ease: OPEN_EASE });
+        setPainted(true);
+        untick = onTick(tick);
+      })
+      .catch(() => {});
+
+    const sizer = new ResizeObserver(() => scene?.resize());
+    sizer.observe(node);
+
+    return () => {
+      live = false;
+      untick?.();
+      sizer.disconnect();
+      gsap.killTweensOf(entry);
+      node.removeEventListener("webglcontextlost", lost);
+      liquid.current = null;
+      scene?.dispose();
+      setPainted(false);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!hot) return;
+
+    const section = SECTIONS.find((item) => item.id === hot);
+    if (!section) return;
+
+    const next = SECTIONS.findIndex((item) => item.id === hot);
+    // O sinal da diferenca de indice e o que da direcao a troca: ir de
+    // FILMOGRAPHY para NOW empurra a onda num sentido, voltar empurra no outro.
+    const push = Math.sign(next - seat.current);
+    seat.current = next;
+
+    const image = new Image();
+    // O still do NOW e a miniatura do YouTube, que e cross-origin: sem isso o
+    // WebGL recusa a textura. Falhando o CORS, o onload nao vem, a chapa DOM
+    // continua no lugar e o painel segue funcionando sem refracao.
+    image.crossOrigin = "anonymous";
+    image.decoding = "async";
+
+    const ready = () => {
+      feed.current = { media: image, focus: section.focus, push };
+      liquid.current?.setMedia(image, section.focus, push);
+    };
+
+    image.addEventListener("load", ready, { once: true });
+    image.src = asset(section.still);
+
+    return () => image.removeEventListener("load", ready);
+  }, [hot]);
+
   const ride = useCallback(
     (event: MouseEvent<HTMLAnchorElement>, id: SectionId) => {
       if (event.metaKey || event.ctrlKey || event.shiftKey) return;
@@ -202,5 +323,5 @@ export function useHeaderGlass() {
     [shut],
   );
 
-  return { shell, hot, active, awake, open: hot !== null, ride, bind };
+  return { shell, view, hot, active, awake, open, painted, ride, bind };
 }

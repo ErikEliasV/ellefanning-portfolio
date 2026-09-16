@@ -8,7 +8,8 @@ import { useHeaderGlass } from "@/lib/useHeaderGlass";
 import "@/styles/header.css";
 
 export function SiteHeader() {
-  const { shell, hot, active, awake, open, ride, bind } = useHeaderGlass();
+  const { shell, view, hot, active, awake, open, painted, ride, bind } =
+    useHeaderGlass();
   const shown = SECTIONS.find((section) => section.id === hot) ?? null;
 
   return (
@@ -18,10 +19,20 @@ export function SiteHeader() {
       data-open={open ? "" : undefined}
       data-awake={awake ? "" : undefined}
     >
+      <canvas
+        ref={view}
+        aria-hidden
+        className="hdr-view"
+        data-on={painted ? "" : undefined}
+      />
+
+      {/* Primeiro frame e fallback ao mesmo tempo: some assim que o WebGL
+          pinta, e volta se o contexto cair. */}
       <div
         aria-hidden
         className="hdr-plate"
-        data-on={open ? "" : undefined}
+        data-on={open && !painted ? "" : undefined}
+        data-raw={!painted ? "" : undefined}
         style={{ "--hdr-focus": shown?.focus ?? 0.5 } as CSSProperties}
       >
         {shown ? (
