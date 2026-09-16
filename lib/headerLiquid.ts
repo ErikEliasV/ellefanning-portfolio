@@ -1,16 +1,16 @@
 import * as THREE from "three";
 
 const RING_FREQ = 9.2;
-const RING_SPEED = 3.4;
-const RING_FALL = 2.1;
-const RING_AMP = 0.026;
-const DRIFT_AMP = 0.006;
+const RING_SPEED = 3.0;
+const RING_FALL = 1.55;
+const RING_AMP = 0.052;
+const DRIFT_AMP = 0.016;
 const DRIFT_SPEED = 0.35;
-const PUSH_AMP = 0.05;
+const PUSH_AMP = 0.075;
 const PUSH_DECAY = 7;
-const CA_AMP = 0.004;
-const SPEC = 0.06;
-const ENTRY_GAIN = 2.4;
+const CA_AMP = 0.0085;
+const SPEC = 0.085;
+const ENTRY_GAIN = 4.2;
 const MIX_SPEED = 3.2;
 const MAX_DPR = 2;
 

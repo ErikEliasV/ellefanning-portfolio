@@ -17,6 +17,7 @@ export function SiteHeader() {
     active,
     awake,
     open,
+    hidden,
     painted,
     ride,
     bind,
@@ -29,6 +30,7 @@ export function SiteHeader() {
       className="hdr"
       data-open={open ? "" : undefined}
       data-awake={awake ? "" : undefined}
+      data-hidden={hidden ? "" : undefined}
     >
       <canvas
         ref={view}
@@ -87,15 +89,15 @@ export function SiteHeader() {
         <filter id="hdr-liquid" x="-20%" y="-20%" width="140%" height="140%">
           <feTurbulence
             type="fractalNoise"
-            baseFrequency="0.014 0.03"
-            numOctaves="2"
+            baseFrequency="0.009 0.021"
+            numOctaves="3"
             seed="7"
             result="noise"
           />
           <feDisplacementMap
             in="SourceGraphic"
             in2="noise"
-            scale="26"
+            scale="58"
             xChannelSelector="R"
             yChannelSelector="G"
           />

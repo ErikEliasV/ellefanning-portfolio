@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { MouseEvent } from "react";
 
 import { asset } from "@/lib/asset";
+import { gooPath } from "@/lib/headerGoo";
 import { isReduced, onTick, scrollTo } from "@/lib/scroll";
 import { SECTIONS } from "@/lib/sections";
 import type { Liquid, Media } from "@/lib/headerLiquid";
@@ -26,18 +27,38 @@ const FOLLOW_EASE = "power3";
 // exatamente uma intersecao ativa quase o tempo todo.
 const SPY_BAND = "-45% 0px -45% 0px";
 
-// A mesma banda do CSS: --duration-slow, na curva assinatura do site.
-const OPEN_S = 0.42;
-const OPEN_EASE = "power4.out";
+// Quanto rolar antes de o header ter licenca para sumir, e a faixa do topo da
+// viewport que o traz de volta so por o ponteiro estar ali.
+const HIDE_AFTER = 160;
+const PEEK = 120;
+
+// A gosma: repouso, painel aberto, e o solavanco que cada transicao injeta.
+const IDLE_AMP = 2.2;
+const OPEN_AMP = 6.5;
+const JOLT_AMP = 24;
+const JOLT_DECAY = 3.4;
+const SHAPE_S = 0.44;
+const SHAPE_EASE = "power4";
+const AMP_S = 0.52;
+const REST = 0.6;
 
 type Feed = { media: Media; focus: number; push: number };
+
+function metric(styles: CSSStyleDeclaration, name: string) {
+  return Number.parseFloat(styles.getPropertyValue(name)) || 0;
+}
 
 export function useHeaderGlass() {
   const shell = useRef<HTMLElement>(null);
   const view = useRef<HTMLCanvasElement>(null);
+  const tapeA = useRef<HTMLVideoElement>(null);
+  const tapeB = useRef<HTMLVideoElement>(null);
+
   const [hot, setHot] = useState<SectionId | null>(null);
   const [active, setActive] = useState<SectionId | null>(null);
   const [awake, setAwake] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [hidden, setHidden] = useState(false);
   const [painted, setPainted] = useState(false);
 
   const liquid = useRef<Liquid | null>(null);
@@ -46,9 +67,8 @@ export function useHeaderGlass() {
   // que chegue por ultimo.
   const feed = useRef<Feed | null>(null);
   const seat = useRef(0);
-  const tapeA = useRef<HTMLVideoElement>(null);
-  const tapeB = useRef<HTMLVideoElement>(null);
   const slot = useRef(0);
+
   // Num ref, e nao em estado, porque nada renderiza a partir disso e os
   // callbacks nao devem se recriar quando o apontador troca.
   const fine = useRef(false);
@@ -58,6 +78,11 @@ export function useHeaderGlass() {
 
   const open = hot !== null;
 
+  // Espelhos, para o loop da gosma ler o estado sem remontar a cada mudanca.
+  const live = useRef({ open: false, awake: false });
+  const jolt = useRef(0);
+  const box = useRef({ bar: 0, tall: 0, width: 0 });
+
   // O estado espelhado num ref porque aim() precisa saber se ja esta aberto
   // sem agendar o timer de dentro de um updater, que o StrictMode roda duas
   // vezes.
@@ -66,7 +91,11 @@ export function useHeaderGlass() {
   const shutAt = useRef(0);
 
   const settle = useCallback((id: SectionId | null) => {
+    if (at.current === id) return;
     at.current = id;
+    // Toda troca de estado injeta um solavanco na gosma: e o que faz a expansao
+    // parecer massa sendo puxada, e nao uma caixa crescendo.
+    jolt.current = 1;
     setHot(id);
   }, []);
 
@@ -108,6 +137,25 @@ export function useHeaderGlass() {
     [aim, settle],
   );
 
+  // Espelhados num efeito, e nao no corpo do componente, porque escrever em
+  // ref durante o render e leitura suja de estado concorrente.
+  useEffect(() => {
+    live.current.open = open;
+    live.current.awake = awake;
+  }, [open, awake]);
+
+  useEffect(() => {
+    const query = window.matchMedia("(pointer: fine)");
+    const read = () => {
+      fine.current = query.matches;
+    };
+
+    read();
+    query.addEventListener("change", read);
+
+    return () => query.removeEventListener("change", read);
+  }, []);
+
   useEffect(() => {
     const node = shell.current;
     if (!node) return;
@@ -115,13 +163,14 @@ export function useHeaderGlass() {
     const arrive = (event: PointerEvent) => {
       if (!fine.current) return;
 
-      const box = node.getBoundingClientRect();
+      const rect = node.getBoundingClientRect();
       spot.current = {
-        x: event.clientX - box.left,
-        y: event.clientY - box.top,
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
       };
 
       setAwake(true);
+      setBusy(true);
     };
 
     const leave = () => {
@@ -142,10 +191,23 @@ export function useHeaderGlass() {
       shut();
     };
 
-    // Com o painel aberto e a pagina correndo por baixo, o preview e o
-    // conteudo contam duas historias ao mesmo tempo.
+    let mark = window.scrollY;
+
+    // Desce, some; sobe ou volta ao topo, reaparece. E com o painel aberto e a
+    // pagina correndo por baixo, o preview e o conteudo contam duas historias
+    // ao mesmo tempo, entao rolar tambem fecha.
     const drift = () => {
+      const y = window.scrollY;
+      const down = y > mark;
+      mark = y;
+
       if (at.current) shut();
+      setHidden(down && y > HIDE_AFTER);
+    };
+
+    // A faixa do topo devolve o header sem precisar rolar para tras.
+    const peek = (event: PointerEvent) => {
+      if (event.clientY <= PEEK) setHidden(false);
     };
 
     node.addEventListener("pointerenter", arrive, { passive: true });
@@ -153,6 +215,7 @@ export function useHeaderGlass() {
     node.addEventListener("focusout", away);
     window.addEventListener("keydown", escape);
     window.addEventListener("scroll", drift, { passive: true });
+    window.addEventListener("pointermove", peek, { passive: true });
 
     return () => {
       window.clearTimeout(openAt.current);
@@ -162,20 +225,9 @@ export function useHeaderGlass() {
       node.removeEventListener("focusout", away);
       window.removeEventListener("keydown", escape);
       window.removeEventListener("scroll", drift);
+      window.removeEventListener("pointermove", peek);
     };
   }, [settle, shut]);
-
-  useEffect(() => {
-    const query = window.matchMedia("(pointer: fine)");
-    const read = () => {
-      fine.current = query.matches;
-    };
-
-    read();
-    query.addEventListener("change", read);
-
-    return () => query.removeEventListener("change", read);
-  }, []);
 
   useEffect(() => {
     const seen = SECTIONS.map((section) =>
@@ -197,54 +249,118 @@ export function useHeaderGlass() {
     return () => spy.disconnect();
   }, []);
 
-  // So se inscreve no tick enquanto a barra esta desperta, e sai ao adormecer:
-  // fora do header o custo e zero.
+  // O loop da gosma. Fica inscrito enquanto houver movimento e se desliga
+  // sozinho quando a forma assenta na barra: fora disso, custo zero.
   useEffect(() => {
     const node = shell.current;
-    if (!node || !awake || isReduced()) return;
+    if (!node || !busy || isReduced()) return;
 
     const lens = { ...spot.current };
+    const shape = { reveal: 0, amp: IDLE_AMP };
+    let clock = 0;
+    let last = 0;
+
     const chase = { duration: FOLLOW, ease: FOLLOW_EASE };
     const toX = gsap.quickTo(lens, "x", chase);
     const toY = gsap.quickTo(lens, "y", chase);
+    const toReveal = gsap.quickTo(shape, "reveal", {
+      duration: SHAPE_S,
+      ease: SHAPE_EASE,
+    });
+    const toAmp = gsap.quickTo(shape, "amp", {
+      duration: AMP_S,
+      ease: SHAPE_EASE,
+    });
 
+    const gauge = () => {
+      const styles = getComputedStyle(node);
+      const nav = node.querySelector<HTMLElement>(".hdr-nav");
+      box.current = {
+        // A nav tem exatamente --hdr-h de altura, entao ela e a medida de
+        // reserva caso o registro de @property nao esteja disponivel.
+        bar: metric(styles, "--hdr-h") || nav?.offsetHeight || 0,
+        tall: metric(styles, "--hdr-open-h"),
+        width: node.getBoundingClientRect().width,
+      };
+    };
+
+    gauge();
+    shape.reveal = live.current.open ? box.current.tall : box.current.bar;
     toX(lens.x, lens.x);
     toY(lens.y, lens.y);
 
     const aimLens = (event: PointerEvent) => {
       if (event.pointerType !== "mouse") return;
-
-      const box = node.getBoundingClientRect();
-      toX(event.clientX - box.left);
-      toY(event.clientY - box.top);
+      const rect = node.getBoundingClientRect();
+      toX(event.clientX - rect.left);
+      toY(event.clientY - rect.top);
     };
 
-    const paint = () => {
+    const paint = (now: number) => {
+      const step = last ? Math.min((now - last) / 1000, 0.1) : 0;
+      last = now;
+      clock += step;
+
       node.style.setProperty("--mx", `${Math.round(lens.x)}px`);
       node.style.setProperty("--my", `${Math.round(lens.y)}px`);
 
-      const scene = liquid.current;
-      if (!scene) return;
+      const { bar, tall, width } = box.current;
 
-      const box = node.getBoundingClientRect();
-      scene.setPointer(
-        (lens.x / box.width) * 2 - 1,
-        1 - (lens.y / box.height) * 2,
-        1,
-      );
+      // Sem medida confiavel o recorte fica com o CSS: escrever um polygon com
+      // altura zero apagaria o header inteiro.
+      if (!bar || !tall || !width) return;
+
+      toReveal(live.current.open ? tall : bar);
+      toAmp(live.current.open ? OPEN_AMP : IDLE_AMP);
+
+      // Decaimento por tempo, nao por frame: a 120Hz um fator por frame
+      // morreria duas vezes mais rapido que a 60Hz.
+      jolt.current *= Math.exp(-step * JOLT_DECAY);
+
+      node.style.clipPath = gooPath({
+        width,
+        reveal: shape.reveal,
+        amp: shape.amp + jolt.current * JOLT_AMP,
+        time: clock,
+        at: width ? lens.x / width : 0.5,
+      });
+
+      const scene = liquid.current;
+      if (scene) {
+        const rect = node.getBoundingClientRect();
+        scene.setPointer(
+          (lens.x / rect.width) * 2 - 1,
+          1 - (lens.y / rect.height) * 2,
+          1,
+        );
+      }
+
+      const done =
+        !live.current.awake &&
+        !live.current.open &&
+        Math.abs(shape.reveal - bar) < REST &&
+        jolt.current < 0.02;
+
+      if (done) setBusy(false);
     };
 
     node.addEventListener("pointermove", aimLens, { passive: true });
+    const sizer = new ResizeObserver(gauge);
+    sizer.observe(node);
     const untick = onTick(paint);
 
     return () => {
       node.removeEventListener("pointermove", aimLens);
+      sizer.disconnect();
       untick();
       gsap.killTweensOf(lens);
+      gsap.killTweensOf(shape);
       node.style.removeProperty("--mx");
       node.style.removeProperty("--my");
+      // Devolve o recorte ao CSS, que e tambem o caminho de movimento reduzido.
+      node.style.removeProperty("clip-path");
     };
-  }, [awake]);
+  }, [busy]);
 
   // A cena nasce na abertura e morre no fechamento: fechada, o header nao tem
   // contexto WebGL nenhum.
@@ -254,7 +370,7 @@ export function useHeaderGlass() {
 
     let scene: Liquid | null = null;
     let untick: (() => void) | null = null;
-    let live = true;
+    let alive = true;
     let last = 0;
 
     const entry = { p: 0 };
@@ -276,7 +392,7 @@ export function useHeaderGlass() {
 
     void import("@/lib/headerLiquid")
       .then(({ createLiquid }) => {
-        if (!live) return;
+        if (!alive) return;
 
         scene = createLiquid({ canvas: node });
         if (!scene) return;
@@ -287,7 +403,7 @@ export function useHeaderGlass() {
         const waiting = feed.current;
         if (waiting) scene.setMedia(waiting.media, waiting.focus, waiting.push);
 
-        gsap.to(entry, { p: 1, duration: OPEN_S, ease: OPEN_EASE });
+        gsap.to(entry, { p: 1, duration: SHAPE_S, ease: "power4.out" });
         setPainted(true);
         untick = onTick(tick);
       })
@@ -297,7 +413,7 @@ export function useHeaderGlass() {
     sizer.observe(node);
 
     return () => {
-      live = false;
+      alive = false;
       untick?.();
       sizer.disconnect();
       gsap.killTweensOf(entry);
@@ -392,6 +508,7 @@ export function useHeaderGlass() {
     active,
     awake,
     open,
+    hidden,
     painted,
     ride,
     bind,
