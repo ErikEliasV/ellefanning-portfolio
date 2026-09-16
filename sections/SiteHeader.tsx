@@ -8,8 +8,19 @@ import { useHeaderGlass } from "@/lib/useHeaderGlass";
 import "@/styles/header.css";
 
 export function SiteHeader() {
-  const { shell, view, hot, active, awake, open, painted, ride, bind } =
-    useHeaderGlass();
+  const {
+    shell,
+    view,
+    tapeA,
+    tapeB,
+    hot,
+    active,
+    awake,
+    open,
+    painted,
+    ride,
+    bind,
+  } = useHeaderGlass();
   const shown = SECTIONS.find((section) => section.id === hot) ?? null;
 
   return (
@@ -41,6 +52,9 @@ export function SiteHeader() {
           // eslint-disable-next-line @next/next/no-img-element
           <img src={asset(shown.still)} alt="" draggable={false} />
         ) : null}
+
+        <video ref={tapeA} muted loop playsInline preload="none" />
+        <video ref={tapeB} muted loop playsInline preload="none" />
       </div>
 
       <div aria-hidden className="hdr-tint" />

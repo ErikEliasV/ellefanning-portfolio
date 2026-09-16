@@ -205,3 +205,15 @@
 .hdr[data-open] .hdr-view[data-on] {
   opacity: 1;
 }
+
+/* Quem pinta as fitas e o shader; no DOM elas so aparecem no caminho sem
+   WebGL, que a chapa marca com data-raw. */
+.hdr-plate video {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+
+.hdr-plate[data-raw] video[data-on] {
+  opacity: 1;
+}

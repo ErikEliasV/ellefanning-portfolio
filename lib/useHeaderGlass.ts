@@ -46,6 +46,9 @@ export function useHeaderGlass() {
   // que chegue por ultimo.
   const feed = useRef<Feed | null>(null);
   const seat = useRef(0);
+  const tapeA = useRef<HTMLVideoElement>(null);
+  const tapeB = useRef<HTMLVideoElement>(null);
+  const slot = useRef(0);
 
   const open = hot !== null;
 
@@ -310,7 +313,42 @@ export function useHeaderGlass() {
     image.addEventListener("load", ready, { once: true });
     image.src = asset(section.still);
 
-    return () => image.removeEventListener("load", ready);
+    // Duas fitas bastam para o cross-fade, e o src so e atribuido no primeiro
+    // hover daquela secao. Sem os arquivos em public/videos o <video> falha em
+    // silencio e o still fica: e o estado padrao ate os clipes existirem.
+    const tape = [tapeA.current, tapeB.current][slot.current ^ 1];
+
+    if (!tape || isReduced()) {
+      return () => image.removeEventListener("load", ready);
+    }
+
+    slot.current ^= 1;
+
+    const rolling = () => {
+      if (tape.dataset.for !== section.id) return;
+      // push 0: o empurrao ja aconteceu quando o still entrou, e repetir na
+      // troca de textura daria dois solavancos para um mesmo gesto.
+      feed.current = { media: tape, focus: section.focus, push: 0 };
+      liquid.current?.setMedia(tape, section.focus, 0);
+      tape.dataset.on = "";
+      void tape.play().catch(() => {});
+    };
+
+    if (tape.dataset.for !== section.id) {
+      tape.dataset.for = section.id;
+      tape.src = asset(section.clip);
+      tape.load();
+    }
+
+    tape.addEventListener("canplay", rolling, { once: true });
+    if (tape.readyState >= 3) rolling();
+
+    return () => {
+      image.removeEventListener("load", ready);
+      tape.removeEventListener("canplay", rolling);
+      delete tape.dataset.on;
+      tape.pause();
+    };
   }, [hot]);
 
   const ride = useCallback(
@@ -323,5 +361,17 @@ export function useHeaderGlass() {
     [shut],
   );
 
-  return { shell, view, hot, active, awake, open, painted, ride, bind };
+  return {
+    shell,
+    view,
+    tapeA,
+    tapeB,
+    hot,
+    active,
+    awake,
+    open,
+    painted,
+    ride,
+    bind,
+  };
 }
