@@ -217,3 +217,10 @@
 .hdr-plate[data-raw] video[data-on] {
   opacity: 1;
 }
+
+/* O contraste do foco sobre periwinkle nao e garantido, entao a regua e
+   explicita em vez de herdar o outline do agente. */
+.hdr-link:focus-visible {
+  outline: 2px solid var(--color-ink-900);
+  outline-offset: 4px;
+}

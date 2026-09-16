@@ -49,6 +49,9 @@ export function useHeaderGlass() {
   const tapeA = useRef<HTMLVideoElement>(null);
   const tapeB = useRef<HTMLVideoElement>(null);
   const slot = useRef(0);
+  // Num ref, e nao em estado, porque nada renderiza a partir disso e os
+  // callbacks nao devem se recriar quando o apontador troca.
+  const fine = useRef(false);
 
   const open = hot !== null;
 
@@ -73,6 +76,9 @@ export function useHeaderGlass() {
 
   const aim = useCallback(
     (id: SectionId) => {
+      // No toque nao ha hover: o link navega e nada mais acontece.
+      if (!fine.current) return;
+
       window.clearTimeout(shutAt.current);
       window.clearTimeout(openAt.current);
 
@@ -103,7 +109,10 @@ export function useHeaderGlass() {
     const node = shell.current;
     if (!node) return;
 
-    const arrive = () => setAwake(true);
+    const arrive = () => {
+      if (!fine.current) return;
+      setAwake(true);
+    };
 
     const leave = () => {
       window.clearTimeout(openAt.current);
@@ -145,6 +154,18 @@ export function useHeaderGlass() {
       window.removeEventListener("scroll", drift);
     };
   }, [settle, shut]);
+
+  useEffect(() => {
+    const query = window.matchMedia("(pointer: fine)");
+    const read = () => {
+      fine.current = query.matches;
+    };
+
+    read();
+    query.addEventListener("change", read);
+
+    return () => query.removeEventListener("change", read);
+  }, []);
 
   useEffect(() => {
     const seen = SECTIONS.map((section) =>
