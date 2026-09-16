@@ -50,8 +50,12 @@
      script, quem escreve o clip-path e lib/headerGoo.ts, por frame. */
   pointer-events: none;
   clip-path: inset(0 0 calc(100% - var(--hdr-reveal)) 0);
-  -webkit-backdrop-filter: blur(var(--hdr-blur));
-  backdrop-filter: blur(var(--hdr-blur));
+  /* A hero e animada e passa perto do branco, e o tipo do Figma e branco: a
+     51% o tinte sozinho deixava a barra ilegivel. Escurecer o backdrop mantem
+     a cor do Figma intacta e e o que vidro de verdade faz com o que esta
+     atras. */
+  -webkit-backdrop-filter: blur(var(--hdr-blur)) saturate(1.18) brightness(0.74);
+  backdrop-filter: blur(var(--hdr-blur)) saturate(1.18) brightness(0.74);
   transform: translate3d(0, 0, 0);
   transition:
     --hdr-reveal var(--duration-micro) var(--ease-out),
