@@ -123,3 +123,33 @@
 .hdr-link[aria-current][data-hot]::after {
   transform: scaleY(calc(1 / var(--hdr-grow)));
 }
+
+/* A regra base declara 360ms; abrir merece a banda mais lenta do site. */
+.hdr[data-open] {
+  --hdr-reveal: var(--hdr-open-h);
+  transition-duration: var(--duration-slow);
+}
+
+.hdr[data-open] .hdr-plate {
+  pointer-events: auto;
+}
+
+.hdr-plate {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity var(--duration-base) var(--ease-out);
+}
+
+.hdr-plate[data-on] {
+  opacity: 1;
+}
+
+.hdr-plate img,
+.hdr-plate video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% calc(var(--hdr-focus, 0.5) * 100%);
+}
