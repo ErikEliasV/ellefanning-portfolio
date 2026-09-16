@@ -8,11 +8,16 @@ import { useHeaderGlass } from "@/lib/useHeaderGlass";
 import "@/styles/header.css";
 
 export function SiteHeader() {
-  const { shell, hot, active, open, ride, bind } = useHeaderGlass();
+  const { shell, hot, active, awake, open, ride, bind } = useHeaderGlass();
   const shown = SECTIONS.find((section) => section.id === hot) ?? null;
 
   return (
-    <header ref={shell} className="hdr" data-open={open ? "" : undefined}>
+    <header
+      ref={shell}
+      className="hdr"
+      data-open={open ? "" : undefined}
+      data-awake={awake ? "" : undefined}
+    >
       <div
         aria-hidden
         className="hdr-plate"
@@ -28,6 +33,7 @@ export function SiteHeader() {
       </div>
 
       <div aria-hidden className="hdr-tint" />
+      <div aria-hidden className="hdr-spec" />
       <div aria-hidden className="hdr-edge" />
 
       <nav
@@ -49,6 +55,27 @@ export function SiteHeader() {
           </a>
         ))}
       </nav>
+
+      {/* Semente fixa e baseFrequency parada: o ruido e calculado uma vez, e
+          quem se move por baixo do mapa e o gradiente. */}
+      <svg aria-hidden className="hdr-defs" width="0" height="0">
+        <filter id="hdr-liquid" x="-20%" y="-20%" width="140%" height="140%">
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.014 0.03"
+            numOctaves="2"
+            seed="7"
+            result="noise"
+          />
+          <feDisplacementMap
+            in="SourceGraphic"
+            in2="noise"
+            scale="26"
+            xChannelSelector="R"
+            yChannelSelector="G"
+          />
+        </filter>
+      </svg>
     </header>
   );
 }
