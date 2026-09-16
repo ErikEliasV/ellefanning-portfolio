@@ -98,3 +98,28 @@
 .hdr-link:last-child {
   transform-origin: right center;
 }
+
+.hdr-link[data-hot] {
+  transform: scale(var(--hdr-grow));
+}
+
+.hdr-nav[data-open] .hdr-link:not([data-hot]) {
+  opacity: 0.55;
+}
+
+/* O Figma sublinha com text-decoration, mas a regua precisa contra-escalar no
+   item que cresce: sem isso ela engorda junto e vira 2.4px so ali. */
+.hdr-link[aria-current]::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0.14em;
+  left: 0;
+  height: 2px;
+  background-color: currentColor;
+  transform-origin: bottom;
+}
+
+.hdr-link[aria-current][data-hot]::after {
+  transform: scaleY(calc(1 / var(--hdr-grow)));
+}
