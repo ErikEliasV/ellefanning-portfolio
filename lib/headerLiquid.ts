@@ -2,9 +2,9 @@ import * as THREE from "three";
 
 const RING_FREQ = 9.2;
 const RING_SPEED = 1.45;
-const RING_FALL = 1.55;
+const RING_FALL = 2.7;
 const RING_AMP = 0.078;
-const DRIFT_AMP = 0.026;
+const DRIFT_AMP = 0.005;
 const DRIFT_SPEED = 0.17;
 const PUSH_AMP = 0.075;
 const PUSH_DECAY = 2.8;

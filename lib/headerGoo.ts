@@ -1,56 +1,33 @@
-// A silhueta do vidro, desenhada ponto a ponto. As duas bordas horizontais
-// cedem na direcao do ponteiro, e quem cede e a que ele esta rondando: perto do
-// topo, o topo incha para cima; perto da base, a base escorre para baixo.
-const COLS = 40;
-const SIDES = 10;
-const SIDE_GAIN = 0.8;
-const PULL_GAIN = 2.4;
-// Largura da bolha que segue o ponteiro. Larga de proposito: estreita vira
-// bico, larga vira massa.
-const PULL_WIDTH = 0.05;
-// O topo tem menos folga que a base antes de bater na viewport, entao puxa um
-// pouco menos.
-const PULL_UP = 0.8;
-// Quao rapido a adesao de uma borda morre conforme o ponteiro se afasta dela.
-const GRIP = 1.5;
-const CREST_GAIN = 0.5;
+// O contorno do vidro e um retangulo em repouso. A unica deformacao e uma
+// bolha que segue o ponteiro e empurra a borda **para fora**, como um dedo por
+// baixo de um tecido: nunca afunda, e nunca mexe no que esta longe dele.
+const SPAN_STEPS = 34;
+const SIDE_STEPS = 12;
+// Fracao de cada aresta em que a normal gira para a diagonal da quina. Sem
+// isso a direcao vira 90 graus de uma vez e a quina da um bico.
+const BLEND = 0.12;
+// A bolha respira. So a bolha: o resto do contorno fica parado.
+const BREATH = 0.1;
+const BREATH_SPEED = 0.75;
 
 export type Goo = {
   width: number;
-  // Teto e chao do que cada borda pode avancar. O topo tem pouco: alem da
-  // folga ele sai pela viewport. A base tem de sobra.
+  // Folgas da caixa: a bolha precisa de espaco para sair do retangulo.
+  wing: number;
+  lip: number;
+  reveal: number;
+  // Altura maxima da bolha, em pixels, e o raio em que ela morre.
+  amp: number;
+  reach: number;
+  time: number;
+  // Ponteiro em coordenadas da caixa, ja suavizado.
+  x: number;
+  y: number;
+  // Quanto cada borda pode avancar antes de sair da caixa ou da viewport.
   roof: number;
   floor: number;
-  // Folga acima da barra, onde o topo tem para onde inchar.
-  lip: number;
-  // Altura visivel do vidro, contada a partir de lip.
-  reveal: number;
-  amp: number;
-  time: number;
-  // Ponteiro em x dentro da caixa, 0 a 1.
-  at: number;
-  // Ponteiro em y dentro do vidro, 0 no topo, 1 na base.
-  near: number;
+  side: number;
 };
-
-// Tres senos em frequencias que nao sao multiplas entre si, para a onda nunca
-// repetir visivelmente o proprio periodo. As velocidades sao baixas: o desenho
-// e agressivo, o movimento e que tem de ser lento.
-function crest(u: number, time: number) {
-  return (
-    Math.sin(u * 6.1 + time * 0.85) * 0.6 +
-    Math.sin(u * 11.3 - time * 0.58) * 0.28 +
-    Math.sin(u * 3.1 + time * 0.31) * 0.42
-  );
-}
-
-function flank(v: number, time: number, way: number) {
-  return SIDE_GAIN * (0.5 + 0.5 * Math.sin(v * 7.7 + time * 0.7 * way));
-}
-
-function pull(u: number, at: number) {
-  return Math.exp(-((u - at) ** 2) / PULL_WIDTH);
-}
 
 // Satura no limite em vez de bater nele: um Math.min acharia a crista num
 // plato reto, que e exatamente o que nao pode parecer liquido.
@@ -58,55 +35,63 @@ function soft(v: number, cap: number) {
   return cap > 0 ? cap * Math.tanh(v / cap) : 0;
 }
 
+// -1 na ponta inicial da aresta, +1 na final, 0 no miolo.
+function bend(t: number) {
+  if (t < BLEND) return t / BLEND - 1;
+  if (t > 1 - BLEND) return (t - 1 + BLEND) / BLEND;
+  return 0;
+}
+
 export function gooPath({
   width,
-  roof,
-  floor,
+  wing,
   lip,
   reveal,
   amp,
+  reach,
   time,
-  at,
-  near,
+  x,
+  y,
+  roof,
+  floor,
+  side,
 }: Goo) {
-  const base = lip + reveal;
-  const up = Math.max(0, 1 - near * GRIP);
-  const down = Math.max(0, 1 - (1 - near) * GRIP);
+  const left = wing;
+  const right = width - wing;
+  const top = lip;
+  const bottom = lip + reveal;
+  const span = right - left;
+  const swell = amp * (1 + BREATH * Math.sin(time * BREATH_SPEED));
 
   const pts: string[] = [];
 
-  for (let i = 0; i <= COLS; i++) {
-    const u = i / COLS;
-    // O deslocamento de fase separa a onda do topo da onda da base, senao as
-    // duas respiram juntas e a faixa inteira parece um retangulo balancando.
-    const rise =
-      amp *
-      (crest(u, time + 11) * CREST_GAIN +
-        pull(u, at) * PULL_GAIN * up * PULL_UP);
-    pts.push(`${(u * width).toFixed(1)}px ${(lip - soft(rise, roof)).toFixed(1)}px`);
+  function lift(px: number, py: number, nx: number, ny: number, cap: number) {
+    const k = Math.hypot(px - x, py - y) / reach;
+    const rise = soft(swell * Math.exp(-k * k), cap);
+    const len = Math.hypot(nx, ny) || 1;
+    const ox = px + (nx / len) * rise;
+    const oy = py + (ny / len) * rise;
+    pts.push(`${ox.toFixed(1)}px ${oy.toFixed(1)}px`);
   }
 
-  for (let i = 1; i < SIDES; i++) {
-    const v = i / SIDES;
-    const inset = amp * flank(v, time, 1);
-    pts.push(
-      `${(width - inset).toFixed(1)}px ${(lip + reveal * v).toFixed(1)}px`,
-    );
+  for (let i = 0; i <= SPAN_STEPS; i++) {
+    const t = i / SPAN_STEPS;
+    lift(left + span * t, top, bend(t), -1, roof);
   }
 
-  for (let i = COLS; i >= 0; i--) {
-    const u = i / COLS;
-    const sag =
-      amp * (crest(u, time) * CREST_GAIN + pull(u, at) * PULL_GAIN * down);
-    pts.push(
-      `${(u * width).toFixed(1)}px ${(base + soft(sag, floor)).toFixed(1)}px`,
-    );
+  for (let i = 1; i < SIDE_STEPS; i++) {
+    const t = i / SIDE_STEPS;
+    lift(right, top + reveal * t, 1, bend(t), side);
   }
 
-  for (let i = SIDES - 1; i >= 1; i--) {
-    const v = i / SIDES;
-    const inset = amp * flank(v, time, -1);
-    pts.push(`${inset.toFixed(1)}px ${(lip + reveal * v).toFixed(1)}px`);
+  for (let i = SPAN_STEPS; i >= 0; i--) {
+    const t = i / SPAN_STEPS;
+    lift(left + span * t, bottom, bend(t), 1, floor);
+  }
+
+  for (let i = SIDE_STEPS - 1; i >= 1; i--) {
+    const t = i / SIDE_STEPS;
+    lift(left, top + reveal * t, -1, bend(t), side);
   }
 
   return `polygon(${pts.join(",")})`;

@@ -17,9 +17,10 @@ import type { SectionId } from "@/lib/sections";
 const INTENT = 90;
 const GRACE = 180;
 
-// Mais lento que o atraso do cursor em lib/useCursor.ts, de proposito: o
-// atraso e o efeito, e aqui a massa e pesada.
-const FOLLOW = 0.62;
+// Curto o bastante para a bolha ler como presa ao ponteiro, longo o bastante
+// para o tecido parecer ter peso. Quem tem de ser lento e a expansao, nao a
+// perseguicao.
+const FOLLOW = 0.34;
 const FOLLOW_EASE = "power2";
 
 // Uma faixa fina no meio da tela: a secao que a cobre e a secao que se esta
@@ -32,12 +33,14 @@ const SPY_BAND = "-45% 0px -45% 0px";
 const HIDE_AFTER = 160;
 const PEEK = 120;
 
-// A gosma: repouso, painel aberto, e o solavanco que cada transicao injeta.
-// A deformacao e grande e a temporizacao e lenta -- e a combinacao das duas
-// que le como massa em vez de caixa saltando.
-const IDLE_AMP = 6;
-const OPEN_AMP = 16;
-const JOLT_AMP = 46;
+// Altura da bolha em pixels, agora que ela e uma so e nao um multiplicador de
+// ondas: fechado, aberto, e o quanto a transicao acrescenta.
+const IDLE_AMP = 26;
+const OPEN_AMP = 34;
+const JOLT_AMP = 40;
+// Raio em que a bolha morre. Largo o bastante para virar tecido, estreito o
+// bastante para o outro lado da barra nao sentir nada.
+const REACH = 250;
 const JOLT_DECAY = 1.15;
 const SHAPE_S = 0.95;
 // power2, e nao power4: a quintica sai rapido demais do lugar, e o pedido e
@@ -47,6 +50,7 @@ const AMP_S = 1.15;
 const REST = 0.6;
 const ROOF_SHARE = 0.85;
 const FLOOR_SHARE = 0.9;
+const SIDE_SHARE = 0.85;
 
 type Feed = { media: Media; focus: number; push: number };
 
@@ -87,7 +91,16 @@ export function useHeaderGlass() {
   // Espelhos, para o loop da gosma ler o estado sem remontar a cada mudanca.
   const live = useRef({ open: false, awake: false });
   const jolt = useRef(0);
-  const box = useRef({ bar: 0, tall: 0, lip: 0, roof: 0, floor: 0, width: 0 });
+  const box = useRef({
+    bar: 0,
+    tall: 0,
+    lip: 0,
+    wing: 0,
+    roof: 0,
+    floor: 0,
+    side: 0,
+    width: 0,
+  });
 
   // O estado espelhado num ref porque aim() precisa saber se ja esta aberto
   // sem agendar o timer de dentro de um updater, que o StrictMode roda duas
@@ -293,6 +306,8 @@ export function useHeaderGlass() {
           Math.min(metric(styles, "--hdr-lip"), metric(styles, "--hdr-top")) *
           ROOF_SHARE,
         floor: metric(styles, "--hdr-slack") * FLOOR_SHARE,
+        wing: metric(styles, "--hdr-wing"),
+        side: metric(styles, "--hdr-wing") * SIDE_SHARE,
         width: node.getBoundingClientRect().width,
       };
     };
@@ -317,7 +332,7 @@ export function useHeaderGlass() {
       node.style.setProperty("--mx", `${Math.round(lens.x)}px`);
       node.style.setProperty("--my", `${Math.round(lens.y)}px`);
 
-      const { bar, tall, lip, roof, floor, width } = box.current;
+      const { bar, tall, lip, wing, roof, floor, side, width } = box.current;
 
       // Sem medida confiavel o recorte fica com o CSS: escrever um polygon com
       // altura zero apagaria o header inteiro.
@@ -330,20 +345,22 @@ export function useHeaderGlass() {
       // morreria duas vezes mais rapido que a 60Hz.
       jolt.current *= Math.exp(-step * JOLT_DECAY);
 
-      const span = shape.reveal || 1;
+      // A moldura acompanha o retangulo do vidro, que so o hook conhece.
+      node.style.setProperty("--hdr-reveal", `${shape.reveal.toFixed(1)}px`);
 
       node.style.clipPath = gooPath({
         width,
-        roof,
-        floor,
+        wing,
         lip,
         reveal: shape.reveal,
         amp: shape.amp + jolt.current * JOLT_AMP,
+        reach: REACH,
         time: clock,
-        at: width ? lens.x / width : 0.5,
-        // Onde o ponteiro esta entre as duas bordas: e isso que decide qual
-        // delas cede quando ele passa raspando.
-        near: Math.min(Math.max((lens.y - lip) / span, 0), 1),
+        x: lens.x,
+        y: lens.y,
+        roof,
+        floor,
+        side,
       });
 
       const scene = liquid.current;
@@ -378,6 +395,7 @@ export function useHeaderGlass() {
       gsap.killTweensOf(shape);
       node.style.removeProperty("--mx");
       node.style.removeProperty("--my");
+      node.style.removeProperty("--hdr-reveal");
       // Devolve o recorte ao CSS, que e tambem o caminho de movimento reduzido.
       node.style.removeProperty("clip-path");
     };

@@ -37,15 +37,23 @@
   initial-value: 0px;
 }
 
+@property --hdr-wing {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
 .hdr {
   --hdr-inset-x: clamp(14px, 2.9vw, 56px);
   --hdr-top: clamp(10px, 1.9vw, 36px);
   --hdr-h: clamp(44px, 4.1vw, 78px);
   --hdr-open-h: clamp(280px, 28vw, 538px);
-  /* Folga para a gosma escorrer sem ser cortada pela propria caixa: acima da
-     barra, para o topo ter para onde inchar, e abaixo do painel aberto. */
+  /* Folgas nos quatro lados, para a bolha ter para onde sair do retangulo sem
+     ser cortada pela propria caixa. O topo e o mais apertado: alem da folga,
+     ele sai pela viewport. */
   --hdr-lip: 48px;
   --hdr-slack: 160px;
+  --hdr-wing: 44px;
   --hdr-pad-x: clamp(12px, 1.6vw, 30.7px);
   --hdr-pad-y: clamp(7px, 0.72vw, 13.8px);
   --hdr-type: clamp(13px, 1.66vw, 31.9px);
@@ -58,8 +66,8 @@
   /* A caixa sobe uma folga inteira, e a barra volta ao lugar pelo recorte: e
      assim que a borda de cima ganha espaco para inchar. */
   top: calc(var(--hdr-top) - var(--hdr-lip));
-  left: var(--hdr-inset-x);
-  right: var(--hdr-inset-x);
+  left: calc(var(--hdr-inset-x) - var(--hdr-wing));
+  right: calc(var(--hdr-inset-x) - var(--hdr-wing));
   height: calc(var(--hdr-lip) + var(--hdr-open-h) + var(--hdr-slack));
   z-index: 80;
   isolation: isolate;
@@ -71,7 +79,8 @@
      script, quem escreve o clip-path e lib/headerGoo.ts, por frame. */
   pointer-events: none;
   clip-path: inset(
-    var(--hdr-lip) 0 calc(100% - var(--hdr-lip) - var(--hdr-reveal)) 0
+    var(--hdr-lip) var(--hdr-wing)
+      calc(100% - var(--hdr-lip) - var(--hdr-reveal)) var(--hdr-wing)
   );
   /* A hero e animada e passa perto do branco, e o tipo do Figma e branco: a
      51% o tinte sozinho deixava a barra ilegivel. Escurecer o backdrop mantem
@@ -193,7 +202,10 @@
 
 .hdr-edge {
   position: absolute;
-  inset: 0;
+  top: var(--hdr-lip);
+  right: var(--hdr-wing);
+  left: var(--hdr-wing);
+  height: var(--hdr-reveal);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.38),
     inset 0 -1px 0 rgba(19, 19, 19, 0.14);
@@ -211,7 +223,7 @@
   align-items: flex-start;
   justify-content: space-between;
   height: var(--hdr-h);
-  margin-top: var(--hdr-lip);
+  margin: var(--hdr-lip) var(--hdr-wing) 0;
   padding: var(--hdr-pad-y) var(--hdr-pad-x);
   pointer-events: auto;
 }
