@@ -1,8 +1,9 @@
 "use client";
 
+import gsap from "gsap";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { onTick } from "@/lib/scroll";
+import { isReduced, lockScroll, onTick } from "@/lib/scroll";
 
 const CELL_VW = 0.3;
 const CELL_HOVER_VW = 0.7;
@@ -11,10 +12,21 @@ const NARROW_MAX = 760;
 const PAN_FACTOR = 0.42;
 const PAN_MIN_VH = 1.2;
 const PAN_MAX_VH = 2;
-const STEP_VH = 0.6;
-const STEP_MIN = 340;
+
+// Quanto de gesto cada quadro da galeria pede. E distancia virtual, nao altura
+// de documento: a foto aberta trava a pagina e o gesto alimenta so a galeria.
+// Por isso pode ser bem mais curta do que quando era scroll de verdade.
+const STEP_VH = 0.28;
+const STEP_MIN = 200;
+
 const IDLE_MS = 180;
 const EXIT_MS = 780;
+const READ_S = 0.5;
+const READ_EASE = "power2";
+// Folga nas duas pontas, para um tranco de trackpad no fim nao fechar sozinho.
+const SHUT_SLACK = 0.08;
+// deltaMode 1 vem em linhas e 2 em paginas; so o 0 ja e pixel.
+const LINE_PX = 16;
 
 function clamp01(value: number) {
   return value < 0 ? 0 : value > 1 ? 1 : value;
@@ -61,16 +73,13 @@ export function useEditorialReel(frames: readonly number[]) {
   const activeRef = useRef<number | null>(null);
   const armedRef = useRef(false);
   const geometry = useRef({ cell: 1, panMax: 0, panScroll: 1, step: 1, view: 0 });
-  const openAt = useRef(0);
-  const spent = useRef(0);
   const idle = useRef(0);
   const exit = useRef(0);
-  const repaint = useRef(() => {});
 
-  const scrolled = useCallback(() => {
-    const node = track.current;
-    return node ? -node.getBoundingClientRect().top : 0;
-  }, []);
+  // A leitura da galeria: alvo cru vindo do gesto, e o valor suavizado que vai
+  // para o CSS. Nada disso toca a altura do documento.
+  const aim = useRef(0);
+  const read = useRef({ at: 0 });
 
   const readFor = useCallback(
     (index: number | null) =>
@@ -80,15 +89,12 @@ export function useEditorialReel(frames: readonly number[]) {
 
   const close = useCallback(() => {
     if (activeRef.current === null) return;
-    const read = readFor(activeRef.current);
-    spent.current += clamp01((scrolled() - openAt.current) / read) * read;
     activeRef.current = null;
     setActive(null);
     setLeaving(true);
     window.clearTimeout(exit.current);
     exit.current = window.setTimeout(() => setLeaving(false), EXIT_MS);
-    repaint.current();
-  }, [readFor, scrolled]);
+  }, []);
 
   const open = useCallback(
     (index: number) => {
@@ -97,16 +103,85 @@ export function useEditorialReel(frames: readonly number[]) {
         return;
       }
       activeRef.current = index;
-      openAt.current = scrolled();
+      gsap.killTweensOf(read.current);
+      aim.current = 0;
+      read.current.at = 0;
+      track.current?.style.setProperty("--c", "0");
       window.clearTimeout(exit.current);
       setLeaving(false);
-      track.current?.style.setProperty("--c", "0");
       setActive(index);
       setShown(index);
-      repaint.current();
     },
-    [close, scrolled],
+    [close],
   );
+
+  // Enquanto uma foto esta aberta a pagina fica travada de verdade e o gesto
+  // alimenta a galeria. Nenhum pixel de scroll e consumido, entao nao ha o que
+  // devolver no fechamento.
+  useEffect(() => {
+    if (active === null) return;
+
+    lockScroll(true);
+
+    // Copiado para uma variavel local: o objeto do ref e sempre o mesmo, mas
+    // a limpeza nao deve reler o ref para saber o que matar.
+    const dial = read.current;
+    const toRead = gsap.quickTo(dial, "at", {
+      duration: READ_S,
+      ease: READ_EASE,
+    });
+
+    function feed(delta: number) {
+      const span = readFor(activeRef.current);
+      if (!span) return;
+
+      aim.current += delta / span;
+
+      if (aim.current > 1 + SHUT_SLACK || aim.current < -SHUT_SLACK) {
+        close();
+        return;
+      }
+
+      toRead(clamp01(aim.current));
+    }
+
+    function onWheel(event: WheelEvent) {
+      event.preventDefault();
+      const unit =
+        event.deltaMode === 1
+          ? LINE_PX
+          : event.deltaMode === 2
+            ? geometry.current.view
+            : 1;
+      feed(event.deltaY * unit);
+    }
+
+    let touch = 0;
+
+    function onTouchStart(event: TouchEvent) {
+      touch = event.touches[0]?.clientY ?? 0;
+    }
+
+    function onTouchMove(event: TouchEvent) {
+      event.preventDefault();
+      const y = event.touches[0]?.clientY ?? touch;
+      feed(touch - y);
+      touch = y;
+    }
+
+    // Nao passivos de proposito: sao eles que impedem a pagina de andar.
+    window.addEventListener("wheel", onWheel, { passive: false });
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: false });
+
+    return () => {
+      lockScroll(false);
+      gsap.killTweensOf(dial);
+      window.removeEventListener("wheel", onWheel);
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
+    };
+  }, [active, close, readFor]);
 
   useEffect(() => {
     const trackNode = track.current;
@@ -138,32 +213,12 @@ export function useEditorialReel(frames: readonly number[]) {
         setArmed(true);
       }
 
-      const { panScroll, view } = geometry.current;
-      const scroll = -rect.top;
-      const index = activeRef.current;
-      const read = readFor(index);
-      const live = index === null ? 0 : scroll - openAt.current;
-
-      if (index !== null && (live < 0 || live >= read)) {
-        close();
-        return;
-      }
-
+      const { panScroll } = geometry.current;
       const style = node.style;
-      style.setProperty(
-        "--q",
-        clamp01((scroll - spent.current - live) / panScroll).toFixed(4),
-      );
 
-      if (index !== null) style.setProperty("--c", (live / read).toFixed(4));
-
-      style.setProperty(
-        "--track-h",
-        `${(view + panScroll + spent.current + live).toFixed(2)}px`,
-      );
+      style.setProperty("--q", clamp01(-rect.top / panScroll).toFixed(4));
+      style.setProperty("--c", read.current.at.toFixed(4));
     }
-
-    repaint.current = progress;
 
     function measure() {
       const node = track.current;
@@ -197,6 +252,8 @@ export function useEditorialReel(frames: readonly number[]) {
       style.setProperty("--cell-hover", `${hover.toFixed(2)}px`);
       style.setProperty("--cell-rest", `${rest.toFixed(2)}px`);
       style.setProperty("--pan-max", `${panMax.toFixed(2)}px`);
+      // Constante: a altura da secao nao depende mais do que o usuario abriu.
+      style.setProperty("--track-h", `${(vh + panScroll).toFixed(2)}px`);
 
       fitTitle(capTitle.current, capYear.current);
 
@@ -236,7 +293,15 @@ export function useEditorialReel(frames: readonly number[]) {
       window.removeEventListener("resize", measure);
       window.removeEventListener("keydown", onKey);
     };
-  }, [count, close, readFor, frames]);
+  }, [count, close]);
+
+  // Com movimento reduzido nao ha gesto que percorra a galeria, entao ela abre
+  // ja inteira em vez de ficar num estado que o usuario nao consegue avancar.
+  useEffect(() => {
+    if (active === null || !isReduced()) return;
+    aim.current = 1;
+    read.current.at = 1;
+  }, [active]);
 
   useEffect(() => {
     const node = track.current;
