@@ -436,10 +436,12 @@ export function useHeaderGlass() {
         scene.resize();
 
         const waiting = feed.current;
-        if (waiting) scene.setMedia(waiting.media, waiting.focus, waiting.push);
+        if (waiting) {
+          scene.setMedia(waiting.media, waiting.focus, waiting.push);
+          setPainted(true);
+        }
 
         gsap.to(entry, { p: 1, duration: SHAPE_S, ease: "power4.out" });
-        setPainted(true);
         untick = onTick(tick);
       })
       .catch(() => {});
@@ -465,51 +467,36 @@ export function useHeaderGlass() {
     const section = SECTIONS.find((item) => item.id === hot);
     if (!section) return;
 
+    // Duas fitas bastam para o cross-fade, e o src so e atribuido no primeiro
+    // hover daquela secao. Ate o clipe chegar o painel e so vidro: nao ha
+    // imagem de espera, por pedido.
+    const tape = [tapeA.current, tapeB.current][slot.current ^ 1];
+    if (!tape) return;
+
     const next = SECTIONS.findIndex((item) => item.id === hot);
     // O sinal da diferenca de indice e o que da direcao a troca: ir de
     // FILMOGRAPHY para NOW empurra a onda num sentido, voltar empurra no outro.
     const push = Math.sign(next - seat.current);
     seat.current = next;
-
-    const image = new Image();
-    // O still do NOW e a miniatura do YouTube, que e cross-origin: sem isso o
-    // WebGL recusa a textura. Falhando o CORS, o onload nao vem, a chapa DOM
-    // continua no lugar e o painel segue funcionando sem refracao.
-    image.crossOrigin = "anonymous";
-    image.decoding = "async";
-
-    const ready = () => {
-      feed.current = { media: image, focus: section.focus, push };
-      liquid.current?.setMedia(image, section.focus, push);
-    };
-
-    image.addEventListener("load", ready, { once: true });
-    image.src = asset(section.still);
-
-    // Duas fitas bastam para o cross-fade, e o src so e atribuido no primeiro
-    // hover daquela secao. Sem os arquivos em public/videos o <video> falha em
-    // silencio e o still fica: e o estado padrao ate os clipes existirem.
-    const tape = [tapeA.current, tapeB.current][slot.current ^ 1];
-
-    if (!tape || isReduced()) {
-      return () => image.removeEventListener("load", ready);
-    }
-
     slot.current ^= 1;
 
     const rolling = () => {
       if (tape.dataset.for !== section.id) return;
-      // push 0: o empurrao ja aconteceu quando o still entrou, e repetir na
-      // troca de textura daria dois solavancos para um mesmo gesto.
-      feed.current = { media: tape, focus: section.focus, push: 0 };
-      liquid.current?.setMedia(tape, section.focus, 0);
+      feed.current = { media: tape, focus: section.focus, push };
+      liquid.current?.setMedia(tape, section.focus, push);
+      if (liquid.current) setPainted(true);
       tape.dataset.on = "";
-      void tape.play().catch(() => {});
+      // Com movimento reduzido o clipe entra parado no primeiro quadro: o
+      // painel continua dizendo o que e a secao, sem nada se mexendo.
+      if (!isReduced()) void tape.play().catch(() => {});
     };
 
     if (tape.dataset.for !== section.id) {
       tape.dataset.for = section.id;
       tape.src = asset(section.clip);
+      // Sem imagem cobrindo a espera, o unico jeito de encurta-la e deixar o
+      // browser bufferizar com vontade assim que o src existe.
+      tape.preload = "auto";
       tape.load();
     }
 
@@ -517,7 +504,6 @@ export function useHeaderGlass() {
     if (tape.readyState >= 3) rolling();
 
     return () => {
-      image.removeEventListener("load", ready);
       tape.removeEventListener("canplay", rolling);
       delete tape.dataset.on;
       tape.pause();

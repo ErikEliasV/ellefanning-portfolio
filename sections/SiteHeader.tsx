@@ -2,7 +2,6 @@
 
 import type { CSSProperties } from "react";
 
-import { asset } from "@/lib/asset";
 import { SECTIONS } from "@/lib/sections";
 import { useHeaderGlass } from "@/lib/useHeaderGlass";
 import "@/styles/header.css";
@@ -39,8 +38,8 @@ export function SiteHeader() {
         data-on={painted ? "" : undefined}
       />
 
-      {/* Primeiro frame e fallback ao mesmo tempo: some assim que o WebGL
-          pinta, e volta se o contexto cair. */}
+      {/* Caminho sem WebGL: as fitas aparecem no DOM quando o shader nao pode
+          desenha-las. Ate o clipe chegar, o painel e so vidro. */}
       <div
         aria-hidden
         className="hdr-plate"
@@ -48,13 +47,6 @@ export function SiteHeader() {
         data-raw={!painted ? "" : undefined}
         style={{ "--hdr-focus": shown?.focus ?? 0.5 } as CSSProperties}
       >
-        {shown ? (
-          // Cru de proposito: o next/image nao acrescenta nada numa chapa que
-          // some atras do canvas, e o output: "export" ja serve o arquivo.
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={asset(shown.still)} alt="" draggable={false} />
-        ) : null}
-
         <video ref={tapeA} muted loop playsInline preload="none" />
         <video ref={tapeB} muted loop playsInline preload="none" />
       </div>
