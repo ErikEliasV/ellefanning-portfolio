@@ -63,6 +63,33 @@ export function useFilmStage(count: number) {
         card.style.filter = reduced || d.blur < 0.1 ? "" : `blur(${d.blur.toFixed(2)}px)`;
       }
 
+      // FILMO branca só aparece onde há pôster atrás dela. O recorte segue a caixa do
+      // card mais próximo — ao passo de 48vw nunca há dois sobre a palavra ao mesmo
+      // tempo, então "o mais próximo" é exato, não aproximação. As bordas saem da
+      // matemática, nunca de getBoundingClientRect: custo zero por frame.
+      const cutEl = cut.current;
+      if (cutEl) {
+        const box = cutEl.getBoundingClientRect();
+        const mid = window.innerWidth / 2;
+
+        let near = 0;
+        let best = Infinity;
+        for (let i = 0; i < count; i += 1) {
+          const gap = Math.abs(i - c.u);
+          if (gap < best) { best = gap; near = i; }
+        }
+
+        const d = depth(near, c.u);
+        const half = (cardW * d.scale) / 2;
+        const cx = mid + d.offset * pitch;
+
+        const l = Math.min(Math.max(cx - half - box.left, 0), box.width);
+        const r = Math.min(Math.max(box.right - (cx + half), 0), box.width);
+
+        set("--cut-l", `${l.toFixed(2)}px`);
+        set("--cut-r", `${r.toFixed(2)}px`);
+      }
+
       if (c.lock !== lastLock.current) {
         lastLock.current = c.lock;
         setLock(c.lock);
