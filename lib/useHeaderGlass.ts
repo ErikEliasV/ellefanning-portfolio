@@ -51,6 +51,8 @@ const REST = 0.6;
 const ROOF_SHARE = 0.85;
 const FLOOR_SHARE = 0.9;
 const SIDE_SHARE = 0.85;
+// --duration-anchor, o token que o projeto ja reserva para salto de ancora.
+const RIDE_S = 1.6;
 
 type Feed = { media: Media; focus: number; push: number };
 
@@ -515,7 +517,15 @@ export function useHeaderGlass() {
       if (event.metaKey || event.ctrlKey || event.shiftKey) return;
       event.preventDefault();
       shut();
-      scrollTo(`#${id}`);
+      scrollTo(`#${id}`, {
+        // immediate e a opcao que o Lenis expoe para pular a animacao; duration
+        // 0 nao e documentado como salto.
+        immediate: isReduced(),
+        duration: RIDE_S,
+        // A mesma quartica do resto do site: sai rapido, chega decidido, sem
+        // repique. E o par em JS do cubic-bezier(.22, 1, .36, 1) do CSS.
+        easing: (t: number) => 1 - Math.pow(1 - t, 4),
+      });
     },
     [shut],
   );
