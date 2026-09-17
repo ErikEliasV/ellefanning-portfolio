@@ -51,12 +51,13 @@ export function scrollTo(
 }
 
 export function lockScroll(on: boolean) {
-  if (lenis) {
-    if (on) lenis.stop();
-    else lenis.start();
-    return;
-  }
+  // O overflow entra nos dois caminhos, nao so no de fallback: parar o Lenis
+  // sozinho nao impede arrastar a barra lateral, e era por ali que a pagina
+  // escapava de uma trava que devia ser total.
   document.documentElement.style.overflow = on ? "hidden" : "";
+  if (!lenis) return;
+  if (on) lenis.stop();
+  else lenis.start();
 }
 
 export function bootScroll() {

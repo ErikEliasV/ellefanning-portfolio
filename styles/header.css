@@ -1,0 +1,285 @@
+@property --hdr-reveal {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+/* Registradas porque lib/useHeaderGlass.ts precisa dos dois valores em pixel:
+   getComputedStyle devolve o texto especificado de uma custom property comum,
+   isto e, a string "clamp(...)" literal, e o parseFloat disso e NaN. */
+@property --hdr-h {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+@property --hdr-open-h {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+@property --hdr-lip {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+@property --hdr-top {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+@property --hdr-slack {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+@property --hdr-wing {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+.hdr {
+  --hdr-inset-x: clamp(14px, 2.9vw, 56px);
+  --hdr-top: clamp(10px, 1.9vw, 36px);
+  --hdr-h: clamp(44px, 4.1vw, 78px);
+  --hdr-open-h: clamp(280px, 28vw, 538px);
+  /* Folgas nos quatro lados, para a bolha ter para onde sair do retangulo sem
+     ser cortada pela propria caixa. O topo e o mais apertado: alem da folga,
+     ele sai pela viewport. */
+  --hdr-lip: 48px;
+  --hdr-slack: 160px;
+  --hdr-wing: 44px;
+  --hdr-pad-x: clamp(12px, 1.6vw, 30.7px);
+  --hdr-pad-y: clamp(7px, 0.72vw, 13.8px);
+  --hdr-type: clamp(13px, 1.66vw, 31.9px);
+  --hdr-lead: 1.592;
+  --hdr-grow: 1.18;
+  --hdr-blur: 10.15px;
+  --hdr-reveal: var(--hdr-h);
+
+  position: fixed;
+  /* A caixa sobe uma folga inteira, e a barra volta ao lugar pelo recorte: e
+     assim que a borda de cima ganha espaco para inchar. */
+  top: calc(var(--hdr-top) - var(--hdr-lip));
+  left: calc(var(--hdr-inset-x) - var(--hdr-wing));
+  right: calc(var(--hdr-inset-x) - var(--hdr-wing));
+  height: calc(var(--hdr-lip) + var(--hdr-open-h) + var(--hdr-slack));
+  z-index: 80;
+  isolation: isolate;
+
+  /* A casca tem sempre a altura aberta e revela por recorte, porque animar
+     height refaria layout a cada frame. O preco e que ela cobriria a caixa
+     inteira de area de clique mesmo fechada, entao o ponteiro so volta na
+     barra. O inset aqui e o caminho de repouso e o de movimento reduzido: com
+     script, quem escreve o clip-path e lib/headerGoo.ts, por frame. */
+  pointer-events: none;
+  clip-path: inset(
+    var(--hdr-lip) var(--hdr-wing)
+      calc(100% - var(--hdr-lip) - var(--hdr-reveal)) var(--hdr-wing)
+  );
+  /* A hero e animada e passa perto do branco, e o tipo do Figma e branco: a
+     51% o tinte sozinho deixava a barra ilegivel. Escurecer o backdrop mantem
+     a cor do Figma intacta e e o que vidro de verdade faz com o que esta
+     atras. */
+  -webkit-backdrop-filter: blur(var(--hdr-blur)) saturate(1.18) brightness(0.74);
+  backdrop-filter: blur(var(--hdr-blur)) saturate(1.18) brightness(0.74);
+  transform: translate3d(0, 0, 0);
+  transition:
+    --hdr-reveal var(--duration-micro) var(--ease-out),
+    transform var(--duration-base) var(--ease-out);
+}
+
+.hdr[data-hidden] {
+  transform: translate3d(
+    0,
+    calc(-1 * (var(--hdr-top) + var(--hdr-h) + 24px)),
+    0
+  );
+}
+
+.hdr[data-open] {
+  --hdr-reveal: var(--hdr-open-h);
+  transition-duration: var(--duration-slow), var(--duration-base);
+}
+
+.hdr[data-open] .hdr-plate {
+  pointer-events: auto;
+}
+
+.hdr-view {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity var(--duration-base) var(--ease-out);
+}
+
+.hdr[data-open] .hdr-view[data-on] {
+  opacity: 1;
+}
+
+.hdr-plate {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity var(--duration-base) var(--ease-out);
+}
+
+.hdr-plate[data-on] {
+  opacity: 1;
+}
+
+.hdr-plate img,
+.hdr-plate video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% calc(var(--hdr-focus, 0.5) * 100%);
+}
+
+/* Quem pinta as fitas e o shader; no DOM elas so aparecem no caminho sem
+   WebGL, que a chapa marca com data-raw. */
+.hdr-plate video {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+
+.hdr-plate[data-raw] video[data-on] {
+  opacity: 1;
+}
+
+.hdr-tint {
+  position: absolute;
+  inset: 0;
+  background-color: color-mix(
+    in srgb,
+    var(--color-periwinkle-400) 51%,
+    transparent
+  );
+}
+
+/* Sem desfoque atras, 51% nao segura o texto branco sobre a hero clara. */
+@supports not (
+  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
+  .hdr-tint {
+    background-color: color-mix(
+      in srgb,
+      var(--color-periwinkle-400) 78%,
+      transparent
+    );
+  }
+}
+
+.hdr-spec {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  mix-blend-mode: soft-light;
+  background: radial-gradient(
+    circle at var(--mx, 50%) var(--my, 50%),
+    rgba(255, 255, 255, 0.62),
+    rgba(255, 255, 255, 0.16) 26%,
+    transparent 58%
+  );
+  /* filter de elemento, nao backdrop-filter: url(), que o Safari nao suporta. */
+  filter: url(#hdr-liquid);
+  transition: opacity var(--duration-base) var(--ease-out);
+}
+
+.hdr[data-awake] .hdr-spec {
+  opacity: 1;
+}
+
+.hdr-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.hdr-nav {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  height: var(--hdr-h);
+  margin: var(--hdr-lip) var(--hdr-wing) 0;
+  padding: var(--hdr-pad-y) var(--hdr-pad-x);
+  pointer-events: auto;
+}
+
+.hdr-link {
+  position: relative;
+  display: inline-block;
+  font-family: var(--font-text);
+  font-size: var(--hdr-type);
+  line-height: var(--hdr-lead);
+  white-space: nowrap;
+  text-decoration: none;
+  color: var(--color-paper-000);
+  transform: scale(1);
+  transition:
+    transform var(--duration-base) var(--ease-out),
+    opacity var(--duration-base) var(--ease-out);
+}
+
+.hdr-link:first-child {
+  transform-origin: left center;
+}
+
+.hdr-link:last-child {
+  transform-origin: right center;
+}
+
+.hdr-link[data-hot] {
+  transform: scale(var(--hdr-grow));
+}
+
+.hdr-nav[data-open] .hdr-link:not([data-hot]) {
+  opacity: 0.55;
+}
+
+/* O contraste do foco sobre periwinkle nao e garantido, entao a regua e
+   explicita em vez de herdar o outline do agente. */
+.hdr-link:focus-visible {
+  outline: 2px solid var(--color-ink-900);
+  outline-offset: 4px;
+}
+
+/* O Figma sublinha com text-decoration, mas a regua precisa contra-escalar no
+   item que cresce: sem isso ela engorda junto e vira 2.4px so ali. */
+.hdr-link[aria-current]::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0.14em;
+  left: 0;
+  height: 2px;
+  background-color: currentColor;
+  transform-origin: bottom;
+}
+
+.hdr-link[aria-current][data-hot]::after {
+  transform: scaleY(calc(1 / var(--hdr-grow)));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hdr-spec {
+    display: none;
+  }
+}
+
+@media (hover: none) {
+  .hdr-spec {
+    display: none;
+  }
+}
