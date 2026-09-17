@@ -61,7 +61,6 @@ export function SiteHeader() {
 
       <div aria-hidden className="hdr-tint" />
       <div aria-hidden className="hdr-spec" />
-      <div aria-hidden className="hdr-edge" />
 
       <nav
         className="hdr-nav"

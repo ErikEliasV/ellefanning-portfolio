@@ -345,9 +345,6 @@ export function useHeaderGlass() {
       // morreria duas vezes mais rapido que a 60Hz.
       jolt.current *= Math.exp(-step * JOLT_DECAY);
 
-      // A moldura acompanha o retangulo do vidro, que so o hook conhece.
-      node.style.setProperty("--hdr-reveal", `${shape.reveal.toFixed(1)}px`);
-
       node.style.clipPath = gooPath({
         width,
         wing,
@@ -395,7 +392,6 @@ export function useHeaderGlass() {
       gsap.killTweensOf(shape);
       node.style.removeProperty("--mx");
       node.style.removeProperty("--my");
-      node.style.removeProperty("--hdr-reveal");
       // Devolve o recorte ao CSS, que e tambem o caminho de movimento reduzido.
       node.style.removeProperty("clip-path");
     };
