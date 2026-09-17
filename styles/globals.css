@@ -148,6 +148,9 @@
 
   html {
     -webkit-font-smoothing: antialiased;
+    /* A calha fica reservada sempre, senao travar o scroll tira a barra e o
+       conteudo inteiro pula de lado no instante em que uma foto abre. */
+    scrollbar-gutter: stable;
   }
 
   body {
