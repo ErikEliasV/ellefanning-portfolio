@@ -16,6 +16,12 @@ export function useFilmStage(count: number) {
   const [lock, setLock] = useState(0);
 
   const lastLock = useRef(0);
+  // `lastLock` guarda o último valor de c.lock, inclusive -1, e é o que evita
+  // redisparo por frame. A direção do tranco precisa de outra coisa: o último
+  // índice de fato travado. Em scroll contínuo o cursor passa por -1 entre uma
+  // trava e a seguinte, então usar `lastLock` para a direção comparava sempre
+  // contra -1 e o tranco nunca invertia.
+  const lastIndex = useRef(-1);
 
   useEffect(() => {
     let vh = 0;
@@ -106,10 +112,13 @@ export function useFilmStage(count: number) {
           reelTick(c.lock, c.lock / (count - 1));
           const card = rail.current?.children[c.lock] as HTMLElement | undefined;
           if (card && !isReduced()) {
-            const back = c.lock < lastLock.current;
+            // Na primeira trava da seção não há índice anterior: lastIndex
+            // ainda é -1, e não existe "direção" para trás disso.
+            const back = lastIndex.current >= 0 && c.lock < lastIndex.current;
             card.dataset.kick = back ? "-" : "+";
             window.setTimeout(() => { delete card.dataset.kick; }, 120);
           }
+          lastIndex.current = c.lock;
         }
 
         lastLock.current = c.lock;
