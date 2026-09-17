@@ -109,10 +109,19 @@ export function cursor(p: number, reduced: boolean): Cursor {
 
   const curtain = span(p, f.curtain);
   const rise = span(p, f.rise);
-  const split = span(p, f.open);
+
+  // O vão abre na fase `open` e fecha na `close`. As duas não se sobrepõem, e
+  // é essa a razão de a subtração bastar: durante a abertura `closed` é 0, e
+  // durante o fechamento `opened` já saturou em 1, então o vão anda de 1 a 0.
+  const opened = span(p, f.open);
+  const closed = span(p, f.close);
+  const split = opened - closed;
+
   // O pôster sobe na segunda metade da abertura: a palavra abre, o filme sobe
-  // pelo vão que ela acabou de abrir.
-  const enter = clamp01((split - 0.5) * 2);
+  // pelo vão que ela acabou de abrir. Sai de `opened`, não de `split`, senão o
+  // fechamento no fim da seção faria o primeiro pôster subir de novo.
+  const enter = clamp01((opened - 0.5) * 2);
+
   const fall = span(p, f.fall);
   const reveal = span(p, f.reveal);
 
