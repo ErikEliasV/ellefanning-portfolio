@@ -1,293 +1,151 @@
-.film-section {
-  --rail: clamp(164px, 34.375vw, 660px);
-  --rail-pad-left: clamp(22px, 2.083vw, 40px);
-  --rail-pad-right: clamp(8px, 0.9375vw, 18px);
-  --reel-gap: clamp(14px, 2.5vw, 48px);
-  --card-gap: clamp(10px, 1.25vw, 24px);
-
-  border-top: 1px solid var(--color-ink-900);
-  background-color: var(--color-paper-000);
-}
-
 .film-track {
   position: relative;
+  /* Vira 12.58 × 100vh na Tarefa 3. Por ora, uma tela: o palco parado. */
+  height: 100vh;
+
+  /* Geometria em px, escrita por `geometry()` na Tarefa 3. O CSS não declara
+     nenhuma destas medidas: são fonte única do JS. Os valores abaixo são só o
+     andaime desta tarefa, para o palco parado ter o que desenhar. */
+  --card-w: 28.1vw;
+  --card-h: calc(var(--card-w) * (812 / 539));
+  --split: 17.3vw;
+
+  /* Estado. A Tarefa 3 escreve estes valores a cada frame. */
+  --curtain: 0;
+  --rise: 1;
+  --fall: 0;
+  --cut-l: 100%;
+  --cut-r: 0px;
 }
 
 .film-stage {
   position: sticky;
   top: 0;
-  display: flex;
-  flex-direction: column;
-  height: 100svh;
+  height: 100vh;
   overflow: hidden;
+  isolation: isolate;
 }
 
-.film-reel {
-  position: relative;
-  flex: 1;
-  min-height: 0;
-}
-
-.film-gate {
+.film-paper {
   position: absolute;
   inset: 0;
-  overflow: hidden;
+  z-index: 1;
+  background-color: var(--color-paper-000);
 }
 
-.film-strip {
-  position: absolute;
-  inset-block: 0;
-  display: flex;
-  align-items: center;
-  width: max-content;
-  padding-left: calc(var(--rail) + var(--reel-gap));
-  gap: var(--card-gap);
-  will-change: transform;
-}
-
-.film-card {
-  position: relative;
-  flex: none;
-  height: min(84%, 47.5vw);
-  aspect-ratio: 605 / 912;
-  overflow: hidden;
-  background-color: var(--color-ink-700);
-}
-
-.film-card-image {
-  object-fit: cover;
-  filter: var(--filter-image-color);
-}
-
-.film-card-blank {
-  position: absolute;
+/* A cortina cobre a hero, que não passa de z-index 20; o header vive em 80. */
+.film-curtain {
+  position: fixed;
   inset: 0;
-  display: grid;
-  place-items: center;
-  padding: 12px;
-  text-align: center;
-  font-family: var(--font-text);
-  font-size: var(--text-label-sm);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-  color: var(--color-ink-300);
+  z-index: 60;
+  background-color: var(--color-paper-000);
+  transform: translate3d(0, calc((1 - var(--curtain)) * 100%), 0);
+  pointer-events: none;
 }
 
-.film-card-plate {
+/* As duas metades se encostam no centro quando --split é 0, e a palavra lê como
+   FILMOGRAPHY. Abrir é uma variável só: nada de medir largura de glifo. */
+.film-word-back,
+.film-word-front,
+.film-word-cut {
   position: absolute;
-  inset-inline: 0;
-  bottom: 0;
+  top: 45.4vh;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: clamp(10px, 0.9375vw, 18px) clamp(12px, 1.042vw, 20px);
-  background-color: var(--scrim-plate);
-  transform: translateY(100%);
-  transition: transform var(--duration-base) var(--ease-out);
+  transform: translate3d(0, calc(var(--fall) * 60vh), 0);
+  opacity: var(--rise);
+  white-space: nowrap;
+  pointer-events: none;
 }
 
-.film-card:focus-within .film-card-plate {
-  transform: translateY(0);
+.film-word-back,
+.film-word-cut {
+  right: calc(50% + var(--split));
+  align-items: flex-start;
 }
 
-@media (hover: hover) {
-  .film-card:hover .film-card-plate {
-    transform: translateY(0);
-  }
+.film-word-front {
+  left: calc(50% + var(--split));
+  align-items: flex-end;
 }
 
-/* Nothing to hover with on touch, so the plate rides whichever poster the
-   counter is already reading. */
-@media (hover: none) {
-  .film-card[data-active] .film-card-plate {
-    transform: translateY(0);
-  }
-}
+.film-word-back { z-index: 2; }
+.film-word-front { z-index: 3; }
+.film-rail { z-index: 4; }
+.film-word-cut { z-index: 5; }
 
-.film-card-title {
-  font-family: var(--font-text);
-  font-weight: 700;
-  font-size: var(--text-label-sm);
-  line-height: 1.25;
-  letter-spacing: var(--tracking-label);
+.film-word {
+  font-family: var(--font-editorial);
+  font-weight: 400;
+  font-size: 5.5vw;
+  line-height: 0.92;
+  letter-spacing: -0.01em;
   text-transform: uppercase;
-  color: var(--color-rose-300);
+  color: var(--color-ink-900);
 }
 
-.film-card-role {
-  font-family: var(--font-text);
-  font-size: var(--text-micro);
-  line-height: 1.6;
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
+/* FILMO existe duas vezes. A preta fica sob os cards e some atrás deles; esta,
+   branca, fica acima e é recortada na caixa do card, então as letras só
+   aparecem onde há pôster. A fronteira é a borda do próprio card, exata. */
+.film-word-cut .film-word {
   color: var(--color-paper-000);
+}
+
+.film-word-cut {
+  clip-path: inset(0 var(--cut-r) 0 var(--cut-l));
+}
+
+.film-count {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6ch;
+  margin-top: 0.1em;
+  font-family: var(--font-text);
+  color: var(--color-ink-900);
+}
+
+.film-count-now { font-size: 3.2vw; line-height: 1; }
+.film-count-all { font-size: 1vw; line-height: 1; }
+
+.film-year {
+  margin-top: 0.1em;
+  font-family: var(--font-text);
+  font-size: 3.9vw;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  color: var(--color-periwinkle-400);
 }
 
 .film-rail {
   position: absolute;
-  inset-block: 0;
-  left: 0;
-  z-index: 10;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  justify-content: center;
-  gap: clamp(28px, 6.406vw, 123px);
-  width: var(--rail);
-  padding-left: var(--rail-pad-left);
-  padding-right: var(--rail-pad-right);
-  background-color: var(--color-paper-000);
+  inset: 0;
 }
 
-.film-heading {
-  margin: 0;
-  font-family: var(--font-editorial);
-  font-weight: 400;
-  font-size: clamp(24px, 5.643vw, 108.35px);
-  line-height: 0.92;
-  letter-spacing: -0.01em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  color: var(--color-ink-900);
-}
-
-.film-index {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-}
-
-.film-index-row {
-  display: flex;
-  align-items: flex-start;
-}
-
-.film-index-now {
-  /* The slot was measured for the old face. Two ZT Nature digit cells are a
-     couple of pixels wider than it, and as separate spans they had somewhere
-     to wrap to, which doubled the height of the counter. Splitting the slot
-     between them keeps the width the design asked for and the digits equal. */
-  display: flex;
-  width: clamp(34px, 6.861vw, 131.74px);
-  font-family: var(--font-text);
-  font-weight: 400;
-  font-size: clamp(22px, 5.242vw, 100.65px);
-  line-height: 1;
-  color: var(--color-ink-900);
-}
-
-.film-index-now .num-cell {
-  flex: 1 1 0;
-  min-width: 0;
-  width: auto;
-}
-
-.film-index-total {
-  white-space: nowrap;
-  padding-top: clamp(3px, 0.7148vw, 13.72px);
-  font-family: var(--font-text);
-  font-weight: 700;
-  font-size: clamp(9px, 1.3105vw, 25.16px);
-  line-height: 1.25;
-  letter-spacing: var(--tracking-label-wide);
-  text-transform: uppercase;
-  color: var(--color-ink-900);
-}
-
-.film-index-year {
-  font-family: var(--font-text);
-  font-weight: 500;
-  font-size: clamp(22px, 5.176vw, 99.38px);
-  line-height: 1.25;
-  letter-spacing: var(--tracking-label);
-  color: var(--color-periwinkle-400);
-}
-
-.film-wash {
+.film-card {
   position: absolute;
-  inset-inline: 0;
-  bottom: 0;
-  top: calc((100% - var(--bar-h, 52px)) * (1 - var(--rise, 0)));
-  z-index: 20;
-  border-top: 1px solid var(--color-ink-900);
-  background-color: var(--wash, var(--color-rose-400));
+  top: 50%;
+  left: 50%;
+  width: var(--card-w);
+  height: var(--card-h);
+  margin: calc(var(--card-h) / -2) 0 0 calc(var(--card-w) / -2);
+  visibility: hidden;
 }
 
-.film-bar {
-  /* The handoff already publishes its own progress: --rise climbs as the bar
-     takes over and --burn eats it away, so the difference is the triangle the
-     split needs. No second scroll listener for something the reel knows. */
-  --split: clamp(0, calc(var(--rise, 0) - var(--burn, 0)), 1);
-  position: relative;
-  z-index: 30;
-  filter:
-    drop-shadow(calc(var(--split) * 6px) 0 0 rgba(224, 114, 149, 0.6))
-    drop-shadow(calc(var(--split) * -6px) 0 0 rgba(141, 154, 196, 0.6));
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding-inline: var(--rail-pad-left);
-  padding-block: clamp(10px, 0.9375vw, 18px);
-  opacity: calc(1 - var(--burn, 0));
-  font-size: var(--text-label-sm);
-  line-height: 1.25;
-  letter-spacing: var(--tracking-label-wide);
-  text-transform: uppercase;
-  white-space: nowrap;
-  color: var(--color-ink-900);
+.film-card[data-at="0"] { visibility: visible; }
+
+.film-card-image {
+  object-fit: cover;
+  user-select: none;
 }
 
-.film-meter {
-  position: absolute;
-  inset-inline: 0;
-  top: 0;
-  height: 3px;
-  transform: scaleX(0);
-  transform-origin: left;
+.film-card-blank {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  padding: 1em;
   background-color: var(--color-ink-900);
-  will-change: transform;
-}
-
-.film-bar-name {
-  font-family: var(--font-text);
-  font-weight: 700;
-}
-
-.film-bar-span {
-  font-family: var(--font-text);
-  font-weight: 500;
-}
-
-@media (width < 64rem) {
-  .film-card {
-    height: min(74%, 84vw);
-  }
-
-  .film-card-role {
-    font-size: var(--text-label-sm);
-    letter-spacing: 0.1em;
-  }
-}
-
-/* The counter never cuts from one number to the next: the new figure resolves
-   out of a short blur as the poster takes the centre. The origin stays at the
-   left edge so the fixed slot the design asked for does not breathe. */
-@keyframes film-tick {
-  from {
-    opacity: 0.35;
-    filter: blur(5px);
-    transform: scale(1.06);
-  }
-  to {
-    opacity: 1;
-    filter: blur(0);
-    transform: scale(1);
-  }
-}
-
-.film-index-now,
-.film-index-year {
-  transform-origin: 0 50%;
-  animation: film-tick var(--duration-micro) var(--ease-out) both;
+  color: var(--color-paper-000);
+  font-family: var(--font-editorial);
+  font-size: 2vw;
+  text-align: center;
 }
