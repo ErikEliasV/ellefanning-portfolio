@@ -1,6 +1,6 @@
 @property --hdr-reveal {
   syntax: "<length>";
-  inherits: false;
+  inherits: true;
   initial-value: 0px;
 }
 
@@ -9,31 +9,31 @@
    isto e, a string "clamp(...)" literal, e o parseFloat disso e NaN. */
 @property --hdr-h {
   syntax: "<length>";
-  inherits: false;
+  inherits: true;
   initial-value: 0px;
 }
 
 @property --hdr-open-h {
   syntax: "<length>";
-  inherits: false;
+  inherits: true;
   initial-value: 0px;
 }
 
 @property --hdr-lip {
   syntax: "<length>";
-  inherits: false;
+  inherits: true;
   initial-value: 0px;
 }
 
 @property --hdr-top {
   syntax: "<length>";
-  inherits: false;
+  inherits: true;
   initial-value: 0px;
 }
 
 @property --hdr-slack {
   syntax: "<length>";
-  inherits: false;
+  inherits: true;
   initial-value: 0px;
 }
 
