@@ -35,9 +35,11 @@ export function useFilmStage(count: number) {
       const set = (name: string, value: string) =>
         trackEl.style.setProperty(name, value);
 
+      const splitPx = c.split * splitMax;
+
       set("--curtain", c.curtain.toFixed(4));
       set("--rise", c.rise.toFixed(4));
-      set("--split", `${(c.split * splitMax).toFixed(2)}px`);
+      set("--split", `${splitPx.toFixed(2)}px`);
       set("--fall", c.fall.toFixed(4));
 
       for (let i = 0; i < count; i += 1) {
@@ -70,7 +72,12 @@ export function useFilmStage(count: number) {
       const cutEl = cut.current;
       if (cutEl) {
         const box = cutEl.getBoundingClientRect();
-        const mid = window.innerWidth / 2;
+        // window.innerWidth inclui a calha da barra de rolagem
+        // (scrollbar-gutter: stable), então não é o centro real do palco. A
+        // borda direita da própria caixa já é `centroDoPalco - split` (é como
+        // .film-word-cut é posicionada em CSS: `right: calc(50% + var(--split))`),
+        // então o centro sai dela mesma, sem nova leitura de layout.
+        const mid = box.right + splitPx;
 
         let near = 0;
         let best = Infinity;
