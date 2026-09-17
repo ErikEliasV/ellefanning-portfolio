@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { NARROW_QUERY, cursor, depth, geometry, trackVh } from "@/lib/filmStage";
 import { isReduced, onTick } from "@/lib/scroll";
+import { reelTick } from "@/lib/audio";
 
 export function useFilmStage(count: number) {
   const track = useRef<HTMLDivElement>(null);
@@ -98,6 +99,19 @@ export function useFilmStage(count: number) {
       }
 
       if (c.lock !== lastLock.current) {
+        // O único beat que não é posição. Fora da matemática de scroll de propósito: se
+        // o overshoot fosse scrubbado, rolar devagar o esticaria por segundos e ele
+        // deixaria de ser seco — e o som, de duração fixa, dessincronizaria.
+        if (c.lock >= 0) {
+          reelTick(c.lock, c.lock / (count - 1));
+          const card = rail.current?.children[c.lock] as HTMLElement | undefined;
+          if (card && !isReduced()) {
+            const back = c.lock < lastLock.current;
+            card.dataset.kick = back ? "-" : "+";
+            window.setTimeout(() => { delete card.dataset.kick; }, 120);
+          }
+        }
+
         lastLock.current = c.lock;
         setLock(c.lock);
         // O contador e o ano trocam em corte duro, no instante da trava, e

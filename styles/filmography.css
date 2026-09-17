@@ -145,3 +145,17 @@
   font-size: 2vw;
   text-align: center;
 }
+
+/* 90ms, seco, sem volta elastica: um obturador engatando o quadro. */
+@keyframes film-kick-fwd {
+  from { translate: 6px 0; }
+  to { translate: 0 0; }
+}
+
+@keyframes film-kick-back {
+  from { translate: -6px 0; }
+  to { translate: 0 0; }
+}
+
+.film-card[data-kick="+"] { animation: film-kick-fwd 90ms var(--ease-out); }
+.film-card[data-kick="-"] { animation: film-kick-back 90ms var(--ease-out); }
