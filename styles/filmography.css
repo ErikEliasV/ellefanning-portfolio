@@ -1,7 +1,5 @@
 .film-track {
   position: relative;
-  /* Vira 12.58 × 100vh na Tarefa 3. Por ora, uma tela: o palco parado. */
-  height: 100vh;
 
   /* Geometria em px, escrita por `geometry()` na Tarefa 3. O CSS não declara
      nenhuma destas medidas: são fonte única do JS. Os valores abaixo são só o
@@ -130,8 +128,6 @@
   margin: calc(var(--card-h) / -2) 0 0 calc(var(--card-w) / -2);
   visibility: hidden;
 }
-
-.film-card[data-at="0"] { visibility: visible; }
 
 .film-card-image {
   object-fit: cover;

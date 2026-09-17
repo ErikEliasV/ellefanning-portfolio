@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { asset } from "@/lib/asset";
 import type { Film } from "@/lib/films";
+import { useFilmStage } from "@/lib/useFilmStage";
 
 function two(value: number) {
   return String(value).padStart(2, "0");
@@ -18,14 +19,14 @@ function digits(value: string) {
 }
 
 export function FilmStage({ films }: { films: readonly Film[] }) {
-  const active = 0;
+  const { track, stage, rail, cut, curtain, active } = useFilmStage(films.length);
   const now = films[active];
 
   return (
-    <div className="film-track">
-      <span aria-hidden className="film-curtain" />
+    <div ref={track} className="film-track">
+      <span ref={curtain} aria-hidden className="film-curtain" />
 
-      <div className="film-stage">
+      <div ref={stage} className="film-stage">
         <span aria-hidden className="film-paper" />
 
         <div className="film-word-back">
@@ -41,7 +42,7 @@ export function FilmStage({ films }: { films: readonly Film[] }) {
           <span className="film-year">{now.year}</span>
         </div>
 
-        <div className="film-rail">
+        <div ref={rail} className="film-rail">
           {films.map((film, index) => (
             <article key={film.id} className="film-card" data-at={index}>
               {film.poster ? (
@@ -61,7 +62,7 @@ export function FilmStage({ films }: { films: readonly Film[] }) {
           ))}
         </div>
 
-        <div aria-hidden className="film-word-cut">
+        <div ref={cut} aria-hidden className="film-word-cut">
           <span className="film-word">Filmo</span>
         </div>
       </div>
