@@ -6,7 +6,7 @@ import type { MouseEvent } from "react";
 
 import { asset } from "@/lib/asset";
 import { gooPath } from "@/lib/headerGoo";
-import { isReduced, onTick, scrollTo } from "@/lib/scroll";
+import { isLocked, isReduced, onTick, scrollTo } from "@/lib/scroll";
 import { SECTIONS } from "@/lib/sections";
 import type { Liquid, Media } from "@/lib/headerLiquid";
 import type { SectionId } from "@/lib/sections";
@@ -226,8 +226,15 @@ export function useHeaderGlass() {
       setHidden(down && y > HIDE_AFTER);
     };
 
-    // A faixa do topo devolve o header sem precisar rolar para tras.
+    // A faixa do topo devolve o header sem precisar rolar para tras. Mas com a
+    // tela travada por um modal o header esta atras dele, inerte e invisivel:
+    // o ponteiro que passa por essa faixa esta a caminho de outra coisa (o
+    // botao de fechar do modal do filme mora a 9.1vh, dentro dos PEEK px), e
+    // nao pedindo o header de volta. Sem esta guarda, abrir um filme com a
+    // barra escondida e fechar pelo botao deixava o header plantado no topo,
+    // porque o gesto de fechar tinha desligado o hidden por baixo do modal.
     const peek = (event: PointerEvent) => {
+      if (isLocked()) return;
       if (event.clientY <= PEEK) setHidden(false);
     };
 

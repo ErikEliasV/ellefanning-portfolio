@@ -139,6 +139,11 @@ export function FilmDialog({
       aria-label={film.title}
       className="film-dialog"
       data-open={open ? "" : undefined}
+      // O modal cobre a tela inteira com --color-ink-900, e o cursor
+      // desenha em ink por padrao: preto sobre preto. "invert" e o mesmo
+      // sinal que Characters, Now e o rodape ja usam para as secoes
+      // escuras -- ver o `closest("[data-cursor-skin]")` de lib/useCursor.ts.
+      data-cursor-skin="invert"
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
