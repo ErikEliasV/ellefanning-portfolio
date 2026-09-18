@@ -166,3 +166,167 @@
 
 .film-card[data-kick="+"] { animation: film-kick-fwd 90ms var(--ease-out); }
 .film-card[data-kick="-"] { animation: film-kick-back 90ms var(--ease-out); }
+
+.film-card {
+  padding: 0;
+  border: 0;
+  background: none;
+  pointer-events: none;
+}
+
+.film-card[data-live] { pointer-events: auto; cursor: pointer; }
+
+/* O convite aparece no hover de ponteiro fino; no toque o tap já abre. */
+@media (hover: hover) {
+  .film-card[data-live]:hover .film-card-image { filter: brightness(1.08); }
+}
+
+.film-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  overflow: hidden;
+  background-color: var(--color-ink-900);
+  animation: film-dialog-in var(--duration-slow) var(--ease-out);
+}
+
+@keyframes film-dialog-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.film-dialog-wash {
+  object-fit: cover;
+  filter: blur(46px) brightness(0.42);
+  transform: scale(1.14);
+}
+
+.film-dialog-close {
+  position: absolute;
+  top: 9.1vh;
+  left: 12.3vw;
+  display: flex;
+  align-items: center;
+  gap: 0.7em;
+  width: 3.2vw;
+  height: 3.2vw;
+  padding: 0 1vw;
+  border: 0;
+  border-radius: 8px;
+  background-color: rgb(255 255 255 / 0.12);
+  color: var(--color-paper-000);
+  overflow: hidden;
+  cursor: pointer;
+  transition:
+    width var(--duration-base) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
+}
+
+/* 61 × 61 em repouso, 180 × 61 aberto: o X gira 45° e vira +, o rótulo entra. */
+.film-dialog-close:hover,
+.film-dialog-close:focus-visible {
+  width: 9.4vw;
+}
+
+.film-dialog-close:active {
+  background-color: var(--color-rose-500);
+}
+
+.film-dialog-x {
+  position: relative;
+  flex: none;
+  width: 1.1em;
+  height: 1.1em;
+  rotate: 45deg;
+  transition: rotate var(--duration-base) var(--ease-out);
+}
+
+.film-dialog-x::before,
+.film-dialog-x::after {
+  content: "";
+  position: absolute;
+  inset: 50% 0 auto;
+  height: 1px;
+  background-color: currentColor;
+}
+
+.film-dialog-x::after { rotate: 90deg; }
+
+.film-dialog-close:hover .film-dialog-x,
+.film-dialog-close:focus-visible .film-dialog-x {
+  rotate: 0deg;
+}
+
+.film-dialog-back {
+  font-family: var(--font-sans);
+  font-size: 1vw;
+  letter-spacing: var(--tracking-label-wide);
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+.film-dialog-close:hover .film-dialog-back,
+.film-dialog-close:focus-visible .film-dialog-back {
+  opacity: 1;
+}
+
+.film-dialog-text {
+  position: absolute;
+  top: 41.2vh;
+  left: 12.3vw;
+  width: 34.8vw;
+  color: var(--color-paper-000);
+}
+
+.film-dialog-title {
+  margin: 0;
+  font-family: var(--font-editorial);
+  font-weight: 400;
+  font-size: 4.3vw;
+  line-height: 0.92;
+  text-transform: uppercase;
+}
+
+.film-dialog-label {
+  margin: 0.6em 0 0.3em;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: var(--text-label);
+  letter-spacing: var(--tracking-label-wide);
+  text-transform: uppercase;
+}
+
+.film-dialog-body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-weight: 300;
+  font-size: 0.94vw;
+  line-height: 1.5;
+  letter-spacing: 0.1em;
+}
+
+.film-dialog-role {
+  margin: 1.4em 0 0;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: var(--text-label);
+  letter-spacing: var(--tracking-label-wide);
+  text-transform: uppercase;
+}
+
+.film-dialog-role span { color: var(--color-rose-400); }
+.film-dialog-dir { opacity: 0.66; }
+
+/* A mesma caixa do card travado, 351px à direita: o modal não surge por cima,
+   o card viaja até aqui. */
+.film-dialog-plate {
+  position: absolute;
+  top: 8.8vh;
+  left: 54.3vw;
+  width: 28.2vw;
+  height: 75.2vh;
+  overflow: hidden;
+}
+
+.film-dialog-still { object-fit: cover; }

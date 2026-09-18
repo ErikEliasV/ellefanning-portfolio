@@ -1,7 +1,9 @@
 "use client";
 
 import Image from "next/image";
+import { useState } from "react";
 import { asset } from "@/lib/asset";
+import { FilmDialog } from "@/components/content/FilmDialog";
 import type { Film } from "@/lib/films";
 import { useFilmStage } from "@/lib/useFilmStage";
 
@@ -19,8 +21,9 @@ function digits(value: string) {
 }
 
 export function FilmStage({ films }: { films: readonly Film[] }) {
-  const { track, stage, rail, cut, curtain, active } = useFilmStage(films.length);
+  const { track, stage, rail, cut, curtain, active, lock } = useFilmStage(films.length);
   const now = films[active];
+  const [open, setOpen] = useState<number | null>(null);
 
   return (
     <div ref={track} className="film-track">
@@ -44,7 +47,15 @@ export function FilmStage({ films }: { films: readonly Film[] }) {
 
         <div ref={rail} className="film-rail">
           {films.map((film, index) => (
-            <article key={film.id} className="film-card" data-at={index}>
+            <button
+              key={film.id}
+              type="button"
+              className="film-card"
+              data-at={index}
+              data-live={index === lock ? "" : undefined}
+              aria-label={`${film.title} (${film.year}) — open details`}
+              onClick={() => setOpen(index)}
+            >
               {film.poster ? (
                 <Image
                   src={asset(film.poster)}
@@ -58,7 +69,7 @@ export function FilmStage({ films }: { films: readonly Film[] }) {
               ) : (
                 <span className="film-card-blank">{film.title}</span>
               )}
-            </article>
+            </button>
           ))}
         </div>
 
@@ -66,6 +77,10 @@ export function FilmStage({ films }: { films: readonly Film[] }) {
           <span className="film-word">Filmo</span>
         </div>
       </div>
+
+      {open !== null ? (
+        <FilmDialog film={films[open]} onClose={() => setOpen(null)} />
+      ) : null}
     </div>
   );
 }
