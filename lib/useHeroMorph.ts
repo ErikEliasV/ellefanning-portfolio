@@ -15,7 +15,13 @@ const FRAME_W = 1920;
 const A_SIL_W_VW = 1.0342;
 const A_SIL_W_VH = 1.6;
 const A_SIL_W_MAX_VW = 1.9;
-const A_SIL_SHOW = 0.38;
+// Fracao da altura do silhueta A visivel dentro do frame: o topo do
+// retrato ja nasce inteiro dentro do frame (nunca corta ali), so a base
+// e que estoura para fora e e cortada pelo overflow:hidden do
+// .hero-frame — entao e este numero, nao a animacao de entrada, que
+// decide onde esse corte cai. Era 0.38 (mostrava ate passar do nariz);
+// reduzido a pedido, para o corte voltar a cair perto da ponta do nariz.
+const A_SIL_SHOW = 0.37;
 const A_SIL_CX_VW = 0.5115;
 const A_RISE_VH = 0.22;
 
