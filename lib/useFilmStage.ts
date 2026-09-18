@@ -57,6 +57,15 @@ export function useFilmStage(count: number) {
       // A cortina serve só à entrada, cobrindo a hero enquanto o palco não chegou. Um
       // instante depois disso ela precisa sair do caminho, senão o z-index 60 dela
       // fica acima do contexto isolado do palco e apaga a seção inteira.
+      //
+      // O limiar de 0.05 não tem 0.4vh de colchão, mesmo `--curtain` saturando em
+      // p = -0.35: entre -0.35 e 0 quem cobre a tela ainda é só a cortina, porque o
+      // palco sticky só trava no topo — e passa a cobrir o viewport inteiro — em
+      // p = 0. A folga real, entre "o palco já cobre" e "a cortina sai", é de 0.05vh
+      // contados a partir de p = 0, não de -0.35. Mexer no limiar, na posição do
+      // palco dentro de .film-track ou nas fases precisa contar a partir daí, senão
+      // volta o bug que esta tarefa corrigiu. E isso vale em qualquer modo: p = 0 é
+      // geométrico (`-trackTop / vh`), phases() não muda onde o palco gruda.
       const curtainEl = curtain.current;
       if (curtainEl) {
         if (p < 0.05) curtainEl.dataset.on = "";
