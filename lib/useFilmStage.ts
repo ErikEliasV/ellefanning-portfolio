@@ -5,6 +5,18 @@ import { CURTAIN_OUT, NARROW_QUERY, cursor, depth, geometry, trackVh } from "@/l
 import { isReduced, onTick } from "@/lib/scroll";
 import { reelTick } from "@/lib/audio";
 
+// O chiado contínuo do reel: um tique a cada 80px de deslocamento
+// (`u * pitch`), igual à STRIDE que components/content/FilmStrip.tsx (o
+// componente que este módulo substituiu) usava para o mesmo som — ver
+// `git show 7d3dc3a:components/content/FilmStrip.tsx`. É esse tique repetido
+// que lê como "tek tek tek tek" durante o scroll; o estalo de trava (mais
+// abaixo, na troca de `c.lock`) é outro som, mais forte.
+const STRIDE = 80;
+// Mais quieto que o estalo de trava (que chama `reelTick` sem terceiro
+// argumento, ganho 1.0) — assim "o TEK da trava é maior" sem precisar tocar
+// no volume da trava em si.
+const TRAVEL_EMPHASIS = 0.4;
+
 // Espelha `smallViewportHeight()` de `lib/useHeroMorph.ts` e
 // `lib/useEditorialReel.ts` (não está exportada de nenhum dos dois). Sonda
 // `100svh` com um elemento fora de tela e cai para `innerHeight` se o
@@ -59,6 +71,13 @@ export function useFilmStage(count: number) {
   // direção pelo resto da sessão. Este ref é o que permite apagar o atributo
   // do card anterior antes de trocar de timer.
   const kickCard = useRef<HTMLElement | null>(null);
+  // O notch do último tique de percurso disparado (`shift / STRIDE`,
+  // arredondado para baixo). Inicializado em 0 porque `u` é 0 no primeiro
+  // paint (antes do scroll entrar no reel) — `shift` também é 0, e o notch
+  // correspondente já nasce igual a este valor, então não sai nenhum tique
+  // fantasma no mount. Comparação simples de igualdade, sem guarda de fase:
+  // a mesma lógica do componente antigo (`atNotch`, ver STRIDE acima).
+  const lastNotch = useRef(0);
 
   useEffect(() => {
     let vh = 0;
@@ -106,6 +125,22 @@ export function useFilmStage(count: number) {
       if (curtainEl) {
         if (p < CURTAIN_OUT) curtainEl.dataset.on = "";
         else delete curtainEl.dataset.on;
+      }
+
+      // O chiado de percurso: um tique a cada STRIDE px de deslocamento do
+      // reel (`u * pitch`), só quando o notch muda — nunca por frame, senão
+      // isto dispararia a cada paint (60/s) em vez de a cada 80px. `u` fica
+      // parado durante o dwell de cada trava (ver cursor() em
+      // lib/filmStage.ts), então o notch também para ali: nenhum tique de
+      // percurso soa por cima do estalo de trava, os dois nunca competem no
+      // mesmo instante. TEC_GAP/TEC_VOICES em lib/audio.ts continuam sendo o
+      // limitador de verdade em scroll rápido — este notch só decide QUANDO
+      // tentar, não substitui aquele limite.
+      const shift = c.u * pitch;
+      const notch = Math.floor(shift / STRIDE);
+      if (notch !== lastNotch.current) {
+        lastNotch.current = notch;
+        reelTick(notch, c.u / (count - 1), TRAVEL_EMPHASIS);
       }
 
       for (let i = 0; i < count; i += 1) {
