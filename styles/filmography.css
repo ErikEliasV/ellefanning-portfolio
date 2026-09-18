@@ -66,9 +66,10 @@
      --fall começar a mexer), então a soma abaixo nunca passa de 2.2. Sem
      opacity ligada a --rise: a palavra sobe já opaca, visível desde o
      primeiro instante — antes ela materializava a meio caminho, e ele pediu
-     para vê-la vindo desde o início. */
+     para vê-la vindo desde o início. 60vh (era 40vh) começa fora do quadro —
+     pedido para vir de ainda mais embaixo. */
   transform:
-    translate3d(0, calc((1 - var(--rise)) * 40vh - var(--fall) * 80vh), 0)
+    translate3d(0, calc((1 - var(--rise)) * 60vh - var(--fall) * 80vh), 0)
     scale(calc(2.2 - 1.2 * var(--rise) + 1.2 * var(--fall)));
   white-space: nowrap;
   pointer-events: none;

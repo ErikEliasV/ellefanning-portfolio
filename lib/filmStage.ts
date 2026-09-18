@@ -93,7 +93,13 @@ export function phases(reduced: boolean): Phases {
   const cycle = reduced ? 0.35 : 0.6167;
   const k = reduced ? 0.5 : 1;
 
-  const curtain = { from: -1.0 * k, to: -0.35 * k };
+  // `curtain.to` era -0.35*k: a cortina saturava cedo e ficava parada,
+  // branca, sem nada acontecendo, por 0.4vh inteiros até `rise.from` soltar a
+  // palavra. Trazer `to` para perto do limiar (sem ultrapassá-lo — ver a
+  // invariante abaixo) encolhe essa folga parada quase à metade, e como
+  // `curtain.from` também subiu (era -1.0*k), a cortina inteira leva menos
+  // scroll para cobrir a tela e soltar o texto.
+  const curtain = { from: -0.7 * k, to: -0.2 * k };
   // `rise` começa em CURTAIN_OUT, não em `curtain.to`: o limiar da cortina é
   // fixo (ponto geométrico, não uma duração de coreografia), então não pode
   // escalar por `k` — em movimento reduzido `CURTAIN_OUT * k` cairia para
@@ -101,6 +107,8 @@ export function phases(reduced: boolean): Phases {
   // modo. Só a duração da subida (o `0.5 * k` abaixo) escala; o início, não.
   // Isso abre um vão proposital entre `curtain.to` e `rise.from` — a cortina
   // já saturou e continua cobrindo a tela até o limiar geométrico soltá-la.
+  // (curtain.to precisa continuar <= CURTAIN_OUT, ou a palavra começaria a
+  // subir atrás da cortina ainda fechada — ver invariante em check.ts.)
   const rise = { from: CURTAIN_OUT, to: CURTAIN_OUT + 0.5 * k };
   const open = { from: rise.to, to: rise.to + 0.5 * k };
   const reel = { from: open.to, to: open.to + cycle * (COUNT - 1) };
