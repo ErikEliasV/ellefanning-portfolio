@@ -157,58 +157,23 @@
 
   html {
     -webkit-font-smoothing: antialiased;
-    /* A calha fica reservada sempre, senao travar o scroll tira a barra e o
-       conteudo inteiro pula de lado no instante em que uma foto abre. */
-    scrollbar-gutter: stable;
+    /* A barra nativa sai de cena inteira. No desktop ela sempre ocupa largura:
+       aqui morava um `scrollbar-gutter: stable` que reservava a calha, e era
+       essa calha que empurrava o conteudo e tirava o site do centro. Sem barra
+       nativa nao ha largura para reservar nem para perder — e o motivo
+       original da calha fixa (travar o scroll tirava a barra e a pagina pulava
+       de lado quando uma foto abria) deixa de existir junto, porque agora
+       `overflow: hidden` nao muda largura nenhuma.
+       Quem desenha a barra e components/core/Scrollbar.tsx, `fixed` por cima
+       do conteudo. A rolagem nativa em si fica intacta: roda, teclado,
+       Page Up/Down e busca na pagina continuam iguais. */
+    scrollbar-width: none;
   }
 
-  /* A barra de rolagem. A calha reservada acima mostra sempre o fundo do
-     <body> (--color-paper-100): elemento `fixed`/`sticky` nao pinta dentro
-     dela, entao o canal e o mesmo creme na hero rosa, na filmografia clara e
-     nas secoes escuras — uma cor de fundo so, sem variante por secao.
-     Em repouso o polegar tem o peso de mais uma regua do site (o ink com
-     alpha cai praticamente em --color-line-hairline); o rosa so aparece sob o
-     ponteiro, que e o mesmo vocabulario de ::selection, do rotulo do cursor e
-     do :active do botao de fechar do modal. */
+  /* Safari e Chrome antigos, que nao entendem `scrollbar-width`. Onde os dois
+     valem, qualquer um dos dois esconde a barra — nao ha conflito a resolver. */
   ::-webkit-scrollbar {
-    width: 14px;
-    height: 14px;
-  }
-
-  ::-webkit-scrollbar-track,
-  ::-webkit-scrollbar-corner {
-    background-color: transparent;
-  }
-
-  /* 6px de barra visivel dentro de um canal de 14: a borda transparente com
-     background-clip: content-box e o que deixa o polegar flutuando no meio da
-     calha em vez de preenche-la de ponta a ponta. */
-  ::-webkit-scrollbar-thumb {
-    border: 4px solid transparent;
-    border-radius: 999px;
-    background-color: rgb(29 28 26 / 0.38);
-    background-clip: content-box;
-    transition: background-color var(--duration-fast) var(--ease-out);
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    background-color: var(--color-rose-400);
-  }
-
-  ::-webkit-scrollbar-thumb:active {
-    background-color: var(--color-rose-500);
-  }
-
-  /* O Firefox nao tem os pseudo-elementos acima, e no Chromium declarar
-     `scrollbar-width` DESLIGA `::-webkit-scrollbar` — por isso as duas
-     propriedades padrao ficam atras de um teste de suporte ao seletor, que so
-     o Firefox reprova. Sem hover nem recuo la, mas a mesma leitura: barra
-     fina, trilho transparente, polegar na cor de regua. */
-  @supports not selector(::-webkit-scrollbar) {
-    html {
-      scrollbar-width: thin;
-      scrollbar-color: rgb(29 28 26 / 0.38) transparent;
-    }
+    display: none;
   }
 
   body {
