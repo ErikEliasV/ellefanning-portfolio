@@ -53,6 +53,7 @@ export function useFilmStage(count: number) {
       set("--rise", c.rise.toFixed(4));
       set("--split", `${splitPx.toFixed(2)}px`);
       set("--fall", c.fall.toFixed(4));
+      set("--reveal", c.reveal.toFixed(4));
 
       // A cortina serve só à entrada, cobrindo a hero enquanto o palco não chegou. Um
       // instante depois disso ela precisa sair do caminho, senão o z-index 60 dela
