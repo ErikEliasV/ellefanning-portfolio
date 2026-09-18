@@ -4,8 +4,15 @@
   initial-value: 0px;
 }
 
+/* O rodape do Figma (frame de 1920) e uma pilha de tres blocos separados pelo
+   mesmo respiro de 117px: o lockup, a fileira de links e o silencio do fim.
+   Aqui o respiro vira 6,09vw, que devolve exatamente 117px na largura em que
+   foi desenhado. O ::after do `grain` e absolute, entao nao entra no flex. */
 .site-footer {
   container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(56px, 6.09vw, 130px);
 }
 
 .footer-mark {
@@ -70,9 +77,73 @@
   color: var(--color-rose-400);
 }
 
-.footer-body {
+/* Abaixo de 64rem os quatro rotulos nao cabem numa fileira sem encolher a
+   ponto de perder o gesto, entao viram grade 2x2. O ponto de troca e o mesmo
+   em que --gutter-page abre para 40px: em 1024 o corpo da fileira ja bate
+   33,5px, quase o teto da grade, e a passagem de um layout ao outro nao da
+   salto de tamanho. */
+.footer-links {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  justify-items: start;
+  gap: clamp(12px, 3vw, 32px);
+  padding-inline: var(--gutter-page);
+  font-family: var(--font-text);
+  font-weight: 700;
+  font-size: clamp(17px, 4.8vw, 34px);
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+@media (width >= 64rem) {
+  .footer-links {
+    display: flex;
+    justify-content: space-between;
+    gap: 0;
+    /* 62,847 / 1920 = 3,27vw, o corpo do Figma na largura do Figma. */
+    font-size: clamp(24px, 3.27vw, 80px);
+  }
+}
+
+.footer-link {
   display: flex;
-  flex-direction: column;
-  gap: clamp(32px, 3.125vw, 60px);
-  padding-block: clamp(48px, 5vw, 96px);
+  align-items: center;
+  gap: 0.28em;
+  /* O alvo de toque de 44px, que a entrelinha sozinha so alcanca a partir de
+     35px de corpo. */
+  min-height: 44px;
+  color: var(--color-paper-000);
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+.footer-link:hover {
+  color: var(--color-rose-400);
+}
+
+.footer-link:focus-visible {
+  outline: 2px solid var(--color-rose-400);
+  outline-offset: 4px;
+}
+
+.footer-arrow {
+  flex: none;
+  width: 0.66em;
+  height: 0.66em;
+}
+
+/* Os 208px que o Figma deixa vazios embaixo. O aviso mora dentro deles, no
+   centro, em vez de somar altura propria. */
+.footer-end {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: clamp(96px, 10.8vw, 220px);
+  margin: 0;
+  padding-inline: var(--gutter-page);
+  font-family: var(--font-text);
+  font-size: var(--text-label-sm);
+  letter-spacing: var(--tracking-label);
+  text-align: center;
+  text-transform: uppercase;
+  color: var(--color-ink-500);
 }
