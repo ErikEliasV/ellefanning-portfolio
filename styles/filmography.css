@@ -375,3 +375,46 @@
 }
 
 .film-dialog-plate[data-open] .film-dialog-still--face { opacity: 1; }
+
+/* O breakpoint aqui tem que ser idêntico a `NARROW_QUERY` em `lib/filmStage.ts`.
+   Esta media query cuida só de tipografia e do layout do modal — a inversão da
+   composição (card maior, vão menor, pôster sobrepondo a palavra) já vem de
+   `geometry(true)`, lida pelo hook via `matchMedia(NARROW_QUERY)`. Redeclarar
+   `--card-w`, `--card-h` ou o passo aqui faria o CSS e o JS discordarem sobre
+   onde cada card está: custom property não resolve unidade, então o JS não
+   teria como ler `48vw` de volta para reconciliar. */
+@media (width < 64rem) {
+  .film-word { font-size: 13vw; }
+  .film-count-now { font-size: 7vw; }
+  .film-count-all { font-size: 2.6vw; }
+  .film-year { font-size: 8vw; }
+
+  .film-dialog-close { width: 11vw; height: 11vw; top: 4vh; left: 7vw; }
+  .film-dialog-close:hover,
+  .film-dialog-close:focus-visible { width: 32vw; }
+  .film-dialog-back { font-size: 3.2vw; }
+
+  /* No celular o modal empilha: still em cima, texto embaixo. */
+  .film-dialog-plate {
+    top: 16vh;
+    left: 50%;
+    width: 58vw;
+    height: 44vh;
+    translate: -50% 0;
+  }
+
+  .film-dialog-text { top: 63vh; left: 7vw; width: 86vw; }
+  .film-dialog-title { font-size: 9vw; }
+  .film-dialog-body { font-size: 3.4vw; }
+}
+
+/* A trilha já encolhe em `phases(reduced)` (Tarefa 1) e o blur de profundidade
+   e o tranco do estalo já são suprimidos pelo hook (Tarefa 3 e Tarefa 5).
+   Resta só garantir que nada mais anime. */
+@media (prefers-reduced-motion: reduce) {
+  .film-card { animation: none; }
+  .film-dialog { animation: none; }
+  .film-dialog-close,
+  .film-dialog-x,
+  .film-dialog-back { transition-duration: var(--duration-fast); }
+}
