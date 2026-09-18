@@ -41,8 +41,11 @@ export const COUNT = 16;
 // Ver o comentário maior em `lib/useFilmStage.ts` junto ao `dataset.on`.
 export const CURTAIN_OUT = 0.05;
 
-// Dentro de cada ciclo, os primeiros 45% de scroll não movem nada: é a trava.
-const DWELL = 0.45;
+// Dentro de cada ciclo, os primeiros 20% de scroll não movem nada: é a trava.
+// Era 45% — quase metade do ciclo sem responder ao scroll lia como duro/preso
+// em vez de solto. 20% ainda trava de verdade no centro, mas devolve 80% do
+// ciclo ao movimento.
+const DWELL = 0.2;
 // 0.58 em d = 1, que é exatamente 313/539 do Figma.
 const DEPTH_SCALE = 0.42;
 const DEPTH_BLUR = 9;
@@ -53,6 +56,19 @@ export function clamp01(x: number) {
 
 export function easeOut4(x: number) {
   return 1 - Math.pow(1 - x, 4);
+}
+
+// Derivada zero nos DOIS extremos (e a segunda derivada também), não só na
+// chegada como `easeOut4`. É o que faz o card sair do platô deslizando em vez
+// de arrancar, e chegar planando em vez de frear de repente. Usada só na
+// viagem entre travas do reel — `easeOut4` continua sendo a curva do resto do
+// palco (a saída do 16º filme, por exemplo, quer arrancar).
+export function smootherstep(x: number) {
+  // clamp01 no retorno, não só na entrada: perto de x = 1 a soma de termos de
+  // magnitude 6, 15 e 10 cancela por ponto flutuante e pode passar de 1 por
+  // ~1e-15 (ex.: 1.0000000000000013). Matematicamente a curva nunca sai de
+  // [0, 1]; isto só fecha a folga que o hardware abre.
+  return clamp01(x * x * x * (x * (x * 6 - 15) + 10));
 }
 
 type Span = { from: number; to: number };
@@ -153,7 +169,7 @@ export function cursor(p: number, reduced: boolean): Cursor {
     const raw = span(p, f.reel) * (COUNT - 1);
     const i = Math.min(Math.floor(raw), COUNT - 2);
     const frac = raw - i;
-    u = i + easeOut4(clamp01((frac - DWELL) / (1 - DWELL)));
+    u = i + smootherstep(clamp01((frac - DWELL) / (1 - DWELL)));
     lock = frac < DWELL ? i : -1;
   } else if (p < f.hold.to) {
     // O 16º chega no instante final do reel e não teria trava nenhuma. Esta
