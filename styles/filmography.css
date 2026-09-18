@@ -194,20 +194,24 @@
      valor que satisfaz as quatro condições — não mexer sem reconferir isso. */
   z-index: 95;
   overflow: hidden;
+  /* Fundo sólido, instantâneo: cobre a página e trava o clique/scroll no
+     mesmo frame em que o modal monta. A entrada de verdade — §6.1 do design
+     doc — não é este painel esmaecendo; é a placa, o wash e o texto animando
+     cada um por si, por cima deste fundo já opaco. */
   background-color: var(--color-ink-900);
-  animation: film-dialog-in var(--duration-slow) var(--ease-out);
-}
-
-@keyframes film-dialog-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
 }
 
 .film-dialog-wash {
   object-fit: cover;
   filter: blur(46px) brightness(0.42);
   transform: scale(1.14);
+  /* "o fundo escurece com o pôster borrado": é este wash que entra por
+     opacidade, não o painel inteiro. */
+  opacity: 0;
+  transition: opacity var(--duration-modal) var(--ease-out);
 }
+
+.film-dialog-wash[data-open] { opacity: 1; }
 
 .film-dialog-close {
   position: absolute;
@@ -285,6 +289,20 @@
   left: 12.3vw;
   width: 34.8vw;
   color: var(--color-paper-000);
+  /* "a coluna de texto entra pela esquerda e assenta". O Figma não dá uma
+     distância para este deslocamento (só a caixa do still tem número
+     medido); 2.4vw é escolha de sensação, não medição — diferente do
+     -18.4vw da placa abaixo, que é conta. */
+  opacity: 0;
+  transform: translateX(-2.4vw);
+  transition:
+    opacity var(--duration-modal) var(--ease-out),
+    transform var(--duration-modal) var(--ease-out);
+}
+
+.film-dialog-text[data-open] {
+  opacity: 1;
+  transform: translateX(0);
 }
 
 .film-dialog-title {
@@ -327,7 +345,11 @@
 .film-dialog-dir { opacity: 0.66; }
 
 /* A mesma caixa do card travado, 351px à direita: o modal não surge por cima,
-   o card viaja até aqui. */
+   o card viaja até aqui. §7.2 do design doc faz a conta: still 541×814 @
+   x=1042, card 539×812 @ x=691, sobre um canvas de 1920 — os centros ficam em
+   68.4vw e 50vw, a diferença é 18.4vw (=351/1920). A placa nasce deslocada
+   dessa distância e desliza até 0: é o card viajando, não um painel que
+   nasce pronto na posição final. */
 .film-dialog-plate {
   position: absolute;
   top: 8.8vh;
@@ -335,6 +357,21 @@
   width: 28.2vw;
   height: 75.2vh;
   overflow: hidden;
+  transform: translateX(-18.4vw);
+  transition: transform var(--duration-modal) var(--ease-out);
 }
 
+.film-dialog-plate[data-open] { transform: translateX(0); }
+
 .film-dialog-still { object-fit: cover; }
+
+/* O still crossfade por cima do pôster, dentro da mesma caixa. Sem still
+   ainda, os dois lados usam o mesmo arquivo (`face` em FilmDialog.tsx) e o
+   crossfade fica visualmente invisível — mas a estrutura de duas camadas
+   já existe, pronta para quando os stills chegarem. */
+.film-dialog-still--face {
+  opacity: 0;
+  transition: opacity var(--duration-modal) var(--ease-out);
+}
+
+.film-dialog-plate[data-open] .film-dialog-still--face { opacity: 1; }

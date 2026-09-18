@@ -1,11 +1,19 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
 import { asset } from "@/lib/asset";
 import { FilmDialog } from "@/components/content/FilmDialog";
 import type { Film } from "@/lib/films";
+import { isReduced } from "@/lib/scroll";
 import { useFilmStage } from "@/lib/useFilmStage";
+
+// Espelha --duration-modal de styles/globals.css: a saída do modal precisa
+// ficar montada exatamente por essa janela para a transição de CSS rodar
+// até o fim antes do desmonte. Sob prefers-reduced-motion o token cai para
+// 120ms — mesma fonte, os dois lados enxergam o mesmo número.
+const EXIT_MS = 520;
+const EXIT_MS_REDUCED = 120;
 
 function two(value: number) {
   return String(value).padStart(2, "0");
@@ -24,18 +32,60 @@ export function FilmStage({ films }: { films: readonly Film[] }) {
   const { track, stage, rail, cut, curtain, active, lock } = useFilmStage(films.length);
   const now = films[active];
   const [open, setOpen] = useState<number | null>(null);
+  // "closing" mantém o FilmDialog montado durante a animação de saída — sem
+  // ele o desmonte é imediato (commit seguinte) e não sobra tempo para a
+  // placa/texto/wash reverterem. Ver docs/2026-09-17-filmography-stage-design.md
+  // §6.1: "Fechar é o inverso, e o card volta para a trava de onde saiu."
+  const [closing, setClosing] = useState(false);
   const trigger = useRef<HTMLButtonElement | null>(null);
+  const exitTimer = useRef(0);
+  // Guarda se havia um modal aberto no render anterior, para o efeito de
+  // refoco abaixo não disparar na montagem inicial (quando `open` já nasce
+  // null e não há nada — nem card — para focar de volta).
+  const wasOpen = useRef(false);
 
-  // O FilmDialog não sabe qual card o abriu, então quem devolve o foco é
-  // quem sabe: aqui. O timeout empurra o .focus() para depois do commit que
-  // remove o modal do DOM — refocar antes disso arrisca o navegador jogar o
-  // foco de volta para <body> quando o botão de fechar (ainda focado) sai da
-  // árvore.
-  function closeFilm() {
-    setOpen(null);
-    const card = trigger.current;
-    window.setTimeout(() => card?.focus(), 0);
+  function openFilm(index: number, event: MouseEvent<HTMLButtonElement>) {
+    window.clearTimeout(exitTimer.current);
+    trigger.current = event.currentTarget;
+    setClosing(false);
+    setOpen(index);
   }
+
+  // Pedido de fechar (botão, Escape ou clique no fundo, todos chamam este
+  // mesmo callback): só liga o estado de saída. Quem tira o FilmDialog do ar
+  // é o efeito abaixo, depois da janela de animação — igual ao padrão de
+  // `exit`/`EXIT_MS` que lib/useEditorialReel.ts já usa para o mesmo problema.
+  //
+  // useCallback (não uma função solta): FilmDialog usa esta referência como
+  // dependência do efeito que trava o foco, marca `inert` e liga o scroll. Uma
+  // identidade nova a cada render de FilmStage faria aquele efeito desmontar e
+  // remontar à toa em qualquer re-render — inclusive um em que o próprio
+  // desmonte de verdade já rodou a limpeza antes.
+  const closeFilm = useCallback(() => setClosing(true), []);
+
+  useEffect(() => {
+    if (!closing) return;
+    const ms = isReduced() ? EXIT_MS_REDUCED : EXIT_MS;
+    exitTimer.current = window.setTimeout(() => {
+      setOpen(null);
+      setClosing(false);
+    }, ms);
+    return () => window.clearTimeout(exitTimer.current);
+  }, [closing]);
+
+  // Devolve o foco ao card de origem quando o modal termina de sair. Reage à
+  // própria transição de `open` para `null` na fase de commit do React — não
+  // corre contra o desmonte (que já aconteceu antes deste efeito rodar) e não
+  // deixa nenhum temporizador próprio para cancelar.
+  useEffect(() => {
+    if (open !== null) {
+      wasOpen.current = true;
+      return;
+    }
+    if (!wasOpen.current) return;
+    wasOpen.current = false;
+    trigger.current?.focus();
+  }, [open]);
 
   return (
     <div ref={track} className="film-track">
@@ -66,10 +116,7 @@ export function FilmStage({ films }: { films: readonly Film[] }) {
               data-at={index}
               data-live={index === lock ? "" : undefined}
               aria-label={`${film.title} (${film.year}) — open details`}
-              onClick={(event) => {
-                trigger.current = event.currentTarget;
-                setOpen(index);
-              }}
+              onClick={(event) => openFilm(index, event)}
             >
               {film.poster ? (
                 <Image
@@ -94,7 +141,7 @@ export function FilmStage({ films }: { films: readonly Film[] }) {
       </div>
 
       {open !== null ? (
-        <FilmDialog film={films[open]} onClose={closeFilm} />
+        <FilmDialog film={films[open]} closing={closing} onClose={closeFilm} />
       ) : null}
     </div>
   );
