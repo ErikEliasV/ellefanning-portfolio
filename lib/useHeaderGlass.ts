@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { MouseEvent } from "react";
 
 import { asset } from "@/lib/asset";
+import { phases, trackVh } from "@/lib/filmStage";
 import { gooPath } from "@/lib/headerGoo";
 import { isLocked, isReduced, onTick, scrollTo } from "@/lib/scroll";
 import { SECTIONS } from "@/lib/sections";
@@ -58,6 +59,31 @@ type Feed = { media: Media; focus: number; push: number };
 
 function metric(styles: CSSStyleDeclaration, name: string) {
   return Number.parseFloat(styles.getPropertyValue(name)) || 0;
+}
+
+// O link FILMOGRAPHY do header pula a abertura inteira (cortina, palavra
+// subindo, vao se abrindo) e pousa direto no ponto em que o 1o filme ja esta
+// travado no centro da tela — em vez do topo da secao, que e a cortina/tela
+// branca do meio da transicao. Esse ponto e `phases().reel.from`: o `p` em
+// que `cursor().lock` passa a valer 0 pela primeira vez (ver lib/filmStage.ts).
+//
+// `p` e medido em multiplos de vh a partir do topo de `.film-track`
+// (`p = -trackTop/vh`), e o vh real e o mesmo que lib/useFilmStage.ts mediu
+// para dimensionar a trilha (`smallViewportHeight()`, nao `innerHeight` —
+// a barra de URL do celular muda um do outro). Em vez de duplicar aquela
+// medicao aqui, este helper le a altura JA APLICADA em `.film-track` (em
+// px, escrita por aquele hook) e divide por `trackVh()` para recuperar o
+// mesmo vh, garantindo que os dois lados concordem sem medir duas vezes.
+function filmEntryTarget(): string | number {
+  const track = document.querySelector<HTMLElement>(".film-track");
+  if (!track) return "#filmography";
+
+  const rect = track.getBoundingClientRect();
+  const vh = rect.height / trackVh(isReduced());
+  if (!vh) return "#filmography";
+
+  const trackTop = rect.top + window.scrollY;
+  return trackTop + phases(isReduced()).reel.from * vh;
 }
 
 export function useHeaderGlass() {
@@ -524,7 +550,7 @@ export function useHeaderGlass() {
       if (event.metaKey || event.ctrlKey || event.shiftKey) return;
       event.preventDefault();
       shut();
-      scrollTo(`#${id}`, {
+      scrollTo(id === "filmography" ? filmEntryTarget() : `#${id}`, {
         // immediate e a opcao que o Lenis expoe para pular a animacao; duration
         // 0 nao e documentado como salto.
         immediate: isReduced(),
