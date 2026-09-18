@@ -3,20 +3,50 @@ export type SectionId =
   | "filmography"
   | "characters"
   | "editorial"
-  | "current"
-  | "footer";
+  | "current";
 
-export type Section = {
+export type NavSection = {
   id: SectionId;
-  index: string;
   label: string;
+  clip: string;
+  focus: number;
 };
 
-export const SECTIONS: readonly Section[] = [
-  { id: "hero", index: "01", label: "Apresentação" },
-  { id: "filmography", index: "02", label: "Filmografia" },
-  { id: "characters", index: "03", label: "Personagens" },
-  { id: "editorial", index: "04", label: "Editorial" },
-  { id: "current", index: "05", label: "Projetos atuais" },
-  { id: "footer", index: "06", label: "Final" },
+// Os rotulos sao os do Figma (no 2338:61). CARACTERS estava escrito errado no
+// arquivo e entra corrigido; CASES e o nome que o desenho da a secao editorial.
+//
+// focus e onde o recorte do painel cai na vertical do clipe, 0 topo, 1 base.
+// O painel e mais largo que 16:9, entao o corte come altura: e isso que decide
+// qual faixa do quadro sobrevive.
+export const SECTIONS: readonly NavSection[] = [
+  {
+    id: "hero",
+    label: "HOME",
+    clip: "/videos/hero.mp4",
+    focus: 0.3,
+  },
+  {
+    id: "filmography",
+    label: "FILMOGRAPHY",
+    clip: "/videos/filmography.mp4",
+    focus: 0.35,
+  },
+  {
+    id: "characters",
+    label: "CHARACTERS",
+    clip: "/videos/characters.mp4",
+    focus: 0.4,
+  },
+  {
+    id: "editorial",
+    label: "CASES",
+    clip: "/videos/editorial.mp4",
+    focus: 0.3,
+  },
+  {
+    id: "current",
+    label: "NOW",
+    clip: "/videos/now.mp4",
+    focus: 0.5,
+  },
 ] as const;

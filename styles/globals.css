@@ -123,6 +123,15 @@
   --duration-slow: 420ms;
   --duration-reveal: 900ms;
   --duration-anchor: 1600ms;
+  /* A coreografia do modal do filme (styles/filmography.css): o pôster
+     clicado cresce até virar o fundo, o fundo escuro do próprio .film-dialog
+     esmaece junto (nunca solido de um frame para o outro — é o que evita o
+     quadro preto no fechamento) e o texto/still entram antes do crescimento
+     terminar, sobrepondo-se a ele em vez de esperar o fim. Não é nenhum dos
+     durations acima, então ganha o próprio token em vez de um literal solto.
+     900ms (era 520ms): o dono do projeto pediu mais suavidade tanto na
+     abertura quanto no fechamento. */
+  --duration-modal: 900ms;
   --filter-image: grayscale(1) contrast(1.16) brightness(0.98);
   --filter-image-hover: grayscale(1) contrast(1.28) brightness(1.02);
   --filter-image-color: grayscale(0) contrast(1.06);
@@ -148,6 +157,9 @@
 
   html {
     -webkit-font-smoothing: antialiased;
+    /* A calha fica reservada sempre, senao travar o scroll tira a barra e o
+       conteudo inteiro pula de lado no instante em que uma foto abre. */
+    scrollbar-gutter: stable;
   }
 
   body {
@@ -194,6 +206,7 @@
     --duration-slow: 120ms;
     --duration-reveal: 120ms;
     --duration-anchor: 120ms;
+    --duration-modal: 120ms;
   }
 }
 

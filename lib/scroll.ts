@@ -12,6 +12,11 @@ const LERP = 0.085;
 let lenis: Lenis | null = null;
 let booted = false;
 let reduced = false;
+// Travar o scroll e o sinal de "alguma coisa modal esta ocupando a tela": o
+// preloader, o lightbox do editorial e o modal do filme sao exatamente os tres
+// que chamam lockScroll. Quem ouve ponteiro ou scroll no window (o header, por
+// exemplo) precisa saber disso, senao reage a gestos que nao eram para ele.
+let locked = false;
 
 const ticks = new Set<Tick>();
 
@@ -26,6 +31,10 @@ function drive() {
 
 export function isReduced() {
   return reduced;
+}
+
+export function isLocked() {
+  return locked;
 }
 
 export function onTick(fn: Tick) {
@@ -51,12 +60,14 @@ export function scrollTo(
 }
 
 export function lockScroll(on: boolean) {
-  if (lenis) {
-    if (on) lenis.stop();
-    else lenis.start();
-    return;
-  }
+  locked = on;
+  // O overflow entra nos dois caminhos, nao so no de fallback: parar o Lenis
+  // sozinho nao impede arrastar a barra lateral, e era por ali que a pagina
+  // escapava de uma trava que devia ser total.
   document.documentElement.style.overflow = on ? "hidden" : "";
+  if (!lenis) return;
+  if (on) lenis.stop();
+  else lenis.start();
 }
 
 export function bootScroll() {
