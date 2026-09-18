@@ -1,9 +1,14 @@
-/* O pill do Figma (node 2446-162), reduzido pelo fator 17/27,104 = 0,627 para
-   ficar perto do peso que os dois botoes ja tinham na pagina: altura 61 -> 38,
-   corpo 27,104 -> 17, icone 27x29 -> 17x18, gap 10 -> 6, respiro 9/15 -> 6/9,
-   raio 11 -> 7. O tracking vem em em (7,0705 / 27,104) para acompanhar o corpo
-   em vez de virar um px solto. A largura fica pelo conteudo, como la. */
-.sound-pill {
+/* O pill do Figma, reduzido pelo fator 17/27,104 = 0,627 para ficar perto do
+   peso que os botoes ja tinham na pagina: altura 61 -> 38, corpo 27,104 -> 17,
+   icone 27x29 -> 17x18, gap 10 -> 6, respiro 9/15 -> 6/9, raio 11 -> 7. O
+   tracking vem em em (7,0705 / 27,104) para acompanhar o corpo em vez de virar
+   um px solto. A largura fica pelo conteudo, como la.
+
+   Tres botoes vestem isto: o som da pagina e o do trailer (node 2446-162, com
+   a nota) e o skip da filmografia (node 2446-163, so o rotulo). O botao de
+   voltar do modal de filme fala a mesma lingua, mas vive na escala em vw da
+   composicao dele -- ver .film-dialog-close em styles/filmography.css. */
+.pill {
   /* As classes de posicao sobrescrevem com fixed/absolute; o relative esta
      aqui para o ::after do alvo de toque ter contra o que se medir. */
   position: relative;
@@ -26,30 +31,30 @@
 }
 
 /* O rosa e o rose-400 a 55%, o mesmo numero que esta no Figma. */
-.sound-pill[aria-pressed="true"] {
+.pill[aria-pressed="true"] {
   background-color: rgba(224, 114, 149, 0.55);
 }
 
 /* O Figma nao desenha hover, entao o fundo so firma: mesmo tom, 55% -> 80%,
    sem uma terceira cor que ninguem escolheu. */
 @media (hover: hover) {
-  .sound-pill:hover {
+  .pill:hover {
     background-color: rgba(92, 92, 92, 0.8);
   }
 
-  .sound-pill[aria-pressed="true"]:hover {
+  .pill[aria-pressed="true"]:hover {
     background-color: rgba(224, 114, 149, 0.8);
   }
 }
 
-.sound-pill-note {
+.pill-note {
   display: block;
   flex-shrink: 0;
   width: 17px;
   height: 18px;
 }
 
-.sound-pill-note img {
+.pill-note img {
   display: block;
   width: 100%;
   height: 100%;
@@ -57,11 +62,11 @@
 
 /* No lugar das tres barrinhas que dancavam: a nota respira enquanto o audio
    esta de fato tocando. */
-.sound-pill[data-live] .sound-pill-note {
+.pill[data-live] .pill-note {
   animation: note-breathe 900ms var(--ease-in-out) infinite alternate;
 }
 
-.sound-pill-label {
+.pill-label {
   display: block;
 }
 
@@ -69,7 +74,7 @@
    de engordar o botao -- ele flutua sobre a barra da filmografia e cobriria
    mais dela. */
 @media (hover: none) {
-  .sound-pill::after {
+  .pill::after {
     content: "";
     position: absolute;
     left: 50%;

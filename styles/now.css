@@ -93,9 +93,9 @@
   );
 }
 
-/* A aparencia mora no .sound-pill (styles/sound.css), compartilhada com o
-   botao de musica da pagina. Aqui fica so onde ele senta no quadro e o fato
-   de que ele espera o trailer estar pronto para aparecer. */
+/* A aparencia mora no .pill (styles/pill.css), compartilhada com o botao de
+   musica da pagina e com o skip da filmografia. Aqui fica so onde ele senta no
+   quadro e o fato de que ele espera o trailer estar pronto para aparecer. */
 .now-sound {
   position: absolute;
   top: clamp(20px, 1.6667vw, 32px);

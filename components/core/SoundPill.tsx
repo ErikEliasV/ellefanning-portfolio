@@ -2,7 +2,7 @@
 
 import { asset } from "@/lib/asset";
 import { cn } from "@/lib/cn";
-import "@/styles/sound.css";
+import "@/styles/pill.css";
 
 // Nota cheia ligado, nota vazada desligado -- os dois SVGs saem exportados do
 // Figma (node 2446-162) e ficam em public/icons. Passam pelo asset() porque o
@@ -39,7 +39,7 @@ export function SoundPill({
   return (
     <button
       type="button"
-      className={cn("sound-pill", className)}
+      className={cn("pill", className)}
       aria-pressed={on}
       aria-label={ariaLabel}
       data-cursor={cursor}
@@ -47,11 +47,11 @@ export function SoundPill({
       data-ready={ready ? "" : undefined}
       onClick={onClick}
     >
-      <span aria-hidden className="sound-pill-note">
+      <span aria-hidden className="pill-note">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={asset(on ? NOTE_ON : NOTE_OFF)} alt="" />
       </span>
-      <span className="sound-pill-label">{label}</span>
+      <span className="pill-label">{label}</span>
     </button>
   );
 }
