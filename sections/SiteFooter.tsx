@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { FooterMark } from "@/components/content/FooterMark";
 import { BackToTop } from "@/components/core/BackToTop";
 import { LINKS } from "@/lib/links";
 import { quietFade } from "@/lib/reveal";
+import { useFooterLantern } from "@/lib/useFooterLantern";
 import "@/styles/footer.css";
 
 // A ZT Nature nao tem a seta para cima, entao um "↑" cairia numa fonte de
@@ -29,7 +30,9 @@ function ArrowUp() {
 }
 
 export function SiteFooter() {
-  const root = useRef<HTMLElement>(null);
+  // Um ref so para o <footer>: a lanterna manda nele e o quietFade tambem
+  // dispara a partir dele.
+  const root = useFooterLantern();
 
   // The counterpoint of silence after the Now panel: the links and the way
   // back up just appear, with no stagger and no travel to notice.
@@ -40,7 +43,7 @@ export function SiteFooter() {
       node,
       Array.from(node.querySelectorAll(".footer-links, .footer-end")),
     );
-  }, []);
+  }, [root]);
 
   return (
     <footer
@@ -49,6 +52,8 @@ export function SiteFooter() {
       data-cursor-skin="invert"
       className="site-footer grain relative overflow-hidden border-t border-ink-850 bg-ink-850 text-paper-000"
     >
+      <span aria-hidden className="footer-glow" />
+
       <FooterMark />
 
       <nav aria-label="Elle Fanning elsewhere" className="footer-links">
