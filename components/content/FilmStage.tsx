@@ -11,8 +11,11 @@ import { useFilmStage } from "@/lib/useFilmStage";
 // Espelha --duration-modal de styles/globals.css: a saída do modal precisa
 // ficar montada exatamente por essa janela para a transição de CSS rodar
 // até o fim antes do desmonte. Sob prefers-reduced-motion o token cai para
-// 120ms — mesma fonte, os dois lados enxergam o mesmo número.
-const EXIT_MS = 520;
+// 120ms — mesma fonte, os dois lados enxergam o mesmo número. A transição
+// de fechar mais longa (texto/still saem, pôster encolhe, fundo esmaece)
+// termina em 95% do orçamento (ver as fracoes em styles/filmography.css),
+// então usar o próprio --duration-modal aqui, sem desconto, sobra folga.
+const EXIT_MS = 900;
 const EXIT_MS_REDUCED = 120;
 
 function two(value: number) {

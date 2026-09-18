@@ -138,6 +138,7 @@ export function FilmDialog({
       aria-modal="true"
       aria-label={film.title}
       className="film-dialog"
+      data-open={open ? "" : undefined}
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}

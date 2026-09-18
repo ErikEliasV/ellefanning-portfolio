@@ -247,11 +247,24 @@
      valor que satisfaz as quatro condições — não mexer sem reconferir isso. */
   z-index: 95;
   overflow: hidden;
-  /* Fundo sólido, instantâneo: cobre a página e trava o clique/scroll no
-     mesmo frame em que o modal monta. A entrada de verdade — §6.1 do design
-     doc — não é este painel esmaecendo; é a placa, o wash e o texto animando
-     cada um por si, por cima deste fundo já opaco. */
-  background-color: var(--color-ink-900);
+  /* O fundo esmaece junto com o crescimento/encolhimento do pôster
+     (.film-dialog-grow abaixo), não some/aparece de um frame para o outro.
+     Sem isto, ao fechar o pôster encolhe de volta para a caixa do card mas o
+     resto da tela continua cobrindo tudo com esta cor sólida até o desmonte
+     — um quadro preto inteiro entre "pôster já pequeno" e "seção de volta".
+     rgb(19 19 19 / X) é --color-ink-900 (#131313) escrito com canal alfa: a
+     cor não muda, só a opacidade, então a transição interpola alfa em vez de
+     saltar. Mesma janela do crescimento (ver o comentário ali) para os dois
+     ficarem em lockstep. */
+  background-color: rgb(19 19 19 / 0);
+  transition:
+    background-color calc(var(--duration-modal) * 0.7) var(--ease-out)
+      calc(var(--duration-modal) * 0.25);
+}
+
+.film-dialog[data-open] {
+  background-color: rgb(19 19 19 / 1);
+  transition: background-color calc(var(--duration-modal) * 0.7) var(--ease-out);
 }
 
 /* A entrada do modal: o pôster clicado cresce da própria caixa (as custom
@@ -279,22 +292,24 @@
      instante, o que muda é o que fica de fora do quadro, nunca a proporção
      do que fica dentro. */
   transition:
-    top calc(var(--duration-modal) * 0.6) var(--ease-out) calc(var(--duration-modal) * 0.4),
-    left calc(var(--duration-modal) * 0.6) var(--ease-out) calc(var(--duration-modal) * 0.4),
-    width calc(var(--duration-modal) * 0.6) var(--ease-out) calc(var(--duration-modal) * 0.4),
-    height calc(var(--duration-modal) * 0.6) var(--ease-out) calc(var(--duration-modal) * 0.4),
-    filter calc(var(--duration-modal) * 0.6) var(--ease-out) calc(var(--duration-modal) * 0.4);
+    top calc(var(--duration-modal) * 0.7) var(--ease-out) calc(var(--duration-modal) * 0.25),
+    left calc(var(--duration-modal) * 0.7) var(--ease-out) calc(var(--duration-modal) * 0.25),
+    width calc(var(--duration-modal) * 0.7) var(--ease-out) calc(var(--duration-modal) * 0.25),
+    height calc(var(--duration-modal) * 0.7) var(--ease-out) calc(var(--duration-modal) * 0.25),
+    filter calc(var(--duration-modal) * 0.7) var(--ease-out) calc(var(--duration-modal) * 0.25);
 }
 
-/* 60% do orçamento (--duration-modal) é o crescimento; os 40% restantes
-   ficam para o texto e o still, que só entram depois (ver
-   .film-dialog-text e .film-dialog-plate abaixo). Por isso o open e o close
-   declaram atraso em lados opostos: abrindo, o crescimento não espera nada
-   (atraso 0, aqui) e o texto/still esperam 60% para entrar depois dele;
-   fechando, é o contrário — a transição usada é sempre a da REGRA DE
-   CHEGADA (é assim que CSS Transitions resolve duration/delay quando o
-   valor muda), então a duração/atraso de "fechar" vêm da regra sem
-   `[data-open]" acima, e a de "abrir" vêm desta. */
+/* 70% do orçamento (--duration-modal) é o crescimento. O texto e o still
+   (ver .film-dialog-text e .film-dialog-plate abaixo) NÃO esperam o
+   crescimento terminar: eles começam a 35% do orçamento, ainda dentro da
+   janela dos 70%, para o gesto ler como uma coisa só em vez de duas em fila
+   (crescer, ENTÃO aparecer). O mesmo vale fechando, ao contrário: texto e
+   still começam a sair no instante 0 e o encolhimento do pôster só começa em
+   25% — ele ainda está pegando o texto/still no meio do caminho quando eles
+   terminam de sair. A transição usada é sempre a da REGRA DE CHEGADA (é
+   assim que CSS Transitions resolve duration/delay quando o valor muda),
+   então a duração/atraso de "fechar" vêm da regra sem `[data-open]` acima, e
+   a de "abrir" vêm desta. */
 .film-dialog-grow[data-open] {
   top: 0;
   left: 0;
@@ -302,11 +317,11 @@
   height: 100vh;
   filter: blur(46px) brightness(0.42);
   transition:
-    top calc(var(--duration-modal) * 0.6) var(--ease-out),
-    left calc(var(--duration-modal) * 0.6) var(--ease-out),
-    width calc(var(--duration-modal) * 0.6) var(--ease-out),
-    height calc(var(--duration-modal) * 0.6) var(--ease-out),
-    filter calc(var(--duration-modal) * 0.6) var(--ease-out);
+    top calc(var(--duration-modal) * 0.7) var(--ease-out),
+    left calc(var(--duration-modal) * 0.7) var(--ease-out),
+    width calc(var(--duration-modal) * 0.7) var(--ease-out),
+    height calc(var(--duration-modal) * 0.7) var(--ease-out),
+    filter calc(var(--duration-modal) * 0.7) var(--ease-out);
 }
 
 .film-dialog-grow-img { object-fit: cover; }
@@ -387,26 +402,27 @@
   left: 12.3vw;
   width: 34.8vw;
   color: var(--color-paper-000);
-  /* "a coluna de texto entra pela esquerda e assenta", só depois de o pôster
-     terminar de crescer e virar o fundo (ver .film-dialog-grow acima). O
-     Figma não dá uma distância para este deslocamento (só a caixa do still
-     tem número medido); 2.4vw é escolha de sensação, não medição. Os 40%
-     finais do orçamento (--duration-modal) são deste estágio; o atraso de
-     60% fica na regra `[data-open]` abaixo — ver o comentário sobre
-     duration/delay virem da regra de chegada, junto a `.film-dialog-grow`. */
+  /* "a coluna de texto entra pela esquerda e assenta", sobrepondo o
+     crescimento do pôster em vez de esperar ele terminar (ver o comentário
+     de overlap em `.film-dialog-grow[data-open]`). O Figma não dá uma
+     distância para este deslocamento (só a caixa do still tem número
+     medido); 2.4vw é escolha de sensação, não medição. 60% do orçamento
+     (--duration-modal) são deste estágio; o atraso de 35% ao abrir fica na
+     regra `[data-open]` abaixo — ver o comentário sobre duration/delay
+     virem da regra de chegada, junto a `.film-dialog-grow`. */
   opacity: 0;
   transform: translateX(-2.4vw);
   transition:
-    opacity calc(var(--duration-modal) * 0.4) var(--ease-out),
-    transform calc(var(--duration-modal) * 0.4) var(--ease-out);
+    opacity calc(var(--duration-modal) * 0.6) var(--ease-out),
+    transform calc(var(--duration-modal) * 0.6) var(--ease-out);
 }
 
 .film-dialog-text[data-open] {
   opacity: 1;
   transform: translateX(0);
   transition:
-    opacity calc(var(--duration-modal) * 0.4) var(--ease-out) calc(var(--duration-modal) * 0.6),
-    transform calc(var(--duration-modal) * 0.4) var(--ease-out) calc(var(--duration-modal) * 0.6);
+    opacity calc(var(--duration-modal) * 0.6) var(--ease-out) calc(var(--duration-modal) * 0.35),
+    transform calc(var(--duration-modal) * 0.6) var(--ease-out) calc(var(--duration-modal) * 0.35);
 }
 
 .film-dialog-title {
@@ -450,8 +466,8 @@
 
 /* A caixa do still fica parada — quem viaja agora é o pôster de fundo
    (.film-dialog-grow acima), crescendo até virar a cena. A placa só
-   aparece, sem deslizar, no mesmo estágio final do texto (40% finais do
-   orçamento, atraso de 60% ao abrir — ver o comentário em
+   aparece, sem deslizar, no mesmo estágio do texto — mesma janela e mesmo
+   atraso de 35% ao abrir (overlapping o crescimento, ver o comentário em
    .film-dialog-grow[data-open]). still 541×814 @ x=1042 sobre um canvas de
    1920: 28.2vw de largura, 54.3vw do centro à esquerda. */
 .film-dialog-plate {
@@ -462,12 +478,12 @@
   height: 75.2vh;
   overflow: hidden;
   opacity: 0;
-  transition: opacity calc(var(--duration-modal) * 0.4) var(--ease-out);
+  transition: opacity calc(var(--duration-modal) * 0.6) var(--ease-out);
 }
 
 .film-dialog-plate[data-open] {
   opacity: 1;
-  transition: opacity calc(var(--duration-modal) * 0.4) var(--ease-out) calc(var(--duration-modal) * 0.6);
+  transition: opacity calc(var(--duration-modal) * 0.6) var(--ease-out) calc(var(--duration-modal) * 0.35);
 }
 
 .film-dialog-still { object-fit: cover; }
@@ -479,12 +495,12 @@
    sem sentido crossfadear enquanto ainda está com opacidade 0. */
 .film-dialog-still--face {
   opacity: 0;
-  transition: opacity calc(var(--duration-modal) * 0.4) var(--ease-out);
+  transition: opacity calc(var(--duration-modal) * 0.6) var(--ease-out);
 }
 
 .film-dialog-plate[data-open] .film-dialog-still--face {
   opacity: 1;
-  transition: opacity calc(var(--duration-modal) * 0.4) var(--ease-out) calc(var(--duration-modal) * 0.6);
+  transition: opacity calc(var(--duration-modal) * 0.6) var(--ease-out) calc(var(--duration-modal) * 0.35);
 }
 
 /* O breakpoint aqui tem que ser idêntico a `NARROW_QUERY` em `lib/filmStage.ts`.
