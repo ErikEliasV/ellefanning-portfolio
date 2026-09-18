@@ -1,14 +1,19 @@
 .film-track {
   position: relative;
 
-  /* Geometria em px, escrita por `geometry()` na Tarefa 3. O CSS não declara
-     nenhuma destas medidas: são fonte única do JS. Os valores abaixo são só o
-     andaime desta tarefa, para o palco parado ter o que desenhar. */
+  /* Geometria em px, escrita por `geometry()` em lib/filmStage.ts. O CSS não
+     declara nenhuma destas medidas: o JS é a fonte única. Os valores abaixo
+     são só o fallback antes do primeiro paint do hook — ele os sobrescreve
+     inline assim que mede o viewport, mas isto dá ao palco algo para
+     desenhar antes disso (sem JS, ou no instante entre hidratação e a
+     primeira medição). */
   --card-w: 28.1vw;
   --card-h: calc(var(--card-w) * (812 / 539));
   --split: 17.3vw;
 
-  /* Estado. A Tarefa 3 escreve estes valores a cada frame. */
+  /* Estado do palco. O hook (`useFilmStage`) escreve estes valores a cada
+     frame, sobrescrevendo inline o que estiver aqui; os números abaixo são
+     só o fallback de repouso antes da primeira medição. */
   --curtain: 0;
   --rise: 1;
   --fall: 0;
@@ -19,7 +24,7 @@
 .film-stage {
   position: sticky;
   top: 0;
-  height: 100vh;
+  height: 100svh;
   overflow: hidden;
   isolation: isolate;
 }
@@ -209,6 +214,12 @@
      opacidade, não o painel inteiro. */
   opacity: 0;
   transition: opacity var(--duration-modal) var(--ease-out);
+  /* next/image com `fill` renderiza um <img> position: absolute; inset: 0
+     cobrindo o shell inteiro. Sem isto, ele é o alvo de qualquer clique no
+     fundo — nunca o .film-dialog que tem o handler de fechar — e o clique
+     fora nunca fecha o modal. É aria-hidden e puramente decorativo, então
+     não perde nada em não capturar ponteiro. */
+  pointer-events: none;
 }
 
 .film-dialog-wash[data-open] { opacity: 1; }
@@ -412,13 +423,10 @@
   .film-dialog-body { font-size: 3.4vw; }
 }
 
-/* A trilha já encolhe em `phases(reduced)` (Tarefa 1) e o blur de profundidade
-   e o tranco do estalo já são suprimidos pelo hook (Tarefa 3 e Tarefa 5).
-   Resta só garantir que nada mais anime. */
+/* A trilha já encolhe em `phases(reduced)` e o blur de profundidade e o
+   tranco do estalo já são suprimidos pelo hook. Resta só garantir que o
+   tranco do card não anime — o resto das transições do módulo já encurta
+   sozinho pelo corte global de --duration-base em styles/globals.css. */
 @media (prefers-reduced-motion: reduce) {
   .film-card { animation: none; }
-  .film-dialog { animation: none; }
-  .film-dialog-close,
-  .film-dialog-x,
-  .film-dialog-back { transition-duration: var(--duration-fast); }
 }

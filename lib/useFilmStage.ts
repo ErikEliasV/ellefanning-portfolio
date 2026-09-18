@@ -5,6 +5,21 @@ import { NARROW_QUERY, cursor, depth, geometry, trackVh } from "@/lib/filmStage"
 import { isReduced, onTick } from "@/lib/scroll";
 import { reelTick } from "@/lib/audio";
 
+// Espelha `smallViewportHeight()` de `lib/useHeroMorph.ts` e
+// `lib/useEditorialReel.ts` (não está exportada de nenhum dos dois). Sonda
+// `100svh` com um elemento fora de tela e cai para `innerHeight` se o
+// navegador não suportar — é o padrão que o resto do site usa para não
+// pular quando a barra de URL do celular recolhe/expande.
+function smallViewportHeight() {
+  const probe = document.createElement("div");
+  probe.style.cssText =
+    "position:absolute;top:0;left:0;width:0;height:100svh;visibility:hidden;pointer-events:none";
+  document.body.appendChild(probe);
+  const height = probe.getBoundingClientRect().height;
+  probe.remove();
+  return height || window.innerHeight;
+}
+
 export function useFilmStage(count: number) {
   const track = useRef<HTMLDivElement>(null);
   const stage = useRef<HTMLDivElement>(null);
@@ -27,6 +42,12 @@ export function useFilmStage(count: number) {
   // se o mesmo card travasse de novo antes dos 120ms, o timeout velho apagaria
   // o atributo que pertence à trava nova, cortando a animação no meio.
   const kickTimer = useRef(0);
+  // O card dono do timer pendente. Quando uma trava nova cancela o timeout de
+  // uma trava anterior EM OUTRO card, ninguém mais vai limpar o data-kick
+  // daquele card — ele fica cravado para sempre e o card fica mudo naquela
+  // direção pelo resto da sessão. Este ref é o que permite apagar o atributo
+  // do card anterior antes de trocar de timer.
+  const kickCard = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     let vh = 0;
@@ -98,8 +119,13 @@ export function useFilmStage(count: number) {
 
       // FILMO branca só aparece onde há pôster atrás dela. O recorte segue a caixa do
       // card mais próximo — ao passo de 48vw nunca há dois sobre a palavra ao mesmo
-      // tempo, então "o mais próximo" é exato, não aproximação. As bordas saem da
-      // matemática, nunca de getBoundingClientRect: custo zero por frame.
+      // tempo, então "o mais próximo" é exato, não aproximação. L/R saem da matemática
+      // (centro ± largura × escala / 2), nunca de nova leitura de layout por card.
+      //
+      // Uma única getBoundingClientRect por frame ainda é necessária: é a fonte do
+      // centro do palco (veja abaixo por quê — window.innerWidth não serve). Restaurar
+      // a matemática pura para essa leitura também reintroduziria o deslocamento de
+      // 7,5px que esta linha corrige; não trocar por cálculo sem reconferir aquilo.
       const cutEl = cut.current;
       if (cutEl) {
         const box = cutEl.getBoundingClientRect();
@@ -140,8 +166,14 @@ export function useFilmStage(count: number) {
             // ainda é -1, e não existe "direção" para trás disso.
             const back = lastIndex.current >= 0 && c.lock < lastIndex.current;
             card.dataset.kick = back ? "-" : "+";
+            const prev = kickCard.current;
+            if (prev && prev !== card) delete prev.dataset.kick;
             window.clearTimeout(kickTimer.current);
-            kickTimer.current = window.setTimeout(() => { delete card.dataset.kick; }, 120);
+            kickCard.current = card;
+            kickTimer.current = window.setTimeout(() => {
+              delete card.dataset.kick;
+              kickCard.current = null;
+            }, 120);
           }
           lastIndex.current = c.lock;
         }
@@ -163,7 +195,7 @@ export function useFilmStage(count: number) {
       const vw = window.innerWidth;
       const g = geometry(narrow.matches);
 
-      vh = window.innerHeight;
+      vh = smallViewportHeight();
       pitch = g.pitchVw * vw;
       cardW = g.widthVw * vw;
       splitMax = g.splitVw * vw;
@@ -184,6 +216,7 @@ export function useFilmStage(count: number) {
       window.removeEventListener("resize", measure);
       narrow.removeEventListener("change", measure);
       window.clearTimeout(kickTimer.current);
+      if (kickCard.current) delete kickCard.current.dataset.kick;
     };
   }, [count]);
 
