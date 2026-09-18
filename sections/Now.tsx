@@ -4,6 +4,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useEffect } from "react";
 import type { CSSProperties } from "react";
+import { SoundPill } from "@/components/core/SoundPill";
 import { CURRENT_WORK } from "@/lib/films";
 import { lineCascade } from "@/lib/reveal";
 import { isReduced } from "@/lib/scroll";
@@ -96,43 +97,18 @@ export function Now() {
           <div className="now-scrim" />
         </div>
 
-        <button
-          type="button"
+        {/* live so quando o trailer esta rodando com som: e ai que a nota
+            respira, como a do botao de musica da pagina. */}
+        <SoundPill
           className="now-sound"
+          on={sound}
+          live={playing && sound}
+          ready={ready}
+          label={sound ? "Sound on" : "Sound off"}
+          ariaLabel={sound ? "Mute the trailer" : "Unmute the trailer"}
+          cursor={sound ? "Mute" : "Unmute"}
           onClick={toggleSound}
-          aria-pressed={sound}
-          aria-label={sound ? "Mute the trailer" : "Unmute the trailer"}
-          data-cursor={sound ? "Mute" : "Unmute"}
-          data-ready={ready ? "" : undefined}
-        >
-          <span aria-hidden className="now-sound-icon">
-            <svg viewBox="0 0 16 16" fill="none">
-              <path d="M2 6.2h3.4L9 3v10L5.4 9.8H2z" fill="currentColor" />
-              {sound ? (
-                <g
-                  stroke="currentColor"
-                  strokeWidth="1.3"
-                  strokeLinecap="round"
-                >
-                  <path d="M10.9 6.1a2.6 2.6 0 0 1 0 3.8" />
-                  <path d="M12.9 4.4a5.2 5.2 0 0 1 0 7.2" />
-                </g>
-              ) : (
-                <g
-                  stroke="currentColor"
-                  strokeWidth="1.3"
-                  strokeLinecap="round"
-                >
-                  <path d="M10.9 6.4 14.1 9.6" />
-                  <path d="M14.1 6.4 10.9 9.6" />
-                </g>
-              )}
-            </svg>
-          </span>
-          <span className="now-sound-label">
-            {sound ? "Sound on" : "Sound off"}
-          </span>
-        </button>
+        />
 
         <div className="now-row">
           <h2 className="now-word">Now</h2>

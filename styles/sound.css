@@ -1,87 +1,75 @@
-.score {
-  position: fixed;
-  bottom: clamp(16px, 1.6667vw, 28px);
-  left: clamp(16px, 2.0833vw, 40px);
-  z-index: 90;
+/* O pill do Figma (node 2446-162), reduzido pelo fator 17/27,104 = 0,627 para
+   ficar perto do peso que os dois botoes ja tinham na pagina: altura 61 -> 38,
+   corpo 27,104 -> 17, icone 27x29 -> 17x18, gap 10 -> 6, respiro 9/15 -> 6/9,
+   raio 11 -> 7. O tracking vem em em (7,0705 / 27,104) para acompanhar o corpo
+   em vez de virar um px solto. A largura fica pelo conteudo, como la. */
+.sound-pill {
+  /* As classes de posicao sobrescrevem com fixed/absolute; o relative esta
+     aqui para o ::after do alvo de toque ter contra o que se medir. */
+  position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  border: 1px solid var(--color-line-rule);
-  padding: 6px 10px;
-  background-color: var(--color-paper-100);
+  gap: 6px;
+  min-height: 38px;
+  padding-right: 9px;
+  padding-left: 6px;
+  border-radius: 7px;
+  background-color: rgba(92, 92, 92, 0.55);
   font-family: var(--font-text);
-  font-weight: 700;
-  font-size: var(--text-micro);
+  font-weight: 500;
+  font-size: 17px;
   line-height: 1;
-  letter-spacing: var(--tracking-label);
+  letter-spacing: 0.26em;
   text-transform: uppercase;
-  color: var(--color-ink-800);
-  transition:
-    background-color var(--duration-fast) var(--ease-out),
-    border-color var(--duration-fast) var(--ease-out),
-    color var(--duration-fast) var(--ease-out);
+  color: var(--color-paper-000);
+  transition: background-color var(--duration-fast) var(--ease-out);
 }
 
-.score[aria-pressed="true"] {
-  border-color: var(--color-rose-400);
-  background-color: var(--color-rose-400);
-  color: var(--color-ink-900);
+/* O rosa e o rose-400 a 55%, o mesmo numero que esta no Figma. */
+.sound-pill[aria-pressed="true"] {
+  background-color: rgba(224, 114, 149, 0.55);
 }
 
+/* O Figma nao desenha hover, entao o fundo so firma: mesmo tom, 55% -> 80%,
+   sem uma terceira cor que ninguem escolheu. */
 @media (hover: hover) {
-  .score:hover {
-    border-color: var(--color-ink-800);
-    background-color: var(--color-ink-800);
-    color: var(--color-paper-100);
+  .sound-pill:hover {
+    background-color: rgba(92, 92, 92, 0.8);
+  }
+
+  .sound-pill[aria-pressed="true"]:hover {
+    background-color: rgba(224, 114, 149, 0.8);
   }
 }
 
-.score-bars {
-  display: flex;
-  align-items: flex-end;
-  gap: 2px;
-  width: 12px;
-  height: 10px;
+.sound-pill-note {
+  display: block;
+  flex-shrink: 0;
+  width: 17px;
+  height: 18px;
 }
 
-.score-bar {
+.sound-pill-note img {
   display: block;
-  width: 2px;
+  width: 100%;
   height: 100%;
-  background-color: currentColor;
-  transform: scaleY(0.28);
-  transform-origin: 50% 100%;
-  transition: transform var(--duration-base) var(--ease-out);
 }
 
-.score[data-live] .score-bar {
-  animation: score-dance 900ms var(--ease-in-out) infinite alternate;
+/* No lugar das tres barrinhas que dancavam: a nota respira enquanto o audio
+   esta de fato tocando. */
+.sound-pill[data-live] .sound-pill-note {
+  animation: note-breathe 900ms var(--ease-in-out) infinite alternate;
 }
 
-.score[data-live] .score-bar-a {
-  animation-delay: 0ms;
-}
-
-.score[data-live] .score-bar-b {
-  animation-delay: 180ms;
-}
-
-.score[data-live] .score-bar-c {
-  animation-delay: 360ms;
-}
-
-.score-label {
+.sound-pill-label {
   display: block;
 }
 
+/* O pill tem 38px, entao o alvo de toque vem de uma extensao invisivel em vez
+   de engordar o botao -- ele flutua sobre a barra da filmografia e cobriria
+   mais dela. */
 @media (hover: none) {
-  .score {
-    font-size: var(--text-label-sm);
-  }
-
-  /* The pill floats over the filmography bar, so it earns its 44px target
-     from an invisible extension instead of growing over more of the bar. */
-  .score::after {
+  .sound-pill::after {
     content: "";
     position: absolute;
     left: 50%;
@@ -92,11 +80,20 @@
   }
 }
 
-@keyframes score-dance {
+@keyframes note-breathe {
   from {
-    transform: scaleY(0.24);
+    transform: scale(1);
   }
   to {
-    transform: scaleY(1);
+    transform: scale(1.12);
   }
+}
+
+/* Daqui para baixo e so posicao: o botao da musica mora fixo no canto da
+   pagina inteira. */
+.score {
+  position: fixed;
+  bottom: clamp(16px, 1.6667vw, 28px);
+  left: clamp(16px, 2.0833vw, 40px);
+  z-index: 90;
 }
