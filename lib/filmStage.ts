@@ -91,7 +91,9 @@ function span(p: number, s: Span) {
 }
 
 export type Cursor = {
-  /** Posição contínua do reel. 0 = 1º travado, 15 = 16º travado, 16 = fora. */
+  /** Posição contínua do reel. 0 = 1º travado, 15 = 16º travado, cresce além
+   * disso durante a fase `exit` até o cursor tirar o 16º de quadro de vez
+   * (ver o fator 1.6 em `cursor()`) — não promete um teto exato aqui. */
   u: number;
   /** Índice travado neste instante, ou -1 se algo está em trânsito. */
   lock: number;

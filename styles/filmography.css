@@ -50,12 +50,12 @@
 .film-word-front,
 .film-word-cut {
   position: absolute;
-  top: 45.4vh;
+  top: 40.8vh;
   display: flex;
   flex-direction: column;
   transform: translate3d(
     0,
-    calc((1 - var(--rise)) * 40vh + var(--fall) * 60vh),
+    calc((1 - var(--rise)) * 40vh + var(--fall) * 70vh),
     0
   );
   opacity: var(--rise);
