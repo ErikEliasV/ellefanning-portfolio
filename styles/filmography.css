@@ -184,7 +184,15 @@
 .film-dialog {
   position: fixed;
   inset: 0;
-  z-index: 70;
+  /* Mapa de camadas do site: header 80, botão de som 90, preloader 100,
+     cursor customizado 200. O modal prende foco e trava scroll, então tem
+     que ficar acima do chrome do site que ele deveria deixar inerte (header
+     e som) — senão o header cobre o botão de fechar e sobram elementos
+     focáveis fora da armadilha de foco. Mas tem que ficar abaixo do
+     preloader (que só existe no carregamento, quando não há modal aberto) e
+     do cursor (que precisa desenhar por cima de tudo, sempre). 95 é o único
+     valor que satisfaz as quatro condições — não mexer sem reconferir isso. */
+  z-index: 95;
   overflow: hidden;
   background-color: var(--color-ink-900);
   animation: film-dialog-in var(--duration-slow) var(--ease-out);

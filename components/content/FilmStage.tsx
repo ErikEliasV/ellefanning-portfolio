@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { asset } from "@/lib/asset";
 import { FilmDialog } from "@/components/content/FilmDialog";
 import type { Film } from "@/lib/films";
@@ -24,6 +24,18 @@ export function FilmStage({ films }: { films: readonly Film[] }) {
   const { track, stage, rail, cut, curtain, active, lock } = useFilmStage(films.length);
   const now = films[active];
   const [open, setOpen] = useState<number | null>(null);
+  const trigger = useRef<HTMLButtonElement | null>(null);
+
+  // O FilmDialog não sabe qual card o abriu, então quem devolve o foco é
+  // quem sabe: aqui. O timeout empurra o .focus() para depois do commit que
+  // remove o modal do DOM — refocar antes disso arrisca o navegador jogar o
+  // foco de volta para <body> quando o botão de fechar (ainda focado) sai da
+  // árvore.
+  function closeFilm() {
+    setOpen(null);
+    const card = trigger.current;
+    window.setTimeout(() => card?.focus(), 0);
+  }
 
   return (
     <div ref={track} className="film-track">
@@ -54,7 +66,10 @@ export function FilmStage({ films }: { films: readonly Film[] }) {
               data-at={index}
               data-live={index === lock ? "" : undefined}
               aria-label={`${film.title} (${film.year}) — open details`}
-              onClick={() => setOpen(index)}
+              onClick={(event) => {
+                trigger.current = event.currentTarget;
+                setOpen(index);
+              }}
             >
               {film.poster ? (
                 <Image
@@ -79,7 +94,7 @@ export function FilmStage({ films }: { films: readonly Film[] }) {
       </div>
 
       {open !== null ? (
-        <FilmDialog film={films[open]} onClose={() => setOpen(null)} />
+        <FilmDialog film={films[open]} onClose={closeFilm} />
       ) : null}
     </div>
   );
