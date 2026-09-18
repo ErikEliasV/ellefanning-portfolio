@@ -389,7 +389,11 @@
   .film-count-all { font-size: 2.6vw; }
   .film-year { font-size: 8vw; }
 
-  .film-dialog-close { width: 11vw; height: 11vw; top: 4vh; left: 7vw; }
+  /* O 11vw sozinho dá 41,25px a 375 de largura, abaixo dos 44px que o projeto
+     adota (docs/responsividade-mobile.md trata alvos de 24 e 29px como
+     defeito a corrigir). O piso garante o mínimo em qualquer largura e o vw
+     continua escalando em telas maiores (45,5px já a 414). */
+  .film-dialog-close { width: max(11vw, 44px); height: max(11vw, 44px); top: 4vh; left: 7vw; }
   .film-dialog-close:hover,
   .film-dialog-close:focus-visible { width: 32vw; }
   .film-dialog-back { font-size: 3.2vw; }
