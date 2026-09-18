@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { NARROW_QUERY, cursor, depth, geometry, trackVh } from "@/lib/filmStage";
+import { CURTAIN_OUT, NARROW_QUERY, cursor, depth, geometry, trackVh } from "@/lib/filmStage";
 import { isReduced, onTick } from "@/lib/scroll";
 import { reelTick } from "@/lib/audio";
 
@@ -53,6 +53,7 @@ export function useFilmStage(count: number) {
     let vh = 0;
     let pitch = 0;
     let cardW = 0;
+    let cardH = 0;
     let splitMax = 0;
 
     function paint() {
@@ -80,7 +81,7 @@ export function useFilmStage(count: number) {
       // instante depois disso ela precisa sair do caminho, senão o z-index 60 dela
       // fica acima do contexto isolado do palco e apaga a seção inteira.
       //
-      // O limiar de 0.05 não tem 0.4vh de colchão, mesmo `--curtain` saturando em
+      // CURTAIN_OUT (0.05) não tem 0.4vh de colchão, mesmo `--curtain` saturando em
       // p = -0.35: entre -0.35 e 0 quem cobre a tela ainda é só a cortina, porque o
       // palco sticky só trava no topo — e passa a cobrir o viewport inteiro — em
       // p = 0. A folga real, entre "o palco já cobre" e "a cortina sai", é de 0.05vh
@@ -88,9 +89,11 @@ export function useFilmStage(count: number) {
       // palco dentro de .film-track ou nas fases precisa contar a partir daí, senão
       // volta o bug que esta tarefa corrigiu. E isso vale em qualquer modo: p = 0 é
       // geométrico (`-trackTop / vh`), phases() não muda onde o palco gruda.
+      // `rise` em filmStage.ts parte deste mesmo CURTAIN_OUT — os dois lados
+      // têm que concordar sobre o instante em que a cortina solta a cena.
       const curtainEl = curtain.current;
       if (curtainEl) {
-        if (p < 0.05) curtainEl.dataset.on = "";
+        if (p < CURTAIN_OUT) curtainEl.dataset.on = "";
         else delete curtainEl.dataset.on;
       }
 
@@ -99,7 +102,13 @@ export function useFilmStage(count: number) {
         if (!card) continue;
 
         const d = depth(i, c.u);
-        if (!d.live) {
+        // Enquanto o 1º pôster ainda está subindo pelo vão (c.enter < 1), os
+        // vizinhos não podem aparecer: `depth(1, 0).live` já é `true` a um
+        // passo de distância, mas o primeiro filme ainda nem entrou em quadro.
+        // Card 0 continua sendo desenhado — é ele que sobe. `c.enter` é
+        // função pura de `p`, então isto desfaz sozinho subindo a página: os
+        // vizinhos voltam a sumir sem lógica extra de direção.
+        if (!d.live || (i > 0 && c.enter < 1)) {
           card.style.visibility = "hidden";
           continue;
         }
@@ -122,13 +131,27 @@ export function useFilmStage(count: number) {
       // tempo, então "o mais próximo" é exato, não aproximação. L/R saem da matemática
       // (centro ± largura × escala / 2), nunca de nova leitura de layout por card.
       //
-      // Uma única getBoundingClientRect por frame ainda é necessária: é a fonte do
-      // centro do palco (veja abaixo por quê — window.innerWidth não serve). Restaurar
-      // a matemática pura para essa leitura também reintroduziria o deslocamento de
-      // 7,5px que esta linha corrige; não trocar por cálculo sem reconferir aquilo.
+      // Duas getBoundingClientRect por frame são necessárias, não uma. A primeira
+      // (`box`, de `cutEl`) é a fonte do centro do palco (veja abaixo por quê —
+      // window.innerWidth não serve) e, de graça, da extensão VERTICAL da palavra
+      // (box.top/box.bottom). Restaurar a matemática pura para essa leitura
+      // reintroduziria o deslocamento de 7,5px que ela corrige; não trocar por
+      // cálculo sem reconferir aquilo.
+      //
+      // A segunda (`stageBox`, de `stageEl`) é nova: o recorte antes só comparava
+      // sobreposição HORIZONTAL (cx ± half contra box.left/box.right) e nunca olhava
+      // a vertical. Durante a intro o card 0 está a 120% de distância vertical (fora
+      // da tela, ver `lift` acima), mas o centro horizontal dele já coincide com a
+      // borda de FILMO (--split é 0 aí, as duas metades encostadas no centro) — o
+      // recorte concluía que havia sobreposição e pintava as letras de branco em
+      // repouso. A extensão vertical do card não pode vir de uma constante do CSS
+      // como `40.8vh`: duplicar essa medida entre CSS e JS já causou a regressão dos
+      // 7,5px citada acima, e o plano proíbe repetir isso — ler o rect do palco é
+      // como saber onde o card cai sem duplicar nada.
       const cutEl = cut.current;
       if (cutEl) {
         const box = cutEl.getBoundingClientRect();
+        const stageBox = stageEl.getBoundingClientRect();
         // window.innerWidth inclui a calha da barra de rolagem
         // (scrollbar-gutter: stable), então não é o centro real do palco. A
         // borda direita da própria caixa já é `centroDoPalco - split` (é como
@@ -147,8 +170,23 @@ export function useFilmStage(count: number) {
         const half = (cardW * d.scale) / 2;
         const cx = mid + d.offset * pitch;
 
-        const l = Math.min(Math.max(cx - half - box.left, 0), box.width);
-        const r = Math.min(Math.max(box.right - (cx + half), 0), box.width);
+        // Centro vertical do card: o do palco (posição de repouso — o card é
+        // `top: 50%` dentro de .film-rail, que preenche o palco) mais o
+        // deslocamento do `lift`, só relevante para o card 0. Percentual de
+        // `translate3d` resolve contra a altura do próprio elemento (`cardH`
+        // sem escala), então o deslocamento em px é `lift% × cardH` — igual
+        // ao que o CSS aplica no card de verdade.
+        const liftNear = near === 0 ? (1 - c.enter) * 120 : 0;
+        const halfH = (cardH * d.scale) / 2;
+        const cy = stageBox.top + stageBox.height / 2 + (liftNear / 100) * cardH;
+        const overlapsVertically = cy + halfH > box.top && cy - halfH < box.bottom;
+
+        const l = overlapsVertically
+          ? Math.min(Math.max(cx - half - box.left, 0), box.width)
+          : box.width;
+        const r = overlapsVertically
+          ? Math.min(Math.max(box.right - (cx + half), 0), box.width)
+          : 0;
 
         set("--cut-l", `${l.toFixed(2)}px`);
         set("--cut-r", `${r.toFixed(2)}px`);
@@ -198,10 +236,11 @@ export function useFilmStage(count: number) {
       vh = smallViewportHeight();
       pitch = g.pitchVw * vw;
       cardW = g.widthVw * vw;
+      cardH = cardW * g.ratio;
       splitMax = g.splitVw * vw;
 
       trackEl.style.setProperty("--card-w", `${cardW.toFixed(2)}px`);
-      trackEl.style.setProperty("--card-h", `${(cardW * g.ratio).toFixed(2)}px`);
+      trackEl.style.setProperty("--card-h", `${cardH.toFixed(2)}px`);
       trackEl.style.height = `${vh * trackVh(isReduced())}px`;
       paint();
     }

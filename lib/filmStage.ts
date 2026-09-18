@@ -32,6 +32,15 @@ export const NARROW_QUERY = "(width < 64rem)";
 
 export const COUNT = 16;
 
+// O limiar (em `p` absoluto, não escalado por `k`) em que a cortina sai do
+// caminho. `p = 0` é geométrico — é onde o palco sticky passa a cobrir o
+// viewport inteiro, não depende de `phases()` — e 0.05 é a folga contada a
+// partir daí. `rise` usa esta mesma constante como início: a subida da
+// palavra só pode começar quando a cortina já saiu, senão 80% dela acontece
+// atrás da chapa branca e a palavra "aparece do nada" quase no lugar final.
+// Ver o comentário maior em `lib/useFilmStage.ts` junto ao `dataset.on`.
+export const CURTAIN_OUT = 0.05;
+
 // Dentro de cada ciclo, os primeiros 45% de scroll não movem nada: é a trava.
 const DWELL = 0.45;
 // 0.58 em d = 1, que é exatamente 313/539 do Figma.
@@ -69,7 +78,14 @@ export function phases(reduced: boolean): Phases {
   const k = reduced ? 0.5 : 1;
 
   const curtain = { from: -1.0 * k, to: -0.35 * k };
-  const rise = { from: curtain.to, to: curtain.to + 0.5 * k };
+  // `rise` começa em CURTAIN_OUT, não em `curtain.to`: o limiar da cortina é
+  // fixo (ponto geométrico, não uma duração de coreografia), então não pode
+  // escalar por `k` — em movimento reduzido `CURTAIN_OUT * k` cairia para
+  // 0.025, antes de a cortina sair em 0.05, e reintroduziria o bug só nesse
+  // modo. Só a duração da subida (o `0.5 * k` abaixo) escala; o início, não.
+  // Isso abre um vão proposital entre `curtain.to` e `rise.from` — a cortina
+  // já saturou e continua cobrindo a tela até o limiar geométrico soltá-la.
+  const rise = { from: CURTAIN_OUT, to: CURTAIN_OUT + 0.5 * k };
   const open = { from: rise.to, to: rise.to + 0.5 * k };
   const reel = { from: open.to, to: open.to + cycle * (COUNT - 1) };
   const hold = { from: reel.to, to: reel.to + cycle * DWELL };

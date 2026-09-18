@@ -58,11 +58,12 @@
   top: 40.8vh;
   display: flex;
   flex-direction: column;
-  transform: translate3d(
-    0,
-    calc((1 - var(--rise)) * 40vh + var(--fall) * 70vh),
-    0
-  );
+  /* A palavra entra grande (1.6×) e chega a 1× ao assentar — ambos função de
+     --rise, então a descida final (--fall) não é afetada: ali --rise já
+     saturou em 1 e a escala fica em 1 o tempo todo. */
+  transform:
+    translate3d(0, calc((1 - var(--rise)) * 40vh + var(--fall) * 70vh), 0)
+    scale(calc(1.6 - 0.6 * var(--rise)));
   opacity: var(--rise);
   white-space: nowrap;
   pointer-events: none;
@@ -72,11 +73,19 @@
 .film-word-cut {
   right: calc(50% + var(--split));
   align-items: flex-start;
+  /* Durante a subida --split é 0: as duas metades estão encostadas no
+     centro. Escalar em torno da borda DIREITA (a borda de junção) prende
+     esse ponto no lugar — as duas metades encolhem convergindo para o
+     centro, não escorregando para os lados. Origin no padrão (centro da
+     própria caixa) abriria a junção durante a subida. */
+  transform-origin: right;
 }
 
 .film-word-front {
   left: calc(50% + var(--split));
   align-items: flex-end;
+  /* Espelho do comentário acima: a borda de junção de GRAPHY é a esquerda. */
+  transform-origin: left;
 }
 
 .film-word-back { z-index: 2; }
