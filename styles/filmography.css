@@ -39,7 +39,10 @@
   background-color: var(--color-paper-000);
   transform: translate3d(0, calc((1 - var(--curtain)) * 100%), 0);
   pointer-events: none;
+  visibility: hidden;
 }
+
+.film-curtain[data-on] { visibility: visible; }
 
 /* As duas metades se encostam no centro quando --split é 0, e a palavra lê como
    FILMOGRAPHY. Abrir é uma variável só: nada de medir largura de glifo. */
@@ -47,10 +50,14 @@
 .film-word-front,
 .film-word-cut {
   position: absolute;
-  top: 40.8vh;
+  top: 45.4vh;
   display: flex;
   flex-direction: column;
-  transform: translate3d(0, calc(var(--fall) * 60vh), 0);
+  transform: translate3d(
+    0,
+    calc((1 - var(--rise)) * 40vh + var(--fall) * 60vh),
+    0
+  );
   opacity: var(--rise);
   white-space: nowrap;
   pointer-events: none;

@@ -54,6 +54,15 @@ export function useFilmStage(count: number) {
       set("--split", `${splitPx.toFixed(2)}px`);
       set("--fall", c.fall.toFixed(4));
 
+      // A cortina serve só à entrada, cobrindo a hero enquanto o palco não chegou. Um
+      // instante depois disso ela precisa sair do caminho, senão o z-index 60 dela
+      // fica acima do contexto isolado do palco e apaga a seção inteira.
+      const curtainEl = curtain.current;
+      if (curtainEl) {
+        if (p < 0.05) curtainEl.dataset.on = "";
+        else delete curtainEl.dataset.on;
+      }
+
       for (let i = 0; i < count; i += 1) {
         const card = railEl.children[i] as HTMLElement | undefined;
         if (!card) continue;
