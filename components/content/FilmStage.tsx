@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
 import { asset } from "@/lib/asset";
-import { FilmDialog } from "@/components/content/FilmDialog";
+import { FilmDialog, type Origin } from "@/components/content/FilmDialog";
 import type { Film } from "@/lib/films";
 import { isReduced } from "@/lib/scroll";
 import { useFilmStage } from "@/lib/useFilmStage";
@@ -33,10 +33,16 @@ export function FilmStage({ films }: { films: readonly Film[] }) {
   const now = films[active];
   const [open, setOpen] = useState<number | null>(null);
   // "closing" mantém o FilmDialog montado durante a animação de saída — sem
-  // ele o desmonte é imediato (commit seguinte) e não sobra tempo para a
-  // placa/texto/wash reverterem. Ver docs/2026-09-17-filmography-stage-design.md
-  // §6.1: "Fechar é o inverso, e o card volta para a trava de onde saiu."
+  // ele o desmonte é imediato (commit seguinte) e não sobra tempo para o
+  // pôster encolher de volta e o texto/still saírem. A abertura é o pôster
+  // clicado crescendo até virar o fundo; fechar roda o mesmo movimento ao
+  // contrário, e o card volta para a trava de onde saiu.
   const [closing, setClosing] = useState(false);
+  // A caixa do card no instante do clique, em coordenadas de viewport — é
+  // dali que o pôster cresce. Precisa ser `getBoundingClientRect()` do
+  // PRÓPRIO clique (não recalculado depois), porque o scroll trava um
+  // instante depois e o valor tem que ser o de antes da trava.
+  const [origin, setOrigin] = useState<Origin | null>(null);
   const trigger = useRef<HTMLButtonElement | null>(null);
   const exitTimer = useRef(0);
   // Guarda se havia um modal aberto no render anterior, para o efeito de
@@ -47,6 +53,8 @@ export function FilmStage({ films }: { films: readonly Film[] }) {
   function openFilm(index: number, event: MouseEvent<HTMLButtonElement>) {
     window.clearTimeout(exitTimer.current);
     trigger.current = event.currentTarget;
+    const rect = event.currentTarget.getBoundingClientRect();
+    setOrigin({ top: rect.top, left: rect.left, width: rect.width, height: rect.height });
     setClosing(false);
     setOpen(index);
   }
@@ -115,6 +123,7 @@ export function FilmStage({ films }: { films: readonly Film[] }) {
               className="film-card"
               data-at={index}
               data-live={index === lock ? "" : undefined}
+              data-cursor={index === lock ? "Open" : undefined}
               aria-label={`${film.title} (${film.year}) — open details`}
               onClick={(event) => openFilm(index, event)}
             >
@@ -131,6 +140,9 @@ export function FilmStage({ films }: { films: readonly Film[] }) {
               ) : (
                 <span className="film-card-blank">{film.title}</span>
               )}
+              {index === lock ? (
+                <span aria-hidden className="film-card-cue">Open</span>
+              ) : null}
             </button>
           ))}
         </div>
@@ -140,8 +152,8 @@ export function FilmStage({ films }: { films: readonly Film[] }) {
         </div>
       </div>
 
-      {open !== null ? (
-        <FilmDialog film={films[open]} closing={closing} onClose={closeFilm} />
+      {open !== null && origin ? (
+        <FilmDialog film={films[open]} closing={closing} origin={origin} onClose={closeFilm} />
       ) : null}
     </div>
   );

@@ -195,6 +195,40 @@
   .film-card[data-live]:hover .film-card-image { filter: brightness(1.08); }
 }
 
+/* O rótulo explícito de que o card travado abre. Mesma lógica de
+   docs/responsividade-mobile.md para `.character-cue`: em ponteiro fino o
+   cursor customizado já rotula "Open" (data-cursor mais abaixo), então o chip
+   só reforça no hover; em ponteiro grosso não existe hover e, sem o chip
+   visível sem interação, o convite de abrir não existe para quem usa toque. */
+.film-card-cue {
+  position: absolute;
+  right: clamp(10px, 0.833vw, 16px);
+  bottom: clamp(10px, 0.833vw, 16px);
+  z-index: 2;
+  display: none;
+  align-items: center;
+  min-height: 32px;
+  border: 1px solid var(--color-rose-400);
+  padding-inline: 14px;
+  background-color: var(--scrim-plate);
+  font-family: var(--font-text);
+  font-weight: 700;
+  font-size: var(--text-micro);
+  line-height: 1;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--color-rose-400);
+  pointer-events: none;
+}
+
+@media (hover: hover) {
+  .film-card[data-live]:hover .film-card-cue { display: inline-flex; }
+}
+
+@media (hover: none) {
+  .film-card[data-live] .film-card-cue { display: inline-flex; }
+}
+
 .film-dialog {
   position: fixed;
   inset: 0;
@@ -215,23 +249,62 @@
   background-color: var(--color-ink-900);
 }
 
-.film-dialog-wash {
-  object-fit: cover;
-  filter: blur(46px) brightness(0.42);
-  transform: scale(1.14);
-  /* "o fundo escurece com o pôster borrado": é este wash que entra por
-     opacidade, não o painel inteiro. */
-  opacity: 0;
-  transition: opacity var(--duration-modal) var(--ease-out);
-  /* next/image com `fill` renderiza um <img> position: absolute; inset: 0
-     cobrindo o shell inteiro. Sem isto, ele é o alvo de qualquer clique no
-     fundo — nunca o .film-dialog que tem o handler de fechar — e o clique
-     fora nunca fecha o modal. É aria-hidden e puramente decorativo, então
-     não perde nada em não capturar ponteiro. */
+/* A entrada do modal: o pôster clicado cresce da própria caixa (as custom
+   properties abaixo, escritas pelo FilmDialog a partir do
+   getBoundingClientRect() do card no clique) até cobrir a tela e virar o
+   fundo — borrando e escurecendo no caminho. Fechar roda o mesmo movimento ao
+   contrário: o fundo encolhe de volta para a caixa do card.
+   Sem isto, ele é o alvo de qualquer clique no fundo — nunca o .film-dialog
+   que tem o handler de fechar — e o clique fora para de funcionar. Mesma
+   armadilha que já pegou o wash antigo (next/image com `fill` gera um <img>
+   absolutamente posicionado cobrindo o próprio elemento). */
+.film-dialog-grow {
+  position: fixed;
+  top: var(--grow-top, 0px);
+  left: var(--grow-left, 0px);
+  width: var(--grow-w, 100vw);
+  height: var(--grow-h, 100vh);
+  overflow: hidden;
+  filter: blur(0) brightness(1);
   pointer-events: none;
+  /* O crescimento anima largura/altura de verdade, não `transform: scale`.
+     A caixa do card é proporção de pôster e a da tela não é — escalar
+     distorceria a imagem. Redimensionando a caixa em si e deixando o
+     `object-fit: cover` da imagem (abaixo) recalcular o recorte a cada
+     instante, o que muda é o que fica de fora do quadro, nunca a proporção
+     do que fica dentro. */
+  transition:
+    top calc(var(--duration-modal) * 0.6) var(--ease-out) calc(var(--duration-modal) * 0.4),
+    left calc(var(--duration-modal) * 0.6) var(--ease-out) calc(var(--duration-modal) * 0.4),
+    width calc(var(--duration-modal) * 0.6) var(--ease-out) calc(var(--duration-modal) * 0.4),
+    height calc(var(--duration-modal) * 0.6) var(--ease-out) calc(var(--duration-modal) * 0.4),
+    filter calc(var(--duration-modal) * 0.6) var(--ease-out) calc(var(--duration-modal) * 0.4);
 }
 
-.film-dialog-wash[data-open] { opacity: 1; }
+/* 60% do orçamento (--duration-modal) é o crescimento; os 40% restantes
+   ficam para o texto e o still, que só entram depois (ver
+   .film-dialog-text e .film-dialog-plate abaixo). Por isso o open e o close
+   declaram atraso em lados opostos: abrindo, o crescimento não espera nada
+   (atraso 0, aqui) e o texto/still esperam 60% para entrar depois dele;
+   fechando, é o contrário — a transição usada é sempre a da REGRA DE
+   CHEGADA (é assim que CSS Transitions resolve duration/delay quando o
+   valor muda), então a duração/atraso de "fechar" vêm da regra sem
+   `[data-open]" acima, e a de "abrir" vêm desta. */
+.film-dialog-grow[data-open] {
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  filter: blur(46px) brightness(0.42);
+  transition:
+    top calc(var(--duration-modal) * 0.6) var(--ease-out),
+    left calc(var(--duration-modal) * 0.6) var(--ease-out),
+    width calc(var(--duration-modal) * 0.6) var(--ease-out),
+    height calc(var(--duration-modal) * 0.6) var(--ease-out),
+    filter calc(var(--duration-modal) * 0.6) var(--ease-out);
+}
+
+.film-dialog-grow-img { object-fit: cover; }
 
 .film-dialog-close {
   position: absolute;
@@ -309,20 +382,26 @@
   left: 12.3vw;
   width: 34.8vw;
   color: var(--color-paper-000);
-  /* "a coluna de texto entra pela esquerda e assenta". O Figma não dá uma
-     distância para este deslocamento (só a caixa do still tem número
-     medido); 2.4vw é escolha de sensação, não medição — diferente do
-     -18.4vw da placa abaixo, que é conta. */
+  /* "a coluna de texto entra pela esquerda e assenta", só depois de o pôster
+     terminar de crescer e virar o fundo (ver .film-dialog-grow acima). O
+     Figma não dá uma distância para este deslocamento (só a caixa do still
+     tem número medido); 2.4vw é escolha de sensação, não medição. Os 40%
+     finais do orçamento (--duration-modal) são deste estágio; o atraso de
+     60% fica na regra `[data-open]` abaixo — ver o comentário sobre
+     duration/delay virem da regra de chegada, junto a `.film-dialog-grow`. */
   opacity: 0;
   transform: translateX(-2.4vw);
   transition:
-    opacity var(--duration-modal) var(--ease-out),
-    transform var(--duration-modal) var(--ease-out);
+    opacity calc(var(--duration-modal) * 0.4) var(--ease-out),
+    transform calc(var(--duration-modal) * 0.4) var(--ease-out);
 }
 
 .film-dialog-text[data-open] {
   opacity: 1;
   transform: translateX(0);
+  transition:
+    opacity calc(var(--duration-modal) * 0.4) var(--ease-out) calc(var(--duration-modal) * 0.6),
+    transform calc(var(--duration-modal) * 0.4) var(--ease-out) calc(var(--duration-modal) * 0.6);
 }
 
 .film-dialog-title {
@@ -364,12 +443,12 @@
 .film-dialog-role span { color: var(--color-rose-400); }
 .film-dialog-dir { opacity: 0.66; }
 
-/* A mesma caixa do card travado, 351px à direita: o modal não surge por cima,
-   o card viaja até aqui. §7.2 do design doc faz a conta: still 541×814 @
-   x=1042, card 539×812 @ x=691, sobre um canvas de 1920 — os centros ficam em
-   68.4vw e 50vw, a diferença é 18.4vw (=351/1920). A placa nasce deslocada
-   dessa distância e desliza até 0: é o card viajando, não um painel que
-   nasce pronto na posição final. */
+/* A caixa do still fica parada — quem viaja agora é o pôster de fundo
+   (.film-dialog-grow acima), crescendo até virar a cena. A placa só
+   aparece, sem deslizar, no mesmo estágio final do texto (40% finais do
+   orçamento, atraso de 60% ao abrir — ver o comentário em
+   .film-dialog-grow[data-open]). still 541×814 @ x=1042 sobre um canvas de
+   1920: 28.2vw de largura, 54.3vw do centro à esquerda. */
 .film-dialog-plate {
   position: absolute;
   top: 8.8vh;
@@ -377,24 +456,31 @@
   width: 28.2vw;
   height: 75.2vh;
   overflow: hidden;
-  transform: translateX(-18.4vw);
-  transition: transform var(--duration-modal) var(--ease-out);
+  opacity: 0;
+  transition: opacity calc(var(--duration-modal) * 0.4) var(--ease-out);
 }
 
-.film-dialog-plate[data-open] { transform: translateX(0); }
+.film-dialog-plate[data-open] {
+  opacity: 1;
+  transition: opacity calc(var(--duration-modal) * 0.4) var(--ease-out) calc(var(--duration-modal) * 0.6);
+}
 
 .film-dialog-still { object-fit: cover; }
 
 /* O still crossfade por cima do pôster, dentro da mesma caixa. Sem still
    ainda, os dois lados usam o mesmo arquivo (`face` em FilmDialog.tsx) e o
    crossfade fica visualmente invisível — mas a estrutura de duas camadas
-   já existe, pronta para quando os stills chegarem. */
+   já existe, pronta para quando os stills chegarem. Mesmo atraso da placa:
+   sem sentido crossfadear enquanto ainda está com opacidade 0. */
 .film-dialog-still--face {
   opacity: 0;
-  transition: opacity var(--duration-modal) var(--ease-out);
+  transition: opacity calc(var(--duration-modal) * 0.4) var(--ease-out);
 }
 
-.film-dialog-plate[data-open] .film-dialog-still--face { opacity: 1; }
+.film-dialog-plate[data-open] .film-dialog-still--face {
+  opacity: 1;
+  transition: opacity calc(var(--duration-modal) * 0.4) var(--ease-out) calc(var(--duration-modal) * 0.6);
+}
 
 /* O breakpoint aqui tem que ser idêntico a `NARROW_QUERY` em `lib/filmStage.ts`.
    Esta media query cuida só de tipografia e do layout do modal — a inversão da

@@ -37,6 +37,17 @@ export function useFilmStage(count: number) {
   // trava e a seguinte, então usar `lastLock` para a direção comparava sempre
   // contra -1 e o tranco nunca invertia.
   const lastIndex = useRef(-1);
+  // `lock === -1` acontece em dois momentos bem diferentes: durante a intro
+  // (antes do reel começar, `p < f.reel.from`) e em trânsito entre duas travas
+  // do meio do reel. `active` (estado do React) segura o último valor até o
+  // próximo `setActive`, e como esse setState só dispara na troca de `c.lock`,
+  // subir a página de volta para a intro nunca zera o contador — ele fica
+  // mostrando o último filme travado antes da intro. `lastIntro` marca só a
+  // BORDA de entrada na intro (null no primeiro paint, depois true/false), pelo
+  // mesmo motivo de `lastLock`: comparar contra o quadro anterior, não contra
+  // `p` de novo, para não disparar `setActive` a cada frame enquanto a intro
+  // continua.
+  const lastIntro = useRef<boolean | null>(null);
   // Só existe um kick em voo por vez — o estalo dispara na troca de trava, e a
   // troca é única — então um ref basta para guardar o timer pendente. Sem ele,
   // se o mesmo card travasse de novo antes dos 120ms, o timeout velho apagaria
@@ -221,6 +232,20 @@ export function useFilmStage(count: number) {
         // O contador e o ano trocam em corte duro, no instante da trava, e
         // seguram o último valor enquanto o próximo está em trânsito.
         if (c.lock >= 0) setActive(c.lock);
+      }
+
+      // `cursor()` só atribui `u = 0` por literal (não por cálculo) num único
+      // lugar: o ramo `p < f.reel.from`, a intro antes do primeiro filme
+      // travar. É o mesmo sinal que identifica "estamos na intro" sem
+      // precisar importar `phases()` só para comparar `p` contra
+      // `f.reel.from` de novo. (`u` também passa por exatamente 0 num
+      // instante do trânsito entre o 1º e o 2º filme — `easeOut4(0)` é 0 por
+      // construção — mas ali `active` já vale 0, herdado da trava que acabou
+      // de soltar, então forçar 0 de novo é inofensivo.)
+      const introNow = c.u === 0 && c.lock === -1;
+      if (introNow !== lastIntro.current) {
+        lastIntro.current = introNow;
+        if (introNow) setActive(0);
       }
     }
 

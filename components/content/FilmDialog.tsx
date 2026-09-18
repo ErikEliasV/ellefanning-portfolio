@@ -1,10 +1,16 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { asset } from "@/lib/asset";
 import { lockScroll } from "@/lib/scroll";
 import type { Film } from "@/lib/films";
+
+// A caixa do card travado no instante do clique, em coordenadas de viewport
+// (`getBoundingClientRect()`). É dali que o pôster cresce até virar o fundo do
+// modal — ver o comentário maior junto a `.film-dialog-grow` em
+// styles/filmography.css.
+export type Origin = { top: number; left: number; width: number; height: number };
 
 // O modal não é portalado para <body>: ele mora dentro de .film-track, vários
 // níveis abaixo do header e do botão de som. "Marcar os irmãos" não basta,
@@ -43,10 +49,12 @@ function clearInert(elements: readonly HTMLElement[]) {
 export function FilmDialog({
   film,
   closing,
+  origin,
   onClose,
 }: {
   film: Film;
   closing: boolean;
+  origin: Origin;
   onClose: () => void;
 }) {
   const close = useRef<HTMLButtonElement>(null);
@@ -112,6 +120,17 @@ export function FilmDialog({
   // no instante em que `closing` vira true — sem efeito nenhum no meio.
   const open = shown && !closing;
 
+  // Custom properties, não inline style direto: a caixa de repouso (fechada)
+  // é dinâmica (a do card clicado), mas a caixa aberta é sempre a tela
+  // inteira — igual ao resto do módulo (--split, --cut-l...), o CSS decide
+  // entre os dois estados via `[data-open]`, o JS só entrega o número.
+  const growStyle = {
+    "--grow-top": `${origin.top}px`,
+    "--grow-left": `${origin.left}px`,
+    "--grow-w": `${origin.width}px`,
+    "--grow-h": `${origin.height}px`,
+  } as CSSProperties;
+
   return (
     <div
       ref={shell}
@@ -124,18 +143,25 @@ export function FilmDialog({
       }}
     >
       {film.poster ? (
-        <Image
-          src={asset(film.poster)}
-          alt=""
-          aria-hidden
-          fill
-          sizes="100vw"
-          className="film-dialog-wash"
-          data-open={open ? "" : undefined}
-        />
+        <div className="film-dialog-grow" data-open={open ? "" : undefined} style={growStyle}>
+          <Image
+            src={asset(film.poster)}
+            alt=""
+            aria-hidden
+            fill
+            sizes="100vw"
+            className="film-dialog-grow-img"
+          />
+        </div>
       ) : null}
 
-      <button ref={close} type="button" className="film-dialog-close" onClick={onClose}>
+      <button
+        ref={close}
+        type="button"
+        className="film-dialog-close"
+        data-cursor="Close"
+        onClick={onClose}
+      >
         <span aria-hidden className="film-dialog-x" />
         <span className="film-dialog-back">back</span>
       </button>

@@ -123,9 +123,10 @@
   --duration-slow: 420ms;
   --duration-reveal: 900ms;
   --duration-anchor: 1600ms;
-  /* A coreografia do modal do filme (docs/2026-09-17-filmography-stage-design.md
-     §6.1): o card viaja até a caixa do still em ~520ms. Não é nenhum dos
-     durations acima, então ganha o próprio token em vez de um literal solto. */
+  /* A coreografia do modal do filme (styles/filmography.css): o pôster
+     clicado cresce até virar o fundo, e só depois entram texto e still — as
+     duas fases dividem este orçamento. Não é nenhum dos durations acima,
+     então ganha o próprio token em vez de um literal solto. */
   --duration-modal: 520ms;
   --filter-image: grayscale(1) contrast(1.16) brightness(0.98);
   --filter-image-hover: grayscale(1) contrast(1.28) brightness(1.02);
