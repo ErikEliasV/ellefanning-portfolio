@@ -22,6 +22,11 @@ export function useFilmStage(count: number) {
   // trava e a seguinte, então usar `lastLock` para a direção comparava sempre
   // contra -1 e o tranco nunca invertia.
   const lastIndex = useRef(-1);
+  // Só existe um kick em voo por vez — o estalo dispara na troca de trava, e a
+  // troca é única — então um ref basta para guardar o timer pendente. Sem ele,
+  // se o mesmo card travasse de novo antes dos 120ms, o timeout velho apagaria
+  // o atributo que pertence à trava nova, cortando a animação no meio.
+  const kickTimer = useRef(0);
 
   useEffect(() => {
     let vh = 0;
@@ -116,7 +121,8 @@ export function useFilmStage(count: number) {
             // ainda é -1, e não existe "direção" para trás disso.
             const back = lastIndex.current >= 0 && c.lock < lastIndex.current;
             card.dataset.kick = back ? "-" : "+";
-            window.setTimeout(() => { delete card.dataset.kick; }, 120);
+            window.clearTimeout(kickTimer.current);
+            kickTimer.current = window.setTimeout(() => { delete card.dataset.kick; }, 120);
           }
           lastIndex.current = c.lock;
         }
@@ -158,6 +164,7 @@ export function useFilmStage(count: number) {
       untick();
       window.removeEventListener("resize", measure);
       narrow.removeEventListener("change", measure);
+      window.clearTimeout(kickTimer.current);
     };
   }, [count]);
 
