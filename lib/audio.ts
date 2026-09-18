@@ -363,7 +363,13 @@ export function pixel(col: number, row: number, x: number) {
   source.start();
 }
 
-export function reelTick(notch: number, spread: number) {
+// `emphasis` escala o ganho desta voz sobre o barramento (TEC). Padrão 1
+// preserva o nível de hoje — o estalo de trava (FilmStage chamando sem o
+// terceiro argumento) não muda de volume. Quem quer um tique menor (o
+// chiado de percurso a cada 80px, ver useFilmStage.ts) passa um valor < 1;
+// é assim que "o TEK da trava soa maior" sem precisar tocar no volume da
+// trava — ele já é o 1.0 de referência.
+export function reelTick(notch: number, spread: number, emphasis = 1) {
   if (!wanted || gated || !ctx || !tecBus || ctx.state !== "running") return;
 
   const now = ctx.currentTime;
@@ -381,13 +387,18 @@ export function reelTick(notch: number, spread: number) {
   const pan = ctx.createStereoPanner();
   pan.pan.value = (Math.min(Math.max(spread, 0), 1) * 2 - 1) * TEC_WIDTH;
 
+  const gain = ctx.createGain();
+  gain.gain.value = Math.max(emphasis, 0);
+
   source.connect(pan);
-  pan.connect(tecBus);
+  pan.connect(gain);
+  gain.connect(tecBus);
 
   source.onended = () => {
     tecVoices -= 1;
     source.disconnect();
     pan.disconnect();
+    gain.disconnect();
   };
 
   source.start();

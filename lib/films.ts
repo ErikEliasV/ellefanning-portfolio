@@ -5,6 +5,8 @@ export type Film = {
   character: string;
   director: string;
   poster?: string;
+  /** Still do filme para o modal. Sem ele, o modal cai no pôster. */
+  still?: string;
   youtubeId?: string;
   clipStart?: number;
   summary?: string;
