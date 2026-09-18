@@ -34,12 +34,15 @@ export const COUNT = 16;
 
 // O limiar (em `p` absoluto, não escalado por `k`) em que a cortina sai do
 // caminho. `p = 0` é geométrico — é onde o palco sticky passa a cobrir o
-// viewport inteiro, não depende de `phases()` — e 0.05 é a folga contada a
-// partir daí. `rise` usa esta mesma constante como início: a subida da
-// palavra só pode começar quando a cortina já saiu, senão 80% dela acontece
-// atrás da chapa branca e a palavra "aparece do nada" quase no lugar final.
-// Ver o comentário maior em `lib/useFilmStage.ts` junto ao `dataset.on`.
-export const CURTAIN_OUT = 0.05;
+// viewport inteiro, não depende de `phases()` — e 0.02 é a folga contada a
+// partir daí (era 0.05; encolhida a pedido — a palavra não precisa esperar a
+// tela ficar perfeitamente branca e parada, só o mínimo para o palco sticky
+// travar antes da cortina sumir). `rise` usa esta mesma constante como
+// início: a subida da palavra só pode começar quando a cortina já saiu,
+// senão 80% dela acontece atrás da chapa branca e a palavra "aparece do
+// nada" quase no lugar final. Ver o comentário maior em
+// `lib/useFilmStage.ts` junto ao `dataset.on`.
+export const CURTAIN_OUT = 0.02;
 
 // Dentro de cada ciclo, os primeiros 20% de scroll não movem nada: é a trava.
 // Era 45% — quase metade do ciclo sem responder ao scroll lia como duro/preso
@@ -93,14 +96,22 @@ export function phases(reduced: boolean): Phases {
   const cycle = reduced ? 0.35 : 0.6167;
   const k = reduced ? 0.5 : 1;
 
-  const curtain = { from: -1.0 * k, to: -0.35 * k };
+  // `curtain.to` era -1.0*k -> -0.35*k, depois -0.7*k -> -0.2*k: a cortina
+  // saturava e ficava parada, branca, sem nada acontecendo, até `rise.from`
+  // soltar a palavra. Trazer `to` para bem perto do limiar (sem ultrapassá-lo
+  // — ver a invariante abaixo) praticamente fecha essa folga parada, e
+  // `curtain.from` acompanha, então a cortina inteira leva bem menos scroll
+  // para cobrir a tela e soltar o texto.
+  const curtain = { from: -0.4 * k, to: -0.05 * k };
   // `rise` começa em CURTAIN_OUT, não em `curtain.to`: o limiar da cortina é
   // fixo (ponto geométrico, não uma duração de coreografia), então não pode
   // escalar por `k` — em movimento reduzido `CURTAIN_OUT * k` cairia para
-  // 0.025, antes de a cortina sair em 0.05, e reintroduziria o bug só nesse
+  // 0.01, antes de a cortina sair em 0.02, e reintroduziria o bug só nesse
   // modo. Só a duração da subida (o `0.5 * k` abaixo) escala; o início, não.
   // Isso abre um vão proposital entre `curtain.to` e `rise.from` — a cortina
   // já saturou e continua cobrindo a tela até o limiar geométrico soltá-la.
+  // (curtain.to precisa continuar <= CURTAIN_OUT, ou a palavra começaria a
+  // subir atrás da cortina ainda fechada — ver invariante em check.ts.)
   const rise = { from: CURTAIN_OUT, to: CURTAIN_OUT + 0.5 * k };
   const open = { from: rise.to, to: rise.to + 0.5 * k };
   const reel = { from: open.to, to: open.to + cycle * (COUNT - 1) };
