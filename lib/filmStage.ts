@@ -143,7 +143,12 @@ export function cursor(p: number, reduced: boolean): Cursor {
     u = COUNT - 1;
     lock = COUNT - 1;
   } else {
-    u = COUNT - 1 + easeOut4(span(p, f.exit));
+    // A fase se chama SAIDA: ela tem que tirar o card da TELA, nao so leva-lo um
+    // passo para a esquerda. Em u = 16 o ultimo card fica com o centro em 2vw e a
+    // borda direita ainda dentro do quadro, e como ele nunca mais se move, sobra
+    // um fragmento borrado no canto pelo resto da rolagem. O fator 1.6 leva o
+    // centro a -26.8vw, bem alem da borda.
+    u = COUNT - 1 + easeOut4(span(p, f.exit)) * 1.6;
     lock = -1;
   }
 
