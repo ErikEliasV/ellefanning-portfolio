@@ -58,13 +58,18 @@
   top: 40.8vh;
   display: flex;
   flex-direction: column;
-  /* A palavra entra grande (1.6×) e chega a 1× ao assentar — ambos função de
-     --rise, então a descida final (--fall) não é afetada: ali --rise já
-     saturou em 1 e a escala fica em 1 o tempo todo. */
+  /* A palavra entra grande (2.2×) e chega a 1× ao assentar — função de
+     --rise. A saída é o espelho: sai crescendo de 1× a 2.2× por --fall, para
+     cima em vez de para baixo (translateY negativo), então ela cresce e
+     desaparece por cima da tela em vez de encolhida saindo por baixo. Os dois
+     termos de escala não se sobrepõem no tempo (--rise satura em 1 antes de
+     --fall começar a mexer), então a soma abaixo nunca passa de 2.2. Sem
+     opacity ligada a --rise: a palavra sobe já opaca, visível desde o
+     primeiro instante — antes ela materializava a meio caminho, e ele pediu
+     para vê-la vindo desde o início. */
   transform:
-    translate3d(0, calc((1 - var(--rise)) * 40vh + var(--fall) * 70vh), 0)
-    scale(calc(1.6 - 0.6 * var(--rise)));
-  opacity: var(--rise);
+    translate3d(0, calc((1 - var(--rise)) * 40vh - var(--fall) * 80vh), 0)
+    scale(calc(2.2 - 1.2 * var(--rise) + 1.2 * var(--fall)));
   white-space: nowrap;
   pointer-events: none;
 }
