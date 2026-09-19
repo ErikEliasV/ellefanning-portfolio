@@ -4,6 +4,8 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useEffect } from "react";
 import type { CSSProperties } from "react";
+import { SoundPill } from "@/components/core/SoundPill";
+import { asset } from "@/lib/asset";
 import { CURRENT_WORK } from "@/lib/films";
 import { lineCascade } from "@/lib/reveal";
 import { isReduced } from "@/lib/scroll";
@@ -14,6 +16,12 @@ import "@/styles/now.css";
 // it seats. The corner is deliberately larger than anything else on the site.
 const SMALL = 0.62;
 const CORNER = 220;
+
+// O quadro de espera, por cima do embed ate o trailer tocar. Era a thumb do
+// proprio YouTube (maxresdefault, com hqdefault numa segunda camada porque a
+// primeira as vezes da 404) -- uma imagem que o site nao escolhia. Agora e um
+// still do filme, servido daqui, e com arquivo local nao ha 404 que cobrir.
+const POSTER = "/images/ellefanning-now-poster.webp";
 
 export function Now() {
   const { frame, stage, ready, playing, sound, toggleSound } = useNowTrailer();
@@ -79,12 +87,7 @@ export function Now() {
         ref={frame}
         className="now-frame"
         data-cursor-skin="invert"
-        style={
-          {
-            "--now-poster": `url(https://i.ytimg.com/vi/${CURRENT_WORK.youtubeId}/maxresdefault.jpg)`,
-            "--now-poster-alt": `url(https://i.ytimg.com/vi/${CURRENT_WORK.youtubeId}/hqdefault.jpg)`,
-          } as CSSProperties
-        }
+        style={{ "--now-poster": `url(${asset(POSTER)})` } as CSSProperties}
       >
         <div aria-hidden className="now-media">
           <div className="now-stage">
@@ -96,43 +99,18 @@ export function Now() {
           <div className="now-scrim" />
         </div>
 
-        <button
-          type="button"
+        {/* live so quando o trailer esta rodando com som: e ai que a nota
+            respira, como a do botao de musica da pagina. */}
+        <SoundPill
           className="now-sound"
+          on={sound}
+          live={playing && sound}
+          ready={ready}
+          label={sound ? "Sound on" : "Sound off"}
+          ariaLabel={sound ? "Mute the trailer" : "Unmute the trailer"}
+          cursor={sound ? "Mute" : "Unmute"}
           onClick={toggleSound}
-          aria-pressed={sound}
-          aria-label={sound ? "Mute the trailer" : "Unmute the trailer"}
-          data-cursor={sound ? "Mute" : "Unmute"}
-          data-ready={ready ? "" : undefined}
-        >
-          <span aria-hidden className="now-sound-icon">
-            <svg viewBox="0 0 16 16" fill="none">
-              <path d="M2 6.2h3.4L9 3v10L5.4 9.8H2z" fill="currentColor" />
-              {sound ? (
-                <g
-                  stroke="currentColor"
-                  strokeWidth="1.3"
-                  strokeLinecap="round"
-                >
-                  <path d="M10.9 6.1a2.6 2.6 0 0 1 0 3.8" />
-                  <path d="M12.9 4.4a5.2 5.2 0 0 1 0 7.2" />
-                </g>
-              ) : (
-                <g
-                  stroke="currentColor"
-                  strokeWidth="1.3"
-                  strokeLinecap="round"
-                >
-                  <path d="M10.9 6.4 14.1 9.6" />
-                  <path d="M14.1 6.4 10.9 9.6" />
-                </g>
-              )}
-            </svg>
-          </span>
-          <span className="now-sound-label">
-            {sound ? "Sound on" : "Sound off"}
-          </span>
-        </button>
+        />
 
         <div className="now-row">
           <h2 className="now-word">Now</h2>

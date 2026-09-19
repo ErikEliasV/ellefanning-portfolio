@@ -99,6 +99,28 @@
 .film-rail { z-index: 4; }
 .film-word-cut { z-index: 5; }
 
+/* Espelha o .score, o pill de música, que flutua no canto oposto: mesma linha
+   de base, um de cada lado do palco. Aparece e some por `data-skip`, que o
+   paint() da trilha liga enquanto há filme adiante -- ver canSkip() em
+   lib/filmStage.ts. */
+.film-skip {
+  position: absolute;
+  right: clamp(16px, 2.0833vw, 40px);
+  bottom: clamp(16px, 1.6667vw, 28px);
+  z-index: 6;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--duration-base) var(--ease-out),
+    visibility var(--duration-base) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
+}
+
+.film-track[data-skip] .film-skip {
+  opacity: 1;
+  visibility: visible;
+}
+
 .film-word {
   font-family: var(--font-editorial);
   font-weight: 400;
@@ -327,52 +349,99 @@
 
 .film-dialog-grow-img { object-fit: cover; }
 
+/* O botão do node 2345-122. Como o resto do modal, ele é medido em vw contra o
+   canvas de 1920 do Figma, então os números de lá dividem por 19,2: caixa 61 ->
+   3.177vw, ícone 36 -> 1.875vw, raio 11 -> 0.573vw, gap 10 -> 0.521vw, corpo
+   27,104 -> 1.4117vw, e o tracking de 7,0705px vira 0,26em para acompanhar o
+   corpo. (Os pills da página vestem o mesmo desenho numa escala fixa menor --
+   ver styles/pill.css.)
+
+   Tudo sai de --close-box, a caixa em repouso, nas razões que o Figma dá sobre
+   os 61px dela. Assim a media query de tela estreita troca um número só e nada
+   desalinha -- e a centragem do + em repouso é `(caixa - ícone) / 2` por
+   construção, não um valor calculado à mão que pode envelhecer.
+
+   O respiro é assimétrico de propósito. Em repouso são 12,5px à esquerda e
+   nenhum à direita: com box-sizing: border-box isso deixa 48,5px de caixa de
+   conteúdo para um ícone de 36px alinhado ao início, ou seja 12,5px sobrando de
+   cada lado -- o + fica no centro exato dos 61px. (Aqui morava `padding: 0 1vw`,
+   e eram esses 19,2px de respiro à esquerda que jogavam o centro do ícone para
+   27,4px numa caixa de 61,4px: o desalinhamento de 3,3px.) Ao abrir, só o
+   padding-left desce para os 9px do Figma, junto com a largura, então o ícone
+   desliza em vez de pular. Os 15px de respiro direito do Figma estão embutidos
+   na largura aberta, já que padding-right não teria o que fazer com a largura
+   fixa e o overflow recortando. */
 .film-dialog-close {
+  --close-box: 3.177vw;
+  --close-icon: calc(var(--close-box) * 0.5902); /* 36 / 61 */
   position: absolute;
   top: 9.1vh;
   left: 12.3vw;
   display: flex;
   align-items: center;
-  gap: 0.7em;
-  width: 3.2vw;
-  height: 3.2vw;
-  padding: 0 1vw;
+  gap: calc(var(--close-box) * 0.1639); /* 10 / 61 */
+  width: var(--close-box);
+  height: var(--close-box);
+  padding-right: 0;
+  padding-left: calc((var(--close-box) - var(--close-icon)) / 2);
   border: 0;
-  border-radius: 8px;
-  background-color: rgb(255 255 255 / 0.12);
+  border-radius: calc(var(--close-box) * 0.1803); /* 11 / 61 */
+  background-color: rgba(92, 92, 92, 0.55);
   color: var(--color-paper-000);
   overflow: hidden;
   cursor: pointer;
   transition:
     width var(--duration-base) var(--ease-out),
+    padding-left var(--duration-base) var(--ease-out),
     background-color var(--duration-fast) var(--ease-out);
 }
 
-/* 61 × 61 em repouso, 180 × 61 aberto: o X gira 45° e vira +, o rótulo entra. */
+/* 61 × 61 em repouso, 171,6 × 61 aberto: o X gira 45° e vira +, o rótulo entra.
+   A largura aberta é um número, não `max-content`, porque `width` não
+   transiciona para tamanho intrínseco. Ele saiu de medir BACK renderizado: 9 de
+   respiro + 36 de ícone + 10 de gap + 101,58 de rótulo + 15 de respiro = 171,6,
+   ou 2,8128 caixas. O rótulo escala junto com a caixa, então a razão vale em
+   qualquer largura; trocar a PALAVRA é que pede medir de novo. */
 .film-dialog-close:hover,
 .film-dialog-close:focus-visible {
-  width: 9.4vw;
+  width: calc(var(--close-box) * 2.8128);
+  padding-left: calc(var(--close-box) * 0.1475); /* 9 / 61 */
 }
 
 .film-dialog-close:active {
-  background-color: var(--color-rose-500);
+  background-color: rgba(224, 114, 149, 0.55);
+}
+
+/* Todo o resto do modal desfaz o movimento de entrada quando `closing` liga, e
+   isso leva --duration-modal inteiro. Este botão não acompanha: ele é o que
+   você acabou de clicar, e vê-lo pendurado em opacidade cheia sobre o pôster
+   encolhendo lê como se o clique não tivesse pego. Sem transição de propósito
+   -- some no instante do clique. O visibility mata junto o ponteiro e o rótulo
+   do cursor, então nada fica sobrando por cima da saída. */
+.film-dialog[data-closing] .film-dialog-close {
+  opacity: 0;
+  visibility: hidden;
 }
 
 .film-dialog-x {
   position: relative;
   flex: none;
-  width: 1.1em;
-  height: 1.1em;
+  width: var(--close-icon);
+  height: var(--close-icon);
   rotate: 45deg;
   transition: rotate var(--duration-base) var(--ease-out);
 }
 
+/* O traço tem 1px no Figma e continua em 1px aqui, não em vw: é uma linha de
+   hairline, não uma medida da composição. O translate sobe a linha meio pixel
+   para o traço ficar centrado na caixa em vez de começar nela. */
 .film-dialog-x::before,
 .film-dialog-x::after {
   content: "";
   position: absolute;
   inset: 50% 0 auto;
   height: 1px;
+  translate: 0 -50%;
   background-color: currentColor;
 }
 
@@ -384,9 +453,12 @@
 }
 
 .film-dialog-back {
-  font-family: var(--font-sans);
-  font-size: 1vw;
-  letter-spacing: var(--tracking-label-wide);
+  font-family: var(--font-text);
+  font-weight: 500;
+  font-size: calc(var(--close-box) * 0.4443); /* 27,104 / 61 */
+  line-height: 1;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
   white-space: nowrap;
   opacity: 0;
   transition: opacity var(--duration-fast) var(--ease-out);
@@ -521,10 +593,9 @@
      adota (docs/responsividade-mobile.md trata alvos de 24 e 29px como
      defeito a corrigir). O piso garante o mínimo em qualquer largura e o vw
      continua escalando em telas maiores (45,5px já a 414). */
-  .film-dialog-close { width: max(11vw, 44px); height: max(11vw, 44px); top: 4vh; left: 7vw; }
-  .film-dialog-close:hover,
-  .film-dialog-close:focus-visible { width: 32vw; }
-  .film-dialog-back { font-size: 3.2vw; }
+  /* Uma variavel so: o icone, o respiro que o centra, o gap, o raio, o corpo
+     do rotulo e a largura aberta saem todos dela nas razoes do Figma. */
+  .film-dialog-close { --close-box: max(11vw, 44px); top: 4vh; left: 7vw; }
 
   /* No celular o modal empilha: still em cima, texto embaixo. */
   .film-dialog-plate {

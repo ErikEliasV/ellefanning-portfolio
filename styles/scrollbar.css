@@ -1,0 +1,70 @@
+/* A barra de rolagem do site. A nativa esta escondida em globals.css: no
+   desktop ela sempre ocupa largura, e reservar a calha empurrava o conteudo e
+   tirava o site do centro. Esta aqui e `fixed`, entao flutua por cima e nao
+   entra na conta de largura de ninguem. */
+.bar {
+  --bar-w: 16px;
+  --bar-thumb: 8px;
+  --bar-thumb-hot: 10px;
+
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 85;
+  width: var(--bar-w);
+  /* O trilho e o papel do site a 30%: sobre as secoes claras ele quase
+     desaparece, e sobre as escuras vira uma faixa cinza suave. Uma cor so
+     resolve as duas pontas porque o que muda atras dela e o conteudo, nao a
+     barra. */
+  background-color: rgb(246 243 233 / 0.3);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-base) var(--ease-out);
+}
+
+/* Sem nada para rolar (ou com a tela travada por um modal) a barra sai de
+   cena inteira, em vez de ficar um trilho morto na borda. */
+.bar[data-live] {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.bar-thumb {
+  position: absolute;
+  top: 0;
+  left: calc((var(--bar-w) - var(--bar-thumb)) / 2);
+  width: var(--bar-thumb);
+  border-radius: 999px;
+  /* Rosa, e nao o ink das reguas: flutuando por cima do conteudo o fundo do
+     polegar deixou de ser sempre creme -- ink sumiria nas secoes escuras. O
+     rosa do site le nas duas pontas, e e o mesmo acento de ::selection e do
+     rotulo do cursor. */
+  background-color: var(--color-rose-400);
+  cursor: grab;
+  will-change: transform;
+  transition:
+    width var(--duration-fast) var(--ease-out),
+    left var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
+}
+
+/* A resposta ao ponteiro e de largura, nao de cor: engrossar funciona sobre
+   qualquer fundo que passe por tras, o que um segundo tom de rosa nao
+   garantiria nas secoes escuras. */
+.bar-thumb:hover,
+.bar[data-drag] .bar-thumb {
+  width: var(--bar-thumb-hot);
+  left: calc((var(--bar-w) - var(--bar-thumb-hot)) / 2);
+}
+
+.bar[data-drag] .bar-thumb {
+  background-color: var(--color-rose-500);
+  cursor: grabbing;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar-thumb {
+    transition: none;
+  }
+}

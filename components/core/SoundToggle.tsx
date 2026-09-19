@@ -1,29 +1,23 @@
 "use client";
 
+import { SoundPill } from "@/components/core/SoundPill";
 import { useSiteSound } from "@/lib/useSiteSound";
-import "@/styles/sound.css";
-
-const BARS = ["a", "b", "c"];
 
 export function SoundToggle() {
   const { on, live, toggle } = useSiteSound();
 
   return (
-    <button
-      type="button"
+    <SoundPill
       className="score"
-      aria-pressed={on}
-      aria-label={on ? "Mute the site music" : "Play the site music"}
-      data-cursor={on ? "Mute" : "Play"}
-      data-live={live ? "" : undefined}
+      on={on}
+      live={live}
+      label={on ? "Music on" : "Music off"}
+      ariaLabel={on ? "Mute the site music" : "Play the site music"}
+      cursor={on ? "Mute" : "Play"}
+      // Fixo no pé da página: o rótulo do cursor por baixo cairia contra a
+      // borda da tela. O do NOW não pede isto -- ele fica no topo do vídeo.
+      cursorAt="top"
       onClick={toggle}
-    >
-      <span aria-hidden className="score-bars">
-        {BARS.map((bar) => (
-          <span key={bar} className={`score-bar score-bar-${bar}`} />
-        ))}
-      </span>
-      <span className="score-label">{on ? "Music on" : "Music off"}</span>
-    </button>
+    />
   );
 }

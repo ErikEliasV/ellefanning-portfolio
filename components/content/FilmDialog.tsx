@@ -139,6 +139,13 @@ export function FilmDialog({
       aria-label={film.title}
       className="film-dialog"
       data-open={open ? "" : undefined}
+      // `closing` já governava tudo por dentro, mas nunca tinha chegado ao
+      // DOM. Quem precisa dele é o botão de voltar, que some no instante do
+      // clique em vez de acompanhar a saída -- ver .film-dialog-close em
+      // styles/filmography.css. Não dá para reusar o `data-open` acima: ele só
+      // liga um tick depois da montagem, e o botão nasceria escondido, o que
+      // faria o focus() da montagem falhar em silêncio.
+      data-closing={closing ? "" : undefined}
       // O modal cobre a tela inteira com --color-ink-900, e o cursor
       // desenha em ink por padrao: preto sobre preto. "invert" e o mesmo
       // sinal que Characters, Now e o rodape ja usam para as secoes

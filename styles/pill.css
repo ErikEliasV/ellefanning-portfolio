@@ -1,0 +1,104 @@
+/* O pill do Figma, reduzido pelo fator 17/27,104 = 0,627 para ficar perto do
+   peso que os botoes ja tinham na pagina: altura 61 -> 38, corpo 27,104 -> 17,
+   icone 27x29 -> 17x18, gap 10 -> 6, respiro 9/15 -> 6/9, raio 11 -> 7. O
+   tracking vem em em (7,0705 / 27,104) para acompanhar o corpo em vez de virar
+   um px solto. A largura fica pelo conteudo, como la.
+
+   Tres botoes vestem isto: o som da pagina e o do trailer (node 2446-162, com
+   a nota) e o skip da filmografia (node 2446-163, so o rotulo). O botao de
+   voltar do modal de filme fala a mesma lingua, mas vive na escala em vw da
+   composicao dele -- ver .film-dialog-close em styles/filmography.css. */
+.pill {
+  /* As classes de posicao sobrescrevem com fixed/absolute; o relative esta
+     aqui para o ::after do alvo de toque ter contra o que se medir. */
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  padding-right: 9px;
+  padding-left: 6px;
+  border-radius: 7px;
+  background-color: rgba(92, 92, 92, 0.55);
+  font-family: var(--font-text);
+  font-weight: 500;
+  font-size: 17px;
+  line-height: 1;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--color-paper-000);
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+
+/* O rosa e o rose-400 a 55%, o mesmo numero que esta no Figma. */
+.pill[aria-pressed="true"] {
+  background-color: rgba(224, 114, 149, 0.55);
+}
+
+/* O Figma nao desenha hover, entao o fundo so firma: mesmo tom, 55% -> 80%,
+   sem uma terceira cor que ninguem escolheu. */
+@media (hover: hover) {
+  .pill:hover {
+    background-color: rgba(92, 92, 92, 0.8);
+  }
+
+  .pill[aria-pressed="true"]:hover {
+    background-color: rgba(224, 114, 149, 0.8);
+  }
+}
+
+.pill-note {
+  display: block;
+  flex-shrink: 0;
+  width: 17px;
+  height: 18px;
+}
+
+.pill-note img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* No lugar das tres barrinhas que dancavam: a nota respira enquanto o audio
+   esta de fato tocando. */
+.pill[data-live] .pill-note {
+  animation: note-breathe 900ms var(--ease-in-out) infinite alternate;
+}
+
+.pill-label {
+  display: block;
+}
+
+/* O pill tem 38px, entao o alvo de toque vem de uma extensao invisivel em vez
+   de engordar o botao -- ele flutua sobre a barra da filmografia e cobriria
+   mais dela. */
+@media (hover: none) {
+  .pill::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    transform: translate(-50%, -50%);
+  }
+}
+
+@keyframes note-breathe {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.12);
+  }
+}
+
+/* Daqui para baixo e so posicao: o botao da musica mora fixo no canto da
+   pagina inteira. */
+.score {
+  position: fixed;
+  bottom: clamp(16px, 1.6667vw, 28px);
+  left: clamp(16px, 2.0833vw, 40px);
+  z-index: 90;
+}

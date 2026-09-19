@@ -57,6 +57,10 @@ export function useCursor() {
 
     let untick: (() => void) | null = null;
     let pendingRetag = false;
+    // O rótulo sai por cima em vez de por baixo. Opt-in por elemento
+    // (data-cursor-at="top"), não automático perto da borda da tela: automático
+    // faria o rótulo virar sozinho enquanto o ponteiro passeia pelo limiar.
+    let above = false;
     let hot: HTMLElement | null = null;
     let snap = false;
     let down = false;
@@ -117,7 +121,14 @@ export function useCursor() {
 
       const tag = label.current;
       if (tag) {
-        tag.style.transform = `translate3d(${-half}px, ${rise + 8}px, 0)`;
+        // O -100% resolve contra a altura do próprio rótulo, então a folga de
+        // 8px fica igual dos dois lados sem precisar medi-lo. `rise` já é meia
+        // altura da caixa envolvida quando o blob abraça o elemento, então isto
+        // continua valendo com data-snap.
+        const off = rise + 8;
+        tag.style.transform = above
+          ? `translate3d(${-half}px, calc(${-off}px - 100%), 0)`
+          : `translate3d(${-half}px, ${off}px, 0)`;
       }
     }
 
@@ -245,6 +256,8 @@ export function useCursor() {
       const tag = hit?.dataset.cursor ?? "";
       const slot = label.current;
       if (slot && slot.textContent !== tag) slot.textContent = tag;
+
+      above = hit?.dataset.cursorAt === "top";
 
       if (tag) node.dataset.tag = "";
       else delete node.dataset.tag;

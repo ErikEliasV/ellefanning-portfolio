@@ -284,7 +284,8 @@
 
 @keyframes hero-rise {
   from {
-    transform: translateY(38%);
+    /* 38% subia demais (pedido para vir de mais perto). */
+    transform: translateY(18%);
   }
   to {
     transform: translateY(0);
