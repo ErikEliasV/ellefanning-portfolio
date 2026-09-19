@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Anton, Archivo } from "next/font/google";
 import localFont from "next/font/local";
 import { Cursor } from "@/components/core/Cursor";
@@ -43,6 +43,17 @@ export const metadata: Metadata = {
   title: "Elle Fanning — Actress & Producer",
   description:
     "Editorial portfolio of Elle Fanning: filmography, characters, editorials and current work.",
+};
+
+// Sem `viewportFit: "cover"` o `env(safe-area-inset-*)` devolve 0 em qualquer
+// aparelho, e os elementos fixos (a barra do header, o painel do menu, o pill
+// de musica) nao tem como desviar do notch nem da faixa de gestos. Nada de
+// `maximumScale` ou `userScalable`: o zoom continua disponivel.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#f6f3e9",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
