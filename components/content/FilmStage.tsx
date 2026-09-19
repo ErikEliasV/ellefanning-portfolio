@@ -176,6 +176,9 @@ export function FilmStage({ films }: { films: readonly Film[] }) {
           type="button"
           className="pill film-skip"
           data-cursor="Skip"
+          // Ele mora no pé do palco: o rótulo do cursor por baixo cairia
+          // contra a borda da tela.
+          data-cursor-at="top"
           aria-label="Skip to the last film"
           onClick={skipToLast}
         >

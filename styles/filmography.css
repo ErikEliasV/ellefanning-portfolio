@@ -412,6 +412,17 @@
   background-color: rgba(224, 114, 149, 0.55);
 }
 
+/* Todo o resto do modal desfaz o movimento de entrada quando `closing` liga, e
+   isso leva --duration-modal inteiro. Este botão não acompanha: ele é o que
+   você acabou de clicar, e vê-lo pendurado em opacidade cheia sobre o pôster
+   encolhendo lê como se o clique não tivesse pego. Sem transição de propósito
+   -- some no instante do clique. O visibility mata junto o ponteiro e o rótulo
+   do cursor, então nada fica sobrando por cima da saída. */
+.film-dialog[data-closing] .film-dialog-close {
+  opacity: 0;
+  visibility: hidden;
+}
+
 .film-dialog-x {
   position: relative;
   flex: none;

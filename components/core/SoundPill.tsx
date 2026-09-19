@@ -18,6 +18,8 @@ type SoundPillProps = {
   label: string;
   ariaLabel: string;
   cursor: string;
+  /** "top" tira o rotulo do cursor de baixo do ponteiro e poe em cima. */
+  cursorAt?: "top";
   /** Classe de posicao -- .score no canto da pagina, .now-sound sobre o video. */
   className?: string;
   ready?: boolean;
@@ -32,6 +34,7 @@ export function SoundPill({
   label,
   ariaLabel,
   cursor,
+  cursorAt,
   className,
   ready,
   onClick,
@@ -43,6 +46,7 @@ export function SoundPill({
       aria-pressed={on}
       aria-label={ariaLabel}
       data-cursor={cursor}
+      data-cursor-at={cursorAt}
       data-live={live ? "" : undefined}
       data-ready={ready ? "" : undefined}
       onClick={onClick}
