@@ -20,6 +20,10 @@ const STEP_VH = 0.28;
 const STEP_MIN = 200;
 
 const IDLE_MS = 180;
+// Em pixels por quadro: abaixo disto a trilha e considerada parada. Ver o
+// comentario longo em `progress()` sobre por que a comparacao nao pode ser
+// exata.
+const MOVE_EPS = 0.5;
 const EXIT_MS = 780;
 const READ_S = 0.5;
 const READ_EASE = "power2";
@@ -197,15 +201,35 @@ export function useEditorialReel(frames: readonly number[]) {
 
       // The pin used to learn it was moving from the scroll event itself; on a
       // shared tick it has to notice the movement on its own.
+      //
+      // A comparacao era `rect.top !== lastTop`, exata, e era a origem de um
+      // defeito bem visivel: `data-scrolling` bloqueia o crescimento no hover
+      // (ver styles/editorial.css), e o Lenis amortece de forma exponencial,
+      // entao `rect.top` segue mudando em fracoes de pixel muito depois de a
+      // roda parar. Passar o mouse numa foto nesse rastro deixava o quadro
+      // preso encolhido por IDLE_MS e so entao ele crescia -- medido: `--grow`
+      // travado em 0 com a celula em 535px ate a flag cair, e ai saltando para
+      // 1341px de uma vez. Lido na tela, isso e a foto expandir, encolher e
+      // expandir de novo.
+      //
+      // Com a tolerancia, "estar rolando" passa a significar movimento que se
+      // ve, e nao ruido de sub-pixel. MOVE_EPS e por quadro, entao meio pixel
+      // equivale a ~30px/s: abaixo disso ninguem le como rolagem. `lastTop` so
+      // e atualizado quando o limiar e cruzado, entao uma deriva lenta ainda
+      // acumula ate disparar em vez de passar despercebida para sempre.
       const pinNode = pin.current;
-      if (pinNode && rect.top !== lastTop) {
-        lastTop = rect.top;
-        pinNode.setAttribute("data-scrolling", "");
-        window.clearTimeout(idle.current);
-        idle.current = window.setTimeout(
-          () => pinNode.removeAttribute("data-scrolling"),
-          IDLE_MS,
-        );
+      if (pinNode) {
+        if (Number.isNaN(lastTop)) {
+          lastTop = rect.top;
+        } else if (Math.abs(rect.top - lastTop) > MOVE_EPS) {
+          lastTop = rect.top;
+          pinNode.setAttribute("data-scrolling", "");
+          window.clearTimeout(idle.current);
+          idle.current = window.setTimeout(
+            () => pinNode.removeAttribute("data-scrolling"),
+            IDLE_MS,
+          );
+        }
       }
 
       if (!armedRef.current && rect.top < window.innerHeight * 2) {

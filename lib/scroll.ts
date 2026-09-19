@@ -7,7 +7,24 @@ import Lenis from "lenis";
 type Tick = (now: number) => void;
 
 const REDUCED = "(prefers-reduced-motion: reduce)";
-const LERP = 0.085;
+// Não é uma fração por quadro, apesar do nome. O Lenis 1.3 faz
+// `damp(valor, alvo, lerp * 60, dt)` sobre `1 - e^(-λ·dt)`, ou seja: isto é uma
+// constante de tempo, e ela não muda de comportamento em 120Hz. λ = lerp * 60,
+// e τ = 1/λ é o tempo em que o scroll cobre 63% da distância que falta.
+//
+//   0.085 -> λ 5.1 -> τ 196ms   (era este)
+//   0.06  -> λ 3.6 -> τ 278ms   (é este)
+//
+// Quase metade a mais de deslize na parada, que é onde a sensação de liso
+// mora. Descer muito além daqui começa a soltar a página da mão: o conteúdo
+// continua andando depois que a roda parou e a rolagem passa a parecer atrasada
+// em vez de suave.
+//
+// Medido antes de mexer, para não estar afinando por cima de um defeito: o
+// trabalho de layout por quadro dos palcos sticky (escrever custom property,
+// ler getBoundingClientRect) custa 0,279ms num orçamento de 16,7ms -- 1,7%.
+// Não havia jank a corrigir, a suavidade era mesmo só esta constante.
+const LERP = 0.06;
 
 let lenis: Lenis | null = null;
 let booted = false;
