@@ -68,8 +68,13 @@
   z-index: 1;
   pointer-events: none;
   background-color: var(--color-ink-900);
-  background-image: var(--now-poster), var(--now-poster-alt);
-  background-position: center;
+  background-image: var(--now-poster);
+  /* O quadro e panoramico (~2,29) e o still e quase 3:2, entao `cover` corta
+     em cima e embaixo. Centrado, o corte encostava no alto do penteado --
+     tangente, que e o pior lugar para cortar. Ancorar em 35% da a ele folga do
+     topo e sobe o rosto para longe da palavra NOW e da ficha; o que se perde
+     embaixo ja estava sob o scrim. */
+  background-position: center 35%;
   background-size: cover;
   background-repeat: no-repeat;
   opacity: 1;

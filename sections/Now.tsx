@@ -5,6 +5,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useEffect } from "react";
 import type { CSSProperties } from "react";
 import { SoundPill } from "@/components/core/SoundPill";
+import { asset } from "@/lib/asset";
 import { CURRENT_WORK } from "@/lib/films";
 import { lineCascade } from "@/lib/reveal";
 import { isReduced } from "@/lib/scroll";
@@ -15,6 +16,12 @@ import "@/styles/now.css";
 // it seats. The corner is deliberately larger than anything else on the site.
 const SMALL = 0.62;
 const CORNER = 220;
+
+// O quadro de espera, por cima do embed ate o trailer tocar. Era a thumb do
+// proprio YouTube (maxresdefault, com hqdefault numa segunda camada porque a
+// primeira as vezes da 404) -- uma imagem que o site nao escolhia. Agora e um
+// still do filme, servido daqui, e com arquivo local nao ha 404 que cobrir.
+const POSTER = "/images/ellefanning-now-poster.webp";
 
 export function Now() {
   const { frame, stage, ready, playing, sound, toggleSound } = useNowTrailer();
@@ -80,12 +87,7 @@ export function Now() {
         ref={frame}
         className="now-frame"
         data-cursor-skin="invert"
-        style={
-          {
-            "--now-poster": `url(https://i.ytimg.com/vi/${CURRENT_WORK.youtubeId}/maxresdefault.jpg)`,
-            "--now-poster-alt": `url(https://i.ytimg.com/vi/${CURRENT_WORK.youtubeId}/hqdefault.jpg)`,
-          } as CSSProperties
-        }
+        style={{ "--now-poster": `url(${asset(POSTER)})` } as CSSProperties}
       >
         <div aria-hidden className="now-media">
           <div className="now-stage">
