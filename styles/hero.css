@@ -250,18 +250,14 @@
   opacity: 0;
 }
 
-/* The entry, in three beats that overlap. The soft copy resolves out of the
-   field first, the sharp one settles a beat later, and the portrait rises
-   into place as that settle lands. All three ride properties the morph does
-   not own — the wipe wrapper's transform is the morph's, so the title beats
-   use filter, opacity and a translate on the faces inside it, and the
-   portrait's own transform is also the morph's (translate + scale, driven by
-   --inv/--img-dx/--img-dy/--img-k), so the rise-from-below travels on the
-   image element one level in instead, where nothing else is animating that
-   property. `.hero-frame`'s `overflow: hidden` clips the tail end sitting
-   below the frame before the animation starts — no clip-path needed here.
-   Nothing is pre-set: with no entry signal the hero simply stands there,
-   dressed. */
+/* A entrada, em dois tempos que se sobrepõem: a cópia macia resolve para fora
+   do campo primeiro e a nítida assenta um tempo depois. Os dois correm em
+   propriedades que o morph não possui — o transform do invólucro do wipe é do
+   morph, então os tempos do título usam filter, opacity e um translate nas
+   faces de dentro. A foto entrava num terceiro tempo, subindo de translateY(18%)
+   no próprio elemento da imagem; o dono do projeto pediu que ela ficasse
+   parada, então ela agora chega já no lugar. Nada fica pré-armado: sem sinal de
+   entrada a hero simplesmente está lá, vestida. */
 @keyframes hero-soft {
   from {
     opacity: 0;
@@ -282,16 +278,6 @@
   }
 }
 
-@keyframes hero-rise {
-  from {
-    /* 38% subia demais (pedido para vir de mais perto). */
-    transform: translateY(18%);
-  }
-  to {
-    transform: translateY(0);
-  }
-}
-
 html[data-entered] .hero-track[data-ready] .hero-title-entry .hero-wipe {
   animation: hero-soft var(--duration-anchor) var(--ease-out) both;
 }
@@ -300,13 +286,8 @@ html[data-entered] .hero-track[data-ready] .hero-title-entry .hero-face {
   animation: hero-sharp var(--duration-reveal) var(--ease-out) 260ms both;
 }
 
-html[data-entered] .hero-track[data-ready] .hero-portrait-img {
-  animation: hero-rise var(--duration-anchor) var(--ease-out) 500ms both;
-}
-
 @media (prefers-reduced-motion: reduce) {
-  html[data-entered] .hero-track[data-ready] .hero-title-entry .hero-face,
-  html[data-entered] .hero-track[data-ready] .hero-portrait-img {
+  html[data-entered] .hero-track[data-ready] .hero-title-entry .hero-face {
     animation-delay: 0s;
   }
 }
