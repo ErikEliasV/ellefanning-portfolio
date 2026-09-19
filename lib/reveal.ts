@@ -3,6 +3,7 @@
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
+import type { Vector } from "@/lib/characterStage";
 import { isReduced } from "@/lib/scroll";
 
 export type Kill = () => void;
@@ -145,6 +146,60 @@ export function focusIn(cells: Element[], rise = 2): Kill {
       start: "top bottom",
       end: "center center",
     });
+  });
+
+  return () => kills.forEach((kill) => kill());
+}
+
+// A mesma resolução de cinza para cor do focusIn, mas cada peça chega do seu
+// lado em vez de todas subirem dois por cento. É o que faz a grade ler como se
+// montando, e não como uma lista aparecendo.
+//
+// Quem se move é o cartão, não a célula: as linhas da grade moram na célula, e
+// arrastá-las junto abriria vãos nos fios enquanto as peças viajam. Com a
+// moldura parada e o conteúdo voando, o movimento vira o encaixe que ele quer
+// ser. O --sat herda para dentro do cartão, então o filtro do still continua
+// funcionando como antes e o hover ainda ganha dele pelo --lift.
+// São dois tempos, não um, e a diferença entre eles é a razão de existirem.
+//
+// O encaixe é curto de propósito: a peça sai do lugar e chega nele enquanto o
+// topo dela atravessa de baixo da tela até a linha dos 55%. O alcance longo do
+// focusIn (`center center`) não serve aqui -- lá o deslocamento é de 2% e nem
+// se nota, aqui é de mais de um terço do cartão, e esticá-lo por uma tela
+// inteira deixa buracos pretos abertos na grade tempo demais. Buraco parado lê
+// como layout quebrado, não como peça a caminho.
+//
+// A cor, ao contrário, quer o alcance longo: é o mesmo `--sat` do focusIn, que
+// resolve de cinza para cor conforme a célula chega ao meio da tela, e é o que
+// faz o papel ganhar vida em vez de simplesmente aparecer. Como uma linha mexe
+// em transform e a outra numa custom property, as duas podem correr no mesmo
+// elemento sem disputar a mesma declaração.
+export function flyIn(pairs: { el: Element; from: Vector }[]): Kill {
+  if (!pairs.length) return NOOP;
+
+  const kills = pairs.flatMap(({ el, from }) => {
+    const snap = gsap.timeline({ paused: true }).fromTo(
+      el,
+      {
+        xPercent: from.x ?? 0,
+        yPercent: from.y ?? 0,
+        scale: from.scale ?? 1,
+      },
+      // A única das primitivas daqui que não usa `ease: "none"`. As outras
+      // mapeiam scroll em valor, e ali o linear é o certo; esta é uma chegada,
+      // e chegada sem desaceleração bate em vez de assentar. É a mesma curva
+      // que o resto do site usa para entrada.
+      { xPercent: 0, yPercent: 0, scale: 1, ease: EASE },
+    );
+
+    const bloom = gsap
+      .timeline({ paused: true })
+      .fromTo(el, { "--sat": 0 }, { "--sat": 1, ease: "none" });
+
+    return [
+      bind(snap, { trigger: el, start: "top bottom", end: "top 55%" }),
+      bind(bloom, { trigger: el, start: "top bottom", end: "center center" }),
+    ];
   });
 
   return () => kills.forEach((kill) => kill());

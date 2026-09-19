@@ -5,6 +5,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { MouseEvent } from "react";
 
 import { asset } from "@/lib/asset";
+import {
+  entryLockAt,
+  trackVh as characterTrackVh,
+} from "@/lib/characterStage";
 import { phases, trackVh } from "@/lib/filmStage";
 import { gooPath } from "@/lib/headerGoo";
 import { isLocked, isReduced, onTick, scrollTo } from "@/lib/scroll";
@@ -84,6 +88,29 @@ function filmEntryTarget(): string | number {
 
   const trackTop = rect.top + window.scrollY;
   return trackTop + phases(isReduced()).reel.from * vh;
+}
+
+// O mesmo raciocinio do filmEntryTarget acima, para a entrada de CHARACTERS: o
+// topo de `.character-section` nao e a secao, e a tela branca em que a
+// varredura preta ainda nem comecou -- e pior, ela agora sobe 100svh para
+// dentro do rabo da filmografia, entao `#characters` pousa dentro do palco
+// alheio. O alvo e `entryLockAt()`: a varredura fechada, o titulo parado e
+// branco no meio da tela.
+//
+// O vh sai da altura JA APLICADA em `.character-track` dividida por
+// `trackVh()`, e nao de uma medicao nova, pelo mesmo motivo de la: e o unico
+// jeito de os dois lados concordarem sobre qual vh vale sem medir duas vezes.
+function characterEntryTarget(): string | number {
+  const track = document.querySelector<HTMLElement>(".character-track");
+  if (!track) return "#characters";
+
+  const reduced = isReduced();
+  const rect = track.getBoundingClientRect();
+  const vh = rect.height / characterTrackVh(reduced);
+  if (!vh) return "#characters";
+
+  const trackTop = rect.top + window.scrollY;
+  return trackTop + entryLockAt(reduced) * vh;
 }
 
 export function useHeaderGlass() {
@@ -550,7 +577,14 @@ export function useHeaderGlass() {
       if (event.metaKey || event.ctrlKey || event.shiftKey) return;
       event.preventDefault();
       shut();
-      scrollTo(id === "filmography" ? filmEntryTarget() : `#${id}`, {
+      const alvo =
+        id === "filmography"
+          ? filmEntryTarget()
+          : id === "characters"
+            ? characterEntryTarget()
+            : `#${id}`;
+
+      scrollTo(alvo, {
         // immediate e a opcao que o Lenis expoe para pular a animacao; duration
         // 0 nao e documentado como salto.
         immediate: isReduced(),
