@@ -43,10 +43,24 @@
   initial-value: 0px;
 }
 
-.hdr {
+/* A geometria da barra sobe para a raiz porque dois elementos que NAO sao
+   filhos de <header> precisam dela para sentar na mesma linha: o botao do menu
+   e o pill de musica (ver o bloco de tela estreita no fim deste arquivo e
+   styles/pill.css). Eles sao `fixed` por fora justamente porque o .hdr tem
+   `transform`, o que o tornaria bloco de contencao deles. Declarar aqui nao
+   muda nada do que ja existia: o .hdr herda os mesmos valores, e o
+   getComputedStyle de lib/useHeaderGlass.ts continua lendo os mesmos pixels. */
+:root {
   --hdr-inset-x: clamp(14px, 2.9vw, 56px);
-  --hdr-top: clamp(10px, 1.9vw, 36px);
+  /* O --safe-top vale 0px em tudo que nao tem notch, entao esta soma nao muda
+     um pixel do desktop -- e no telefone e o que impede a barra de nascer por
+     baixo do recorte da camera. */
+  --hdr-top: calc(clamp(10px, 1.9vw, 36px) + var(--safe-top));
   --hdr-h: clamp(44px, 4.1vw, 78px);
+  --hdr-pad-x: clamp(12px, 1.6vw, 30.7px);
+}
+
+.hdr {
   --hdr-open-h: clamp(280px, 28vw, 538px);
   /* Folgas nos quatro lados, para a bolha ter para onde sair do retangulo sem
      ser cortada pela propria caixa. O topo e o mais apertado: alem da folga,
@@ -54,7 +68,6 @@
   --hdr-lip: 48px;
   --hdr-slack: 160px;
   --hdr-wing: 44px;
-  --hdr-pad-x: clamp(12px, 1.6vw, 30.7px);
   --hdr-pad-y: clamp(7px, 0.72vw, 13.8px);
   --hdr-type: clamp(13px, 1.66vw, 31.9px);
   --hdr-lead: 1.592;
@@ -281,5 +294,217 @@
 @media (hover: none) {
   .hdr-spec {
     display: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   O menu de tela estreita.
+
+   Abaixo de 64rem os cinco rotulos nao cabem numa fileira: medido em 360px de
+   largura, eles iam de x=26 a x=334 com corpo de 13px e alvos de 38x21px --
+   metade do minimo de toque, e sem respiro nenhum nas pontas. A fileira sai, e
+   no lugar dela fica um botao que abre a lista em tela cheia.
+
+   O botao veste .pill, o mesmo desenho dos outros controles flutuantes do site
+   (musica, skip da filmografia): assim os dois que sentam sobre a barra de
+   vidro sao irmaos visuais em vez de dois desenhos diferentes no mesmo lugar.
+
+   O limiar e o mesmo de lib/filmStage.ts (NARROW_QUERY), de characters.css e
+   de footer.css. Acima dele nada aqui existe -- o desktop nao ve uma linha
+   deste bloco.
+   ------------------------------------------------------------------------- */
+
+.hdr-menu,
+.hdr-sheet {
+  display: none;
+}
+
+@media (width < 64rem) {
+  .hdr-nav {
+    display: none;
+  }
+
+  .hdr-menu {
+    position: fixed;
+    /* A mesma linha da barra: o topo dela mais a folga que centra o pill
+       dentro dos --hdr-h de altura. */
+    top: calc(var(--hdr-top) + (var(--hdr-h) - var(--pill-h)) / 2);
+    right: calc(var(--hdr-inset-x) + var(--hdr-pad-x) + var(--safe-right));
+    z-index: 98;
+    display: inline-flex;
+    transition:
+      background-color var(--duration-fast) var(--ease-out),
+      transform var(--duration-base) var(--ease-out);
+  }
+
+  /* Acompanha o recolher da barra. O atributo vem de lib/useHeaderGlass.ts,
+     que espelha o proprio `hidden` do header no <html> justamente porque
+     este elemento mora fora de <header>. O par do pill de musica esta em
+     styles/pill.css, junto da regra que o posiciona. */
+  html[data-chrome-hidden] .hdr-menu {
+    transform: translate3d(0, calc(-1 * (var(--hdr-top) + var(--hdr-h) + 24px)), 0);
+  }
+
+  /* Duas reguas que viram X. Nao ha icone: o traco e o material do site. */
+  .hdr-menu-mark {
+    position: relative;
+  }
+
+  .hdr-menu-mark::before,
+  .hdr-menu-mark::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: currentColor;
+    transition:
+      top var(--duration-base) var(--ease-out),
+      rotate var(--duration-base) var(--ease-out);
+  }
+
+  .hdr-menu-mark::before {
+    top: 4px;
+  }
+
+  .hdr-menu-mark::after {
+    top: 12px;
+  }
+
+  .hdr-menu[aria-expanded="true"] .hdr-menu-mark::before,
+  .hdr-menu[aria-expanded="true"] .hdr-menu-mark::after {
+    top: 8px;
+  }
+
+  .hdr-menu[aria-expanded="true"] .hdr-menu-mark::before {
+    rotate: 45deg;
+  }
+
+  .hdr-menu[aria-expanded="true"] .hdr-menu-mark::after {
+    rotate: -45deg;
+  }
+
+  .hdr-menu:focus-visible {
+    outline: 2px solid var(--color-rose-400);
+    outline-offset: 3px;
+  }
+
+  /* O painel. 96 fica acima do header (80), do som (90) e do modal do filme
+     (95, que de todo modo inertiza o menu antes de abrir), e abaixo do
+     preloader (100) e do cursor (200) -- o mesmo mapa de camadas documentado
+     em styles/filmography.css. */
+  .hdr-sheet {
+    position: fixed;
+    inset: 0;
+    z-index: 96;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-block: calc(var(--safe-top) + var(--hdr-top) + var(--hdr-h) + 24px)
+      calc(var(--safe-bottom) + 32px);
+    padding-inline: calc(var(--gutter-page) + var(--safe-left))
+      calc(var(--gutter-page) + var(--safe-right));
+    background-color: var(--color-ink-900);
+    /* A mesma varredura vertical que o resto do site usa para revelar
+       (maskReveal em lib/reveal.ts, a historia da personagem): o painel desce
+       em vez de esmaecer. `visibility` no lugar de `display` para a transicao
+       existir -- e ela ja tira os links da ordem de tabulacao quando fechado,
+       que e o mesmo motivo por que .film-skip e .now-sound fazem assim.
+
+       O `visibility` transiciona em 0s com atraso, e nao junto do clip-path.
+       Interpolado, ele so vale `visible` a partir de progresso > 0, e o painel
+       abre no mesmo quadro em que o efeito de useHeaderMenu chama `focus()` no
+       primeiro link -- medido, o foco caia no vazio e ficava no botao, porque
+       para o browser o painel ainda estava invisivel naquele instante. Com 0s
+       sem atraso na abertura ele fica visivel na hora; com 0s atrasado de uma
+       varredura inteira no fechamento ele so some quando a varredura termina,
+       que era o motivo de ele estar na transicao. */
+    visibility: hidden;
+    clip-path: inset(0 0 100% 0);
+    transition:
+      clip-path var(--duration-micro) var(--ease-out),
+      visibility 0s linear var(--duration-micro);
+  }
+
+  .hdr-sheet[data-open] {
+    visibility: visible;
+    clip-path: inset(0 0 0 0);
+    transition:
+      clip-path var(--duration-micro) var(--ease-out),
+      visibility 0s linear 0s;
+  }
+
+  .hdr-sheet-nav {
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid var(--color-line-invert);
+  }
+
+  .hdr-sheet-link {
+    display: flex;
+    align-items: baseline;
+    gap: clamp(12px, 3.4vw, 20px);
+    min-height: var(--tap);
+    padding-block: clamp(10px, 2.6vw, 18px);
+    border-bottom: 1px solid var(--color-line-invert);
+    color: var(--color-paper-000);
+    text-decoration: none;
+    /* Os itens chegam um atras do outro, na ordem da lista. O atraso sai de
+       --at (o indice, escrito pelo componente) para nao virar uma regra por
+       item. */
+    opacity: 0;
+    translate: 0 12px;
+    transition:
+      opacity var(--duration-base) var(--ease-out),
+      translate var(--duration-base) var(--ease-out),
+      color var(--duration-fast) var(--ease-out);
+  }
+
+  .hdr-sheet[data-open] .hdr-sheet-link {
+    opacity: 1;
+    translate: 0 0;
+    transition-delay: calc(var(--at) * 45ms + 90ms);
+  }
+
+  .hdr-sheet-num {
+    flex: none;
+    font-family: var(--font-text);
+    font-weight: 700;
+    font-size: var(--text-micro);
+    line-height: 1;
+    letter-spacing: var(--tracking-label);
+    color: var(--color-rose-400);
+  }
+
+  .hdr-sheet-word {
+    font-family: var(--font-editorial);
+    font-weight: 400;
+    font-size: var(--type-sheet);
+    line-height: 0.92;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+    overflow-wrap: break-word;
+  }
+
+  .hdr-sheet-link[aria-current] {
+    color: var(--color-rose-400);
+  }
+
+  .hdr-sheet-link:focus-visible {
+    outline: 2px solid var(--color-rose-400);
+    outline-offset: -2px;
+  }
+}
+
+@media (width < 64rem) and (prefers-reduced-motion: reduce) {
+  .hdr-sheet,
+  .hdr-sheet-link {
+    transition-duration: 0ms;
+  }
+
+  .hdr-sheet[data-open] .hdr-sheet-link {
+    transition-delay: 0ms;
   }
 }

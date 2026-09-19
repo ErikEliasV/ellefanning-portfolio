@@ -218,6 +218,23 @@ export function useHeaderGlass() {
     live.current.awake = awake;
   }, [open, awake]);
 
+  // O mesmo `hidden` que recolhe a barra precisa alcancar dois elementos que
+  // NAO moram dentro de <header>: o botao do menu e o pill de musica, que no
+  // celular sentam sobre a barra mas sao fixos por conta propria (o .hdr tem
+  // `transform`, e isso o torna bloco de contencao de qualquer `fixed` que
+  // caia dentro dele -- por isso eles ficam de fora). Sem este espelho, rolar
+  // para baixo levava a nav embora e deixava os dois pendurados sozinhos no
+  // alto da tela.
+  useEffect(() => {
+    const root = document.documentElement;
+    if (hidden) root.dataset.chromeHidden = "";
+    else delete root.dataset.chromeHidden;
+
+    return () => {
+      delete root.dataset.chromeHidden;
+    };
+  }, [hidden]);
+
   useEffect(() => {
     const query = window.matchMedia("(pointer: fine)");
     const read = () => {
