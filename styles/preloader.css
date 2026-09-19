@@ -9,194 +9,113 @@
   inset: 0;
   z-index: 100;
   overflow: hidden;
-  container-type: inline-size;
-  background-color: var(--color-paper-100);
+  /* O quadro do Figma é preto puro, e é ele que fica à vista à medida que a
+     foto esmaece. Os ink-* do projeto são todos quentes demais para servir de
+     fundo aqui -- o mesmo motivo pelo qual o rodapé e o hero já usam #000 cru
+     nas suas máscaras. */
+  background-color: #000;
   transition: transform var(--duration-slow) var(--ease-out);
 
-  /* The gate is centred in the band under the lockup, so it needs the same
-     figure the title is sized from. --pre-foot is measured on mount. */
-  --pre-fs: min(
-    calc((100cqw - var(--gutter-page) * 2) / 3.54),
-    calc((100svh - 144px) / 2.34)
-  );
+  /* Os dois extremos do número, medidos no quadro 1920x1083 do Figma: 283,05px
+     e 1400,66px. Cada um vira o menor entre a fração da largura e a fração da
+     altura, para o número nunca estourar a altura numa janela baixa nem
+     encolher a nada num retrato estreito. Num 16:9 os dois lados coincidem, que
+     é onde o desenho foi feito. */
+  --pre-fs-a: min(14.74vw, 26.13svh);
+  --pre-fs-b: min(72.95vw, 129.33svh);
+
+  /* O crescimento e a travessia são a parte vestibular disto; a contagem, a
+     troca de cor e o escurecimento não são. Por isso a geometria anda numa
+     variável própria, que o reduced-motion trava no estado final. */
+  --pre-m: var(--pre-p);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pre {
+    --pre-m: 1;
+    transition-duration: 0ms;
+  }
 }
 
 .pre[data-exit] {
   transform: translateY(-100%);
 }
 
-.pre:not([data-typeset]) .pre-title,
-.pre:not([data-typeset]) .pre-band,
-.pre:not([data-typeset]) .pre-foot {
+/* As duas linhas são compostas em fontes baixadas; mostrá-las antes de a fonte
+   chegar trocaria as métricas no meio da contagem. */
+.pre:not([data-typeset]) .pre-name,
+.pre:not([data-typeset]) .pre-count {
   visibility: hidden;
 }
 
-.pre-title {
-  position: absolute;
-  left: var(--gutter-page);
-  top: 50%;
-  margin: 0;
-  font-family: var(--font-editorial);
-  font-weight: 400;
-  font-size: var(--pre-fs);
-  line-height: 0.96;
-  letter-spacing: -0.01em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  transform: translateY(-50%);
-  pointer-events: none;
-}
-
-.pre-title > span {
-  display: block;
-}
-
-.pre-title-ink {
-  z-index: 5;
-  color: var(--color-ink-900);
-}
-
-.pre-rose {
+.pre-plate {
   position: absolute;
   inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* O Figma vai de 100% a 33%, mas ele foi desenhado sobre um still escuro de
+     cinema. A chapa daqui é alta-chave -- 215 de média num máximo de 255 --, e
+     nesse intervalo o branco do primeiro estado ficaria invisível sobre a
+     parede branca e o fim viraria um cinza chapado, sem escurecimento nenhum a
+     ver. 46% -> 14% devolve as duas coisas que o intervalo original entregava
+     lá: tipo legível desde o primeiro quadro e um fim escuro o bastante para o
+     rosa dominar. O preto por baixo é quem escurece. */
+  opacity: calc(0.46 - 0.32 * var(--pre-p));
+}
+
+.pre-name {
+  position: absolute;
+  left: 24.3%;
+  top: 50%;
   z-index: 10;
-  background-color: var(--color-rose-400);
-  clip-path: inset(0 calc((1 - var(--pre-p)) * 100%) 0 0);
-}
-
-.pre-title-paper {
-  color: var(--color-paper-200);
-}
-
-.pre-dot {
-  color: var(--color-rose-400);
-}
-
-.pre-title-paper .pre-dot {
-  color: var(--color-ink-900);
-}
-
-.pre-edge {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: calc(var(--pre-p) * 100%);
-  z-index: 15;
-  width: 2px;
-  margin-left: -1px;
-  background-color: var(--color-ink-900);
-}
-
-.pre-band,
-.pre-foot {
-  position: absolute;
-  right: 0;
-  left: 0;
-  z-index: 20;
-  display: flex;
-  gap: 12px;
-  padding-block: calc(var(--spacing) * 3);
-  padding-inline: var(--gutter-page);
+  margin: 0;
+  transform: translate(-50%, -50%);
   font-family: var(--font-text);
-  font-size: var(--text-label-sm);
-  font-weight: 700;
-  line-height: 1.4;
-  letter-spacing: var(--tracking-label-wide);
+  font-weight: 400;
+  /* 46,36px sobre 1920 de largura; o piso impede que vire um fio no telefone. */
+  font-size: clamp(13px, 2.414vw, 46px);
+  line-height: 1.6;
+  letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: var(--color-ink-800);
-}
-
-.pre-band {
-  top: 0;
-  align-items: flex-start;
-  justify-content: space-between;
-  border-bottom: 1px solid var(--color-line-rule);
-}
-
-.pre-mark {
-  display: flex;
-  flex-direction: column;
   white-space: nowrap;
-}
-
-.pre-mark:last-child {
-  text-align: right;
-}
-
-.pre-foot {
-  bottom: 0;
-  align-items: baseline;
-  justify-content: space-between;
-  border-top: 1px solid var(--color-line-rule);
-}
-
-/* Three digit cells side by side need somewhere to not wrap to. */
-.pre-num {
-  white-space: nowrap;
-}
-
-.pre-pct {
-  color: var(--color-ink-500);
-}
-
-/* The lockup is two lines tall at 0.96, so its bottom edge lands at
-   50% + 0.96em of the title size. The gate takes the band from there down to
-   the footer rule and centres itself in it. */
-.pre-gate {
-  position: absolute;
-  right: 0;
-  left: 0;
-  top: calc(50% + var(--pre-fs) * 0.96);
-  bottom: var(--pre-foot, 54px);
-  z-index: 25;
-  display: grid;
-  place-items: center;
-  padding: clamp(10px, 1.6svh, 26px) var(--gutter-page);
+  color: var(--color-paper-000);
+  /* Já saiu inteiro de cena antes de a contagem fechar. */
+  opacity: clamp(0, calc((0.75 - var(--pre-p)) / 0.75), 1);
   pointer-events: none;
 }
 
-.pre-enter {
-  width: min(100%, 300px);
-  /* Fills the band on a phone and gives way on a short desktop window, never
-     below the 44px floor. */
-  height: clamp(44px, 100%, 76px);
+.pre-count {
+  position: absolute;
+  /* O centro da caixa do número, do primeiro estado para o segundo: 74,87% ->
+     52,99% da largura, 50% -> 58,33% da altura. Centrar em vez de ancorar pela
+     esquerda funciona porque a caixa do Figma é a largura natural do texto nos
+     dois estados (465 e 2301 são o mesmo 4,948x do corpo da fonte). */
+  left: calc(74.87% - 21.88% * var(--pre-m));
+  top: calc(50% + 8.33% * var(--pre-m));
+  z-index: 20;
   margin: 0;
-  border: 1px solid var(--color-ink-900);
-  padding: 0;
-  background-color: var(--color-ink-900);
-  font-family: var(--font-text);
-  font-weight: 700;
-  font-size: clamp(13px, 1.1cqw, 17px);
+  transform: translate(-50%, -50%);
+  font-family: var(--font-editorial);
+  font-weight: 400;
+  /* Interpolar o corpo da fonte, e não um scale(), mantém o número nítido:
+     o Chrome rasteriza o texto no tamanho de origem e estica a textura. */
+  font-size: calc(
+    var(--pre-fs-a) + (var(--pre-fs-b) - var(--pre-fs-a)) * var(--pre-m)
+  );
   line-height: 1;
-  letter-spacing: var(--tracking-label-wide);
-  text-transform: uppercase;
-  color: var(--color-paper-100);
-  cursor: pointer;
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: auto;
-  transition:
-    opacity var(--duration-base) var(--ease-out),
-    visibility var(--duration-base) var(--ease-out),
-    background-color var(--duration-fast) var(--ease-out),
-    color var(--duration-fast) var(--ease-out);
+  letter-spacing: var(--tracking-poster);
+  white-space: nowrap;
+  color: color-mix(
+    in srgb,
+    var(--color-paper-000),
+    var(--color-rose-400) calc(var(--pre-p) * 100%)
+  );
+  pointer-events: none;
 }
 
-.pre[data-ready] .pre-enter {
-  opacity: 1;
-  visibility: visible;
-}
-
-.pre-enter:focus-visible {
-  outline: 2px solid var(--color-paper-100);
-  outline-offset: 4px;
-}
-
-/* At 100% the rose layer has swept the whole plate, so the hover state has to
-   leave rose rather than land on it. */
-@media (hover: hover) {
-  .pre-enter:hover {
-    background-color: var(--color-paper-100);
-    color: var(--color-ink-900);
-  }
+/* Três células de dígito lado a lado precisam de algum lugar para não quebrar. */
+.pre-num {
+  white-space: nowrap;
 }
