@@ -5,27 +5,145 @@
   overflow-x: clip;
   background-color: var(--color-ink-900);
   color: var(--color-paper-000);
+
+  /* A seção sobe uma tela inteira para dentro do rabo da filmografia, e esta é
+     a correção do defeito que mais se sentia aqui.
+
+     O palco da filmografia é sticky e mede 100svh, então ele leva exatamente
+     uma tela para se desgrudar e sair de cena. Nesse trecho o pin já soltou e a
+     trilha de characters ainda não começou: medido, `--fall`, `--reveal` e
+     `--wipe` ficam todos em zero enquanto o palco desliza de 0 a -973px. É uma
+     tela de rolagem crua, a 1:1, logo depois de quinze filmes que passavam a
+     62vh cada -- e o salto de ritmo lê como o site apressando, ou quebrando.
+
+     Com o -100svh o palco daqui prende no exato quadro em que o de lá solta. A
+     saída da filmografia acontece escondida atrás deste palco, que é branco no
+     mesmo tom, e o buraco vira coreografia. Encurta a página em uma tela e
+     ainda assim dá o dobro de percurso animado.
+
+     O fundo preto da seção não vaza para cima por causa disto: o palco nasce na
+     borda de cima da seção e tem 100svh, então é sempre ele que se vê primeiro
+     quando a seção sobe pela base da tela. */
+  margin-top: -100svh;
+  /* Precisa pintar acima do .film-stage, que é sticky, enquanto os dois se
+     sobrepõem -- senão o painel preto entraria por baixo do palco de lá. */
+  z-index: 1;
+
+  /* O corpo do título e o respiro abaixo dele vivem aqui, e não soltos na
+     regra do .character-heading, porque o .character-shell precisa dos três
+     para calcular quanto subir. O respiro é o mesmo padding-block que o
+     .character-header usava antes do palco existir. */
+  --heading-size: 19.1vw;
+  --heading-line: 0.89;
+  --heading-gap: clamp(20px, 2.441vw, 47px);
 }
 
 .character-shell {
   width: 94.27%;
   margin-inline: auto;
+
+  /* A grade sobe para debaixo do palco. O título fica centrado no palco, então
+     a borda de baixo dele cai a meia linha do centro, e daí até o fim do palco
+     sobra quase meia tela de preto -- era esse o vão grande demais. Subindo
+     `50svh menos a meia linha`, a grade encosta exatamente na base do título; o
+     --heading-gap devolve o respiro que o cabeçalho antigo tinha.
+
+     A conta sai dos tokens, e não de um número medido numa tela só: mudar o
+     corpo do título reajusta o vão sozinho. Enquanto o palco está preso ele
+     cobre a tela inteira e esconde o que a grade invadiu -- sticky é
+     posicionado e o shell não, então o palco pinta por cima sem precisar de
+     z-index. */
+  margin-top: calc(
+    -50svh + (var(--heading-size) * var(--heading-line)) / 2 +
+      var(--heading-gap)
+  );
 }
 
-.character-header {
-  padding-inline: clamp(14px, 2.034vw, 39px);
-  padding-block: clamp(20px, 2.441vw, 47px);
+/* A entrada. `--slide` e `--wipe` são escritos a cada quadro por
+   lib/useCharacterStage.ts; 1 é o estado assentado, e é o valor inicial de
+   propósito -- sem JS a seção fica vestida, preta e com o título no lugar, em
+   vez de pré-armada esperando um sinal que não vem. */
+@property --slide {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+
+@property --wipe {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+
+.character-track {
+  position: relative;
+  /* A altura real é escrita pelo hook, em px, a partir de trackVh(). Este
+     fallback é o que o palco tem para desenhar antes da primeira medição, e
+     tem que acompanhar o ENTRY de lib/characterStage.ts: 1 de palco + 1 de
+     percurso. */
+  height: 200svh;
+}
+
+.character-stage {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow: hidden;
+  isolation: isolate;
+  /* O alvo da varredura. A filmografia entrega a tela branca e o palco começa
+     na mesma cor, então a emenda entre as duas seções não existe -- o que se
+     vê é só o preto chegando por cima. */
+  background-color: var(--color-paper-000);
+}
+
+.character-panel {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background-color: var(--color-ink-900);
+  /* Recorta pela direita: em --wipe 0 o inset é a largura inteira e não sobra
+     painel nenhum; em 1 o inset é zero e ele cobre tudo. A borda desse inset é
+     a linha que atravessa a tela, e ela anda da esquerda para a direita. */
+  clip-path: inset(0 calc((1 - var(--wipe)) * 100%) 0 0);
+}
+
+.character-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  /* Exatamente o mesmo recorte do painel, medido contra a mesma caixa. É isso
+     que faz a cópia branca aparecer no passo da borda do preto, glifo a glifo,
+     em vez de um crossfade entre as duas. */
+  clip-path: inset(0 calc((1 - var(--wipe)) * 100%) 0 0);
+  pointer-events: none;
 }
 
 .character-heading {
+  position: absolute;
+  top: 50%;
+  left: 0;
   margin: 0;
+  padding-inline: clamp(14px, 2.034vw, 39px);
   font-family: var(--font-editorial);
   font-weight: 400;
-  font-size: 19.1vw;
-  line-height: 0.89;
+  font-size: var(--heading-size);
+  line-height: var(--heading-line);
   letter-spacing: -0.0097em;
   text-transform: uppercase;
   white-space: nowrap;
+  /* 100vw e não 100%: a palavra é bem mais larga que a tela nesse corpo, e uma
+     porcentagem dela mediria contra a própria largura, dando uma distância de
+     entrada que muda com o tamanho da fonte. */
+  transform: translate(calc((1 - var(--slide)) * 100vw), -50%);
+  pointer-events: none;
+}
+
+.character-heading-ink {
+  z-index: 2;
+  color: var(--color-ink-900);
+}
+
+.character-heading-paper {
   color: var(--color-paper-000);
 }
 
@@ -43,6 +161,13 @@
   min-width: 0;
   border-right: 1px solid var(--color-periwinkle-400);
   border-bottom: 1px solid var(--color-periwinkle-400);
+  /* Cada peça entra presa na própria moldura: sem isto os cartões viajam por
+     cima dos vizinhos no caminho, e duas fotos chegam a se sobrepor. Com o
+     recorte, o que se vê é a foto deslizando para dentro do seu quadro, que é
+     o encaixe que o movimento quer ser. O outline de foco é inset (-2px), e o
+     parallax da imagem já mora dentro do .character-shot, então nada do que
+     precisa aparecer é cortado junto. */
+  overflow: hidden;
 }
 
 .character-card {
