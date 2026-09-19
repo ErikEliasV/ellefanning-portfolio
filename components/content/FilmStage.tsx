@@ -5,8 +5,10 @@ import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react
 import { asset } from "@/lib/asset";
 import { FilmDialog, type Origin } from "@/components/content/FilmDialog";
 import type { Film } from "@/lib/films";
-import { isReduced } from "@/lib/scroll";
+import { lastLockAt, trackVh } from "@/lib/filmStage";
+import { isReduced, scrollTo } from "@/lib/scroll";
 import { useFilmStage } from "@/lib/useFilmStage";
+import "@/styles/pill.css";
 
 // Espelha --duration-modal de styles/globals.css: a saída do modal precisa
 // ficar montada exatamente por essa janela para a transição de CSS rodar
@@ -73,6 +75,21 @@ export function FilmStage({ films }: { films: readonly Film[] }) {
   // remontar à toa em qualquer re-render — inclusive um em que o próprio
   // desmonte de verdade já rodou a limpeza antes.
   const closeFilm = useCallback(() => setClosing(true), []);
+
+  // Pular para o último filme é rolar até lá: o reel inteiro é função de `p`,
+  // a posição de scroll em múltiplos de vh contados do topo da trilha, então
+  // basta inverter essa conta. O vh sai da altura da própria trilha em vez de
+  // ser medido de novo — `trackVh` é a mesma constante que a definiu, então os
+  // dois lados não têm como discordar. Quem rola é o Lenis, pelo mesmo
+  // `scrollTo` do voltar-ao-topo; um salto nativo passaria por baixo dele.
+  const skipToLast = useCallback(() => {
+    const trackEl = track.current;
+    if (!trackEl) return;
+    const reduced = isReduced();
+    const vh = trackEl.offsetHeight / trackVh(reduced);
+    const top = trackEl.getBoundingClientRect().top + window.scrollY;
+    scrollTo(top + lastLockAt(reduced) * vh);
+  }, [track]);
 
   useEffect(() => {
     if (!closing) return;
@@ -153,6 +170,20 @@ export function FilmStage({ films }: { films: readonly Film[] }) {
         <div ref={cut} aria-hidden className="film-word-cut">
           <span className="film-word">Filmo</span>
         </div>
+
+        {/* O rótulo é o "skip" do Figma; quem diz para onde é o aria-label. */}
+        <button
+          type="button"
+          className="pill film-skip"
+          data-cursor="Skip"
+          // Ele mora no pé do palco: o rótulo do cursor por baixo cairia
+          // contra a borda da tela.
+          data-cursor-at="top"
+          aria-label="Skip to the last film"
+          onClick={skipToLast}
+        >
+          <span className="pill-label">Skip</span>
+        </button>
       </div>
 
       {open !== null && origin ? (

@@ -5,14 +5,22 @@ import { useEffect, useRef } from "react";
 
 import { onTick } from "@/lib/scroll";
 
-// The lantern used to need a cursor to exist. It now walks the lockup on its
+// The lantern used to need a cursor to exist. It now walks the footer on its
 // own whenever the footer is on screen, and steps aside the moment a real
 // pointer takes over.
+//
+// It also used to live inside the lockup, which is why the light died at the
+// edge of the name. The variables are written on the <footer> instead, and
+// since they all inherit, the whole panel is lit. Only the photo is still
+// clipped to the name: that is what background-clip: text can do.
 const OPEN_MIN = 140;
 const OPEN_VW = 0.16;
 const OPEN_MAX = 320;
 const LEAD_MS = 400;
-const SWEEP_MS = 2600;
+// Two legs at the speed one used to have, so the pass reads the same and just
+// goes further: out to the right across the name, back to the left across the
+// links.
+const SWEEP_MS = 5200;
 const REST_MS = 2200;
 const SPAN = LEAD_MS + SWEEP_MS + REST_MS;
 const IDLE_MS = 3000;
@@ -23,11 +31,11 @@ const FOLLOW = 0.5;
 const OPEN_S = 0.45;
 const SHUT_S = 0.7;
 
-export function useFooterMark() {
-  const mark = useRef<HTMLHeadingElement>(null);
+export function useFooterLantern() {
+  const foot = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    const node = mark.current;
+    const node = foot.current;
     if (!node) return;
 
     const point = { x: 0, y: 0 };
@@ -48,6 +56,20 @@ export function useFooterMark() {
     let lastInput = 0;
     let auto = true;
     let opened = false;
+
+    // --mx/--my are measured from the top of the footer, but the layer that
+    // reveals the photo draws inside the lockup. This is the distance between
+    // the two origins, which the mask subtracts. The footer is already
+    // position: relative (the grain utility), so it is the offsetParent. There
+    // is no twin for x: the lockup is a flex-column child, so it starts at 0
+    // like the footer does.
+    function measure() {
+      if (!node) return;
+      size.w = node.offsetWidth;
+      size.h = node.offsetHeight;
+      const mark = node.querySelector<HTMLElement>(".footer-mark");
+      node.style.setProperty("--mark-y", `${mark ? mark.offsetTop : 0}px`);
+    }
 
     function radius() {
       return Math.min(
@@ -107,9 +129,12 @@ export function useFooterMark() {
         } else if (into > SWEEP_MS) {
           open(false);
         } else {
-          // A diagonal, so one pass crosses both lines of the lockup.
+          // x is a triangle — out past the right edge, then back past the left
+          // — while y only ever descends, so the return leg crosses the first
+          // one instead of retracing it.
           const k = into / SWEEP_MS;
-          toX((k * (1 + OVERSHOOT * 2) - OVERSHOOT) * size.w);
+          const leg = k < 0.5 ? k * 2 : (1 - k) * 2;
+          toX((leg * (1 + OVERSHOOT * 2) - OVERSHOOT) * size.w);
           toY((MY_FROM + (MY_TO - MY_FROM) * k) * size.h);
           open(true);
         }
@@ -143,16 +168,15 @@ export function useFooterMark() {
       lastInput = 0;
     }
 
+    measure();
+
     const watcher = new IntersectionObserver((entries) => {
       if (entries.some((entry) => entry.isIntersecting)) run();
       else halt();
     });
     watcher.observe(node);
 
-    const sizer = new ResizeObserver(() => {
-      size.w = node.offsetWidth;
-      size.h = node.offsetHeight;
-    });
+    const sizer = new ResizeObserver(measure);
     sizer.observe(node);
 
     node.addEventListener("pointerenter", aim, { passive: true });
@@ -167,10 +191,13 @@ export function useFooterMark() {
       node.removeEventListener("pointerenter", aim);
       node.removeEventListener("pointermove", aim);
       node.removeEventListener("pointerleave", drop);
+      node.style.removeProperty("--mx");
+      node.style.removeProperty("--my");
+      node.style.removeProperty("--mark-y");
       node.style.removeProperty("--lens-r");
       node.style.removeProperty("--lens-glow");
     };
   }, []);
 
-  return mark;
+  return foot;
 }

@@ -157,9 +157,23 @@
 
   html {
     -webkit-font-smoothing: antialiased;
-    /* A calha fica reservada sempre, senao travar o scroll tira a barra e o
-       conteudo inteiro pula de lado no instante em que uma foto abre. */
-    scrollbar-gutter: stable;
+    /* A barra nativa sai de cena inteira. No desktop ela sempre ocupa largura:
+       aqui morava um `scrollbar-gutter: stable` que reservava a calha, e era
+       essa calha que empurrava o conteudo e tirava o site do centro. Sem barra
+       nativa nao ha largura para reservar nem para perder — e o motivo
+       original da calha fixa (travar o scroll tirava a barra e a pagina pulava
+       de lado quando uma foto abria) deixa de existir junto, porque agora
+       `overflow: hidden` nao muda largura nenhuma.
+       Quem desenha a barra e components/core/Scrollbar.tsx, `fixed` por cima
+       do conteudo. A rolagem nativa em si fica intacta: roda, teclado,
+       Page Up/Down e busca na pagina continuam iguais. */
+    scrollbar-width: none;
+  }
+
+  /* Safari e Chrome antigos, que nao entendem `scrollbar-width`. Onde os dois
+     valem, qualquer um dos dois esconde a barra — nao ha conflito a resolver. */
+  ::-webkit-scrollbar {
+    display: none;
   }
 
   body {
@@ -177,12 +191,10 @@
     color: var(--color-ink-900);
   }
 
-  /* Over the rose header and the rose sweep of the preloader that highlight
-     would be rose on rose, so it flips instead of disappearing. */
+  /* Over the rose header that highlight would be rose on rose, so it flips
+     instead of disappearing. */
   header::selection,
-  header *::selection,
-  .pre-rose::selection,
-  .pre-rose *::selection {
+  header *::selection {
     background-color: var(--color-ink-900);
     color: var(--color-rose-400);
   }

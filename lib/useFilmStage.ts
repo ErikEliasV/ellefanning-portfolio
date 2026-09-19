@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CURTAIN_OUT, NARROW_QUERY, cursor, depth, geometry, trackVh } from "@/lib/filmStage";
+import { CURTAIN_OUT, NARROW_QUERY, canSkip, cursor, depth, geometry, trackVh } from "@/lib/filmStage";
 import { isReduced, onTick } from "@/lib/scroll";
 import { reelTick } from "@/lib/audio";
 
@@ -126,6 +126,12 @@ export function useFilmStage(count: number) {
         if (p < CURTAIN_OUT) curtainEl.dataset.on = "";
         else delete curtainEl.dataset.on;
       }
+
+      // O skip aparece e some por atributo, como a cortina acima: é estado de
+      // scroll, e um setState por frame para isto custaria um render do palco
+      // inteiro a 60/s.
+      if (canSkip(p, reduced)) trackEl.dataset.skip = "";
+      else delete trackEl.dataset.skip;
 
       // O chiado de percurso: um tique a cada STRIDE px de deslocamento do
       // reel (`u * pitch`), só quando o notch muda — nunca por frame, senão

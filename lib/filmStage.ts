@@ -129,6 +129,23 @@ export function trackVh(reduced: boolean) {
   return 1 + phases(reduced).reveal.to;
 }
 
+// O `p` em que o último filme está travado. A fase `hold` existe só para dar a
+// ele o mesmo dwell dos outros quinze (ver `cursor()`), então o meio dela é o
+// ponto mais folgado dentro dessa trava — cair na borda deixaria o pulo a um
+// pixel de scroll de destravar.
+export function lastLockAt(reduced: boolean) {
+  const f = phases(reduced);
+  return (f.hold.from + f.hold.to) / 2;
+}
+
+// Há para onde pular: o reel já começou e o último ainda não travou. Sai daqui,
+// e não de uma comparação com `lock`, porque `lock` é -1 em trânsito entre duas
+// travas e o botão piscaria a cada passagem.
+export function canSkip(p: number, reduced: boolean) {
+  const f = phases(reduced);
+  return p >= f.reel.from && p < f.hold.from;
+}
+
 function span(p: number, s: Span) {
   return clamp01((p - s.from) / (s.to - s.from));
 }

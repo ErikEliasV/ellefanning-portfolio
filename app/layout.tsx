@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 import { Cursor } from "@/components/core/Cursor";
 import { ScrollBoot } from "@/components/core/ScrollBoot";
 import { Preloader } from "@/components/core/Preloader";
+import { Scrollbar } from "@/components/core/Scrollbar";
 import { SoundToggle } from "@/components/core/SoundToggle";
 import "@/styles/globals.css";
 
@@ -54,6 +55,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <ScrollBoot />
         <Preloader />
         <Cursor />
+        <Scrollbar />
         <SoundToggle />
         {children}
       </body>
