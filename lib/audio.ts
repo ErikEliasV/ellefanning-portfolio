@@ -277,11 +277,21 @@ function route(el: HTMLAudioElement) {
   wet.connect(send);
 }
 
+// O resume só vinga depois; quem chama é o arm() logo abaixo.
+function reroute() {
+  if (!gated) arm();
+}
+
 function arm() {
   restore();
 
   const live = open();
-  if (live.state === "suspended") void live.resume();
+  // Sem o botão Enter, o primeiro arm() acontece com o contexto ainda suspenso
+  // -- e route() desiste nesse estado, o que deixaria a trilha seca, fora da
+  // sala. Quando o resume vinga, por autoplay liberado ou pelo primeiro gesto,
+  // vale um segundo arm() só para fechar o roteamento. Não recursa: este ramo
+  // só existe enquanto o estado for "suspended".
+  if (live.state === "suspended") void live.resume().then(reroute, () => {});
 
   if (!wanted || hushed) return;
 
@@ -295,6 +305,15 @@ function arm() {
     slide(level(), RETURN);
     return;
   }
+
+  // A trilha passou a ser montada antes de qualquer gesto, e o Chrome adia o
+  // download de um <audio> que ainda não tem licença para tocar. O adiamento
+  // não se desfaz sozinho quando a licença chega: o elemento fica preso em
+  // readyState 0, a promessa do play() nunca resolve, `armed` nunca vira true e
+  // o pill nunca acende, mesmo com o arquivo já baixado. Pedir o load() de novo
+  // é o que destrava -- e só custa alguma coisa justamente quando não há dado
+  // nenhum a perder.
+  if (el.readyState === 0) el.load();
 
   el
     .play()

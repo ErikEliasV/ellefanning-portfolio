@@ -1,28 +1,28 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { asset } from "@/lib/asset";
 import { release as openSound } from "@/lib/audio";
 import { lockScroll, onTick, scrollTo } from "@/lib/scroll";
 
 const SIGNALS = 3;
-const MIN_MS = 900;
+// Era 900ms. O número agora cresce de 26vh a 129vh enquanto conta, e a
+// travessia precisa de tempo de tela para ser lida como um movimento em vez
+// de um salto.
+const MIN_MS = 1500;
 const CEIL_MS = 6000;
-const HOLD_MS = 140;
+const HOLD_MS = 360;
 const EXIT_MS = 420;
 const CHASE = 0.11;
-const PORTRAIT = "/images/ellefanning-hero-portrait.webp";
+
+export const PLATE = "/images/ellefanning-preloader.webp";
 
 export type PreloaderPhase = "loading" | "ready" | "exit" | "done";
 
 export function usePreloader() {
   const plate = useRef<HTMLDivElement>(null);
   const readout = useRef<HTMLSpanElement>(null);
-  const gate = useRef<HTMLButtonElement>(null);
-  const leave = useRef(() => {});
   const [phase, setPhase] = useState<PreloaderPhase>("loading");
-
-  const enter = useCallback(() => leave.current(), []);
 
   useEffect(() => {
     const node = plate.current;
@@ -33,6 +33,12 @@ export function usePreloader() {
     // force, because the lock has already stopped Lenis by this point.
     scrollTo(0, { immediate: true, force: true });
 
+    // Sem o botão Enter não há mais um clique garantido para abrir a trilha, e
+    // o portão cai aqui, na montagem. O navegador ainda pode recusar o play
+    // sem gesto -- quem cobre esse caso são os ouvintes de gesto que listen()
+    // mantém no site inteiro (lib/audio.ts).
+    openSound();
+
     const start = performance.now();
     const timers: number[] = [];
 
@@ -41,10 +47,6 @@ export function usePreloader() {
     let landed = 0;
     let shown = 0;
     let left = false;
-
-    function release() {
-      lockScroll(false);
-    }
 
     function land() {
       if (live) landed = Math.min(landed + 1, SIGNALS);
@@ -74,20 +76,9 @@ export function usePreloader() {
       }
     }
 
-    // The plate now waits on the reader instead of dismissing itself, so the
-    // click doubles as the gesture that lets the score start.
-    function arm() {
-      timers.push(
-        window.setTimeout(() => {
-          if (live) setPhase("ready");
-        }, HOLD_MS),
-      );
-    }
-
-    leave.current = () => {
+    function leave() {
       if (!live || left) return;
       left = true;
-      openSound();
       // The curtain and the hero entry overlap on purpose: the name is already
       // resolving behind the plate as it lifts, so the two read as one move.
       document.documentElement.dataset.entered = "";
@@ -96,11 +87,18 @@ export function usePreloader() {
         window.setTimeout(() => {
           if (!live) return;
           scrollTo(0, { immediate: true, force: true });
-          release();
+          lockScroll(false);
           setPhase("done");
         }, EXIT_MS),
       );
-    };
+    }
+
+    // O 100% precisa de uma batida parado antes de a cortina subir, senão o
+    // número chega ao fim e sai de cena no mesmo quadro.
+    function arm() {
+      setPhase("ready");
+      timers.push(window.setTimeout(leave, HOLD_MS));
+    }
 
     function tick(now: number) {
       const goal = Math.min(landed / SIGNALS, (now - start) / MIN_MS, 1);
@@ -114,23 +112,14 @@ export function usePreloader() {
       }
     }
 
-    // The gate spans from the lockup's baseline down to the footer rule, so the
-    // footer's real height has to reach CSS.
-    function measure() {
-      if (!node) return;
-      const foot = node.querySelector<HTMLElement>(".pre-foot");
-      if (foot) node.style.setProperty("--pre-foot", `${foot.offsetHeight}px`);
-    }
-
-    measure();
-    const sizer = new ResizeObserver(measure);
-    sizer.observe(node);
-
     document.fonts.ready.then(typeset, typeset);
 
-    const portrait = document.createElement("img");
-    portrait.src = asset(PORTRAIT);
-    portrait.decode().then(land, land);
+    // A chapa de fundo é o que precisa estar pronto para a cena existir, então
+    // é ela que vale como sinal -- o mesmo URL que a <img> do plate pede, logo
+    // é uma requisição só.
+    const backdrop = document.createElement("img");
+    backdrop.src = asset(PLATE);
+    backdrop.decode().then(land, land);
 
     if (document.readyState === "complete") {
       land();
@@ -148,17 +137,12 @@ export function usePreloader() {
 
     return () => {
       live = false;
-      sizer.disconnect();
       untick?.();
       timers.forEach((id) => clearTimeout(id));
       window.removeEventListener("load", land);
-      release();
+      lockScroll(false);
     };
   }, []);
 
-  useEffect(() => {
-    if (phase === "ready") gate.current?.focus();
-  }, [phase]);
-
-  return { plate, readout, gate, phase, enter };
+  return { plate, readout, phase };
 }
