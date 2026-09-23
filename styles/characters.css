@@ -256,6 +256,14 @@
   align-items: center;
   gap: calc(var(--card-h) * 0.0077); /* 5 / 649 */
   text-align: center;
+  opacity: var(--settle);
+  /* Nasce atras da borda de baixo da foto (o overflow da faixa a esconde),
+     sobe por ela e cresce ate a frente. Os tres andam no mesmo escalar, entao
+     nao ha como um chegar antes do outro. Nada de transition aqui: quem manda
+     no tempo e o scroll, e uma transicao faria a legenda ignorar a rolagem de
+     volta. */
+  transform: translateY(calc((1 - var(--settle)) * 100%))
+    scale(calc(0.92 + var(--settle) * 0.08));
 }
 
 .character-cap-name {
