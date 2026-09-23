@@ -9,7 +9,7 @@ import {
   entryLockAt,
   trackVh as characterTrackVh,
 } from "@/lib/characterStage";
-import { phases, trackVh } from "@/lib/filmStage";
+import { isNarrow, phases, trackVh } from "@/lib/filmStage";
 import { gooPath } from "@/lib/headerGoo";
 import { isLocked, isReduced, onTick, scrollTo } from "@/lib/scroll";
 import { SECTIONS } from "@/lib/sections";
@@ -82,12 +82,14 @@ function filmEntryTarget(): string | number {
   const track = document.querySelector<HTMLElement>(".film-track");
   if (!track) return "#filmography";
 
+  const reduced = isReduced();
+  const narrow = isNarrow();
   const rect = track.getBoundingClientRect();
-  const vh = rect.height / trackVh(isReduced());
+  const vh = rect.height / trackVh(reduced, narrow);
   if (!vh) return "#filmography";
 
   const trackTop = rect.top + window.scrollY;
-  return trackTop + phases(isReduced()).reel.from * vh;
+  return trackTop + phases(reduced, narrow).reel.from * vh;
 }
 
 // O mesmo raciocinio do filmEntryTarget acima, para a entrada de CHARACTERS: o

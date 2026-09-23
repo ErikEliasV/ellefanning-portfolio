@@ -66,6 +66,11 @@ export function useFilmStage(count: number) {
   const lastNotch = useRef(0);
 
   useEffect(() => {
+    // Declarada antes de paint() porque agora tambem manda no tempo da
+    // secao, e nao so na geometria: `phases()` tem um perfil estreito, com o
+    // ciclo por filme mais curto (ver lib/filmStage.ts).
+    const narrow = window.matchMedia(NARROW_QUERY);
+
     let vh = 0;
     let pitch = 0;
     let cardW = 0;
@@ -80,7 +85,7 @@ export function useFilmStage(count: number) {
 
       const reduced = isReduced();
       const p = -trackEl.getBoundingClientRect().top / vh;
-      const c = cursor(p, reduced);
+      const c = cursor(p, reduced, narrow.matches);
 
       const set = (name: string, value: string) =>
         trackEl.style.setProperty(name, value);
@@ -116,7 +121,7 @@ export function useFilmStage(count: number) {
       // O skip aparece e some por atributo, como a cortina acima: é estado de
       // scroll, e um setState por frame para isto custaria um render do palco
       // inteiro a 60/s.
-      if (canSkip(p, reduced)) trackEl.dataset.skip = "";
+      if (canSkip(p, reduced, narrow.matches)) trackEl.dataset.skip = "";
       else delete trackEl.dataset.skip;
 
       // O chiado de percurso: um tique a cada STRIDE px de deslocamento do
@@ -186,8 +191,12 @@ export function useFilmStage(count: number) {
       // como `40.8vh`: duplicar essa medida entre CSS e JS já causou a regressão dos
       // 7,5px citada acima, e o plano proíbe repetir isso — ler o rect do palco é
       // como saber onde o card cai sem duplicar nada.
+      // Em tela estreita a copia branca e `display: none` (a palavra mora
+      // ACIMA do poster, sem sobreposicao para recortar), e a caixa dela vem
+      // zerada. Sair aqui poupa duas leituras de layout por quadro e o resto
+      // da conta, que nao teria onde ser aplicada.
       const cutEl = cut.current;
-      if (cutEl) {
+      if (cutEl && cutEl.offsetWidth) {
         const box = cutEl.getBoundingClientRect();
         const stageBox = stageEl.getBoundingClientRect();
         // window.innerWidth inclui a calha da barra de rolagem
@@ -276,8 +285,6 @@ export function useFilmStage(count: number) {
       }
     }
 
-    const narrow = window.matchMedia(NARROW_QUERY);
-
     function measure() {
       const trackEl = track.current;
       if (!trackEl) return;
@@ -287,13 +294,18 @@ export function useFilmStage(count: number) {
 
       vh = smallViewportHeight();
       pitch = g.pitchVw * vw;
+      // Em tela estreita a largura sozinha nao dimensiona o card: num tablet
+      // em retrato ela daria um poster mais alto que a tela, e o titulo que
+      // agora mora ACIMA dele nao teria onde caber. O teto de altura so existe
+      // na geometria estreita -- ver NARROW em lib/filmStage.ts.
       cardW = g.widthVw * vw;
+      if (g.heightVh) cardW = Math.min(cardW, (g.heightVh * vh) / g.ratio);
       cardH = cardW * g.ratio;
       splitMax = g.splitVw * vw;
 
       trackEl.style.setProperty("--card-w", `${cardW.toFixed(2)}px`);
       trackEl.style.setProperty("--card-h", `${cardH.toFixed(2)}px`);
-      trackEl.style.height = `${vh * trackVh(isReduced())}px`;
+      trackEl.style.height = `${vh * trackVh(isReduced(), narrow.matches)}px`;
       paint();
     }
 

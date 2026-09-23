@@ -584,10 +584,49 @@
    onde cada card está: custom property não resolve unidade, então o JS não
    teria como ler `48vw` de volta para reconciliar. */
 @media (width < 64rem) {
-  .film-word { font-size: 13vw; }
-  .film-count-now { font-size: 7vw; }
-  .film-count-all { font-size: 2.6vw; }
-  .film-year { font-size: 8vw; }
+  /* A palavra deixa de se partir em volta do pôster e vira um título acima
+     dele.
+
+     O vão estreito era 0.04vw — 15px numa tela de 390 — e o card mede 0.58vw.
+     Medido em 390, 430 e 768, o pôster caía exatamente sobre o vão e apagava
+     "graphy" e o ano: lia-se "FILMO … HY", ou só "FILMO". Com `splitVw: 0` em
+     `lib/filmStage.ts` as duas metades encostam no centro e voltam a ser uma
+     palavra só; aqui elas sobem para cima do pôster, onde nada as cobre.
+
+     Ancoradas por `bottom`, e não por `top`: assim a borda de baixo do bloco
+     fica a uma folga constante do topo do card e a caixa cresce para cima
+     sozinha, acompanhando o card em qualquer altura de tela sem um vh mágico.
+     A origem do `scale` passa a ser `bottom` pelo mesmo motivo — a junção das
+     duas metades continua presa no centro enquanto a palavra assenta, e o
+     crescimento acontece para cima em vez de invadir o pôster. */
+  .film-word-back,
+  .film-word-front {
+    top: auto;
+    bottom: calc(50% + var(--card-h) / 2 + clamp(14px, 3.4vw, 26px));
+  }
+
+  .film-word-back { transform-origin: right bottom; }
+  .film-word-front { transform-origin: left bottom; }
+
+  /* A cópia branca recortada na caixa do card existia porque o pôster passava
+     POR CIMA da palavra. Com o título acima dele não há sobreposição nenhuma
+     para recortar. O paint() de lib/useFilmStage.ts também para de calcular o
+     recorte quando esta caixa não tem largura. */
+  .film-word-cut { display: none; }
+
+  /* Os corpos saem do menor entre a largura e a altura. Só o vw deixava a
+     palavra alta demais num tablet em paisagem estreita (1023 × 768): 13vw são
+     133px de corpo, e o bloco inteiro não cabia acima do card. */
+  .film-word { font-size: min(11.6vw, 11svh); }
+  .film-count-now { font-size: min(7vw, 6.6svh); }
+  .film-count-all { font-size: min(2.6vw, 2.4svh); }
+  .film-year { font-size: min(8vw, 7.5svh); }
+
+  /* O pé da tela é onde mora a faixa de gestos do aparelho. */
+  .film-skip {
+    bottom: calc(clamp(16px, 1.6667vw, 28px) + var(--safe-bottom));
+    right: calc(clamp(16px, 2.0833vw, 40px) + var(--safe-right));
+  }
 
   /* O 11vw sozinho dá 41,25px a 375 de largura, abaixo dos 44px que o projeto
      adota (docs/responsividade-mobile.md trata alvos de 24 e 29px como
@@ -608,7 +647,10 @@
 
   .film-dialog-text { top: 63vh; left: 7vw; width: 86vw; }
   .film-dialog-title { font-size: 9vw; }
-  .film-dialog-body { font-size: 3.4vw; }
+  /* 3.4vw sozinhos davam 13,3px num 390 de largura, abaixo do piso de leitura
+     que o projeto adota para texto corrido. O vw continua mandando a partir de
+     ~470px. */
+  .film-dialog-body { font-size: max(15px, 3.4vw); }
 }
 
 /* A trilha já encolhe em `phases(reduced)` e o blur de profundidade e o

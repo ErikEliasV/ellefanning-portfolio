@@ -7,6 +7,8 @@ export type Geometry = {
   ratio: number;
   pitchVw: number;
   splitVw: number;
+  /** Teto de altura do card, em fração de vh. Só a geometria estreita usa. */
+  heightVh?: number;
 };
 
 // 539 × 812 sobre canvas de 1920 × 1083, centro exato do quadro. O passo de
@@ -18,7 +20,26 @@ const WIDE: Geometry = { widthVw: 0.281, ratio: 812 / 539, pitchVw: 0.48, splitV
 // entra ali. A lógica se inverte: a palavra fica proporcionalmente maior que o
 // vão e o pôster sobrepõe as duas metades já em repouso, o que torna o recorte
 // branco permanente em vez de momentâneo.
-const NARROW: Geometry = { widthVw: 0.58, ratio: 812 / 539, pitchVw: 0.82, splitVw: 0.04 };
+//
+// A resposta a isso não é um vão menor — é não partir a palavra. Medido em
+// 390, 430 e 768 de largura, o pôster caía exatamente sobre o vão e apagava
+// "graphy" e o ano: lia-se "FILMO … HY", ou só "FILMO". Com `splitVw: 0` as
+// duas metades encostam no centro e voltam a ser uma palavra só, que o CSS
+// pendura ACIMA do pôster (ver a media query em styles/filmography.css). Nada
+// mais se sobrepõe, e o recorte branco deixa de ter função.
+//
+// `heightVh` só existe aqui: em tela estreita a largura sozinha não basta para
+// dimensionar o card. Num tablet em retrato (768 × 1024) 0.68vw daria um
+// pôster de 787px de altura, e o título acima dele não teria onde caber. O
+// card passa a ser o menor entre o que a largura pede e o que a altura
+// permite.
+const NARROW: Geometry = {
+  widthVw: 0.68,
+  heightVh: 0.52,
+  ratio: 812 / 539,
+  pitchVw: 0.82,
+  splitVw: 0,
+};
 
 // Fonte única da geometria. O CSS não declara nenhuma destas medidas: custom
 // property não resolve unidade, então o JS não conseguiria ler `48vw` de volta,
@@ -29,6 +50,16 @@ export function geometry(narrow: boolean): Geometry {
 }
 
 export const NARROW_QUERY = "(width < 64rem)";
+
+// Quem chama `phases()` precisa saber se a tela é estreita, e nem todos os
+// chamadores têm um matchMedia à mão — `filmEntryTarget()` em
+// lib/useHeaderGlass.ts mede a trilha de fora da seção. O teste mora aqui,
+// junto do NARROW_QUERY que ele usa, para os dois lados nunca discordarem
+// sobre o limiar. Fora do browser devolve `false`, que é o perfil largo: é o
+// que o `output: export` renderiza no build.
+export function isNarrow() {
+  return typeof window !== "undefined" && window.matchMedia(NARROW_QUERY).matches;
+}
 
 export const COUNT = 16;
 
@@ -92,9 +123,17 @@ export type Phases = {
 // Movimento reduzido não pode apagar o mapeamento — ele É a navegação. Encolhe:
 // o ciclo cai de 0.6167 para 0.35 e as fases de coreografia caem pela metade,
 // porque prender quem pediu menos movimento em doze telas contraria o pedido.
-export function phases(reduced: boolean): Phases {
-  const cycle = reduced ? 0.35 : 0.6167;
-  const k = reduced ? 0.5 : 1;
+export function phases(reduced: boolean, narrow: boolean): Phases {
+  // Três perfis, do mais longo ao mais curto. `cycle` é quanto de rolagem cada
+  // filme pede; `k` encolhe as fases de coreografia em volta do reel.
+  //
+  // O estreito é novo. A trilha inteira media 12,79 telas, e num telefone isso
+  // são 10.800px — 57% da página só nesta seção, percorridos com o polegar.
+  // Com 0.34 cada filme pede ~290px num aparelho de 844 de altura: ainda trava
+  // em cada um, sem virar uma corrida, e a trilha cai para 7,9 telas. Movimento
+  // reduzido continua ganhando dos dois, porque ali o pedido é outro.
+  const cycle = reduced ? 0.35 : narrow ? 0.34 : 0.6167;
+  const k = reduced ? 0.5 : narrow ? 0.7 : 1;
 
   // `curtain.to` era -1.0*k -> -0.35*k, depois -0.7*k -> -0.2*k: a cortina
   // saturava e ficava parada, branca, sem nada acontecendo, até `rise.from`
@@ -125,24 +164,24 @@ export function phases(reduced: boolean): Phases {
 }
 
 // Altura da trilha em múltiplos de vh: o palco sticky (1) mais o percurso.
-export function trackVh(reduced: boolean) {
-  return 1 + phases(reduced).reveal.to;
+export function trackVh(reduced: boolean, narrow: boolean) {
+  return 1 + phases(reduced, narrow).reveal.to;
 }
 
 // O `p` em que o último filme está travado. A fase `hold` existe só para dar a
 // ele o mesmo dwell dos outros quinze (ver `cursor()`), então o meio dela é o
 // ponto mais folgado dentro dessa trava — cair na borda deixaria o pulo a um
 // pixel de scroll de destravar.
-export function lastLockAt(reduced: boolean) {
-  const f = phases(reduced);
+export function lastLockAt(reduced: boolean, narrow: boolean) {
+  const f = phases(reduced, narrow);
   return (f.hold.from + f.hold.to) / 2;
 }
 
 // Há para onde pular: o reel já começou e o último ainda não travou. Sai daqui,
 // e não de uma comparação com `lock`, porque `lock` é -1 em trânsito entre duas
 // travas e o botão piscaria a cada passagem.
-export function canSkip(p: number, reduced: boolean) {
-  const f = phases(reduced);
+export function canSkip(p: number, reduced: boolean, narrow: boolean) {
+  const f = phases(reduced, narrow);
   return p >= f.reel.from && p < f.hold.from;
 }
 
@@ -166,8 +205,8 @@ export type Cursor = {
   reveal: number;
 };
 
-export function cursor(p: number, reduced: boolean): Cursor {
-  const f = phases(reduced);
+export function cursor(p: number, reduced: boolean, narrow: boolean): Cursor {
+  const f = phases(reduced, narrow);
 
   const curtain = span(p, f.curtain);
   const rise = span(p, f.rise);
