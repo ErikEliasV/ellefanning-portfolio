@@ -40,16 +40,23 @@
   initial-value: 0;
 }
 
-/* Estes dois sao por card, entao nao herdam: cada um recebe o seu do hook. */
+/* Estes dois o hook escreve por card, mas quem os LE sao as <img> dentro do
+   card, e por isso eles herdam. Uma propriedade registrada com
+   `inherits: false` resolve para o initial-value em todo elemento que nao a
+   declara: o filtro ficaria preso em brightness(1) e o espelho em opacity 0
+   para sempre, sem erro, sem aviso de lint e sem sintoma visivel enquanto os
+   dois valores de repouso forem justamente esses. Herdando, o valor escrito no
+   botao desce para as imagens dele, e o de um card nunca alcanca outro porque
+   cada card escreve o seu. */
 @property --dim {
   syntax: "<number>";
-  inherits: false;
+  inherits: true;
   initial-value: 1;
 }
 
 @property --mirror {
   syntax: "<number>";
-  inherits: false;
+  inherits: true;
   initial-value: 0;
 }
 
