@@ -50,6 +50,24 @@ export function CharacterStage({ characters }: { characters: readonly Character[
                   draggable={false}
                   className="character-card-img"
                 />
+                {/* A copia espelhada. No Figma os cards da direita estao
+                    espelhados e os da esquerda e o do centro nao; e o que deixa
+                    o leque simetrico. Duas copias cruzando opacidade, e nao um
+                    scaleX que vira de uma vez: uma troca instantanea sobre um
+                    rosto a 60 quadros por segundo o olho pega. O cruzamento
+                    acontece no quarto externo do ultimo salto, com o card ainda
+                    estreito e em boa parte coberto pelo vizinho. Mesmo arquivo
+                    da copia de baixo: o browser serve as duas da mesma
+                    requisicao. */}
+                <Image
+                  src={asset(character.still)}
+                  alt=""
+                  aria-hidden
+                  fill
+                  sizes="(min-width: 64rem) 36vw, 62vw"
+                  draggable={false}
+                  className="character-card-img character-card-img-mirror"
+                />
                 {index === active ? (
                   <span aria-hidden className="character-card-cue">Open</span>
                 ) : null}

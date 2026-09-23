@@ -195,6 +195,11 @@
   filter: brightness(var(--dim));
 }
 
+.character-card-img-mirror {
+  transform: scaleX(-1);
+  opacity: var(--mirror);
+}
+
 /* No desktop o convite e o rotulo do cursor; sem ponteiro o card tem que dizer
    em voz alta. Acompanha a legenda: durante a travessia nao ha o que abrir. */
 .character-card-cue {
