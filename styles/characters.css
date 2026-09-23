@@ -232,6 +232,154 @@
   opacity: var(--settle);
 }
 
+/* A tela expandida. A foto clicada cresce ate virar o fundo, o painel de
+   desfoque entra pela esquerda e o texto com ele. Fechar roda o mesmo movimento
+   ao contrario, e o card volta para a trava de onde saiu. */
+
+.character-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background-color: rgba(19, 19, 19, 0);
+  transition: background-color var(--duration-modal) var(--ease-out);
+}
+
+.character-dialog[data-open] {
+  background-color: rgba(19, 19, 19, 0.92);
+}
+
+.character-dialog-grow {
+  position: absolute;
+  top: var(--grow-top);
+  left: var(--grow-left);
+  width: var(--grow-w);
+  height: var(--grow-h);
+  border-radius: var(--grow-r);
+  overflow: hidden;
+  transition:
+    top var(--duration-modal) var(--ease-out),
+    left var(--duration-modal) var(--ease-out),
+    width var(--duration-modal) var(--ease-out),
+    height var(--duration-modal) var(--ease-out),
+    border-radius var(--duration-modal) var(--ease-out);
+}
+
+.character-dialog-grow[data-open] {
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100svh;
+  border-radius: 0;
+}
+
+.character-dialog-img {
+  object-fit: cover;
+  object-position: calc(var(--focus, 0.5) * 100%) 50%;
+}
+
+.character-dialog-veil {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 71.41vw; /* 1371 / 1920 */
+  background-image: linear-gradient(
+    to right,
+    rgba(50, 50, 50, 0.72),
+    rgba(50, 50, 50, 0)
+  );
+  backdrop-filter: blur(30.75px);
+  -webkit-backdrop-filter: blur(30.75px);
+  opacity: 0;
+  transition: opacity var(--duration-modal) var(--ease-out);
+}
+
+.character-dialog-veil[data-open] {
+  opacity: 1;
+}
+
+.character-dialog-text {
+  position: absolute;
+  top: 50%;
+  left: 12.29vw; /* 236 / 1920 */
+  z-index: 1;
+  width: 37.86vw; /* 727 / 1920 */
+  /* Entra junto com o crescimento, nao depois dele: o texto sobrepondo a foto
+     que ainda cresce e o que faz a abertura ler como um movimento so. */
+  transform: translate(-2vw, -50%);
+  opacity: 0;
+  transition:
+    opacity var(--duration-modal) var(--ease-out),
+    transform var(--duration-modal) var(--ease-out);
+}
+
+.character-dialog-text[data-open] {
+  transform: translate(0, -50%);
+  opacity: 1;
+}
+
+.character-dialog-name {
+  margin: 0;
+  font-family: var(--font-text);
+  font-weight: 400;
+  font-size: 5.573vw; /* 107 / 1920 */
+  line-height: 1.05;
+  color: var(--color-paper-000);
+}
+
+.character-dialog-film {
+  margin: 0.75vw 0 0; /* 14,392 / 1920 */
+  font-family: var(--font-editorial);
+  font-weight: 400;
+  font-size: 5.208vw; /* 100 / 1920 */
+  line-height: 1.05;
+  color: var(--color-paper-000);
+}
+
+.character-dialog-story {
+  margin: 5.52vw 0 0; /* 106 / 1920 */
+  max-width: 34.48vw; /* 662 / 1920 */
+  font-family: var(--font-text);
+  font-weight: 300;
+  font-size: 1.5625vw; /* 30 / 1920 */
+  line-height: 1.45;
+  letter-spacing: 0.05em; /* 1,5 / 30 */
+  color: var(--color-paper-000);
+}
+
+.character-dialog-credit {
+  margin: 5.52vw 0 0;
+  font-family: var(--font-editorial);
+  font-weight: 400;
+  font-size: 1.875vw; /* 36 / 1920 */
+  line-height: 1.3;
+  color: var(--color-paper-000);
+}
+
+.character-dialog-imdb {
+  display: inline-flex;
+  align-items: center;
+  gap: 1.82vw; /* 35 / 1920 */
+  margin-top: 8.85vw; /* 170 / 1920 */
+}
+
+.character-dialog-imdb-logo {
+  width: 7.19vw; /* 138 / 1920 */
+  height: auto;
+}
+
+.character-dialog-imdb-arrow {
+  width: 2vw; /* 38,333 / 1920 */
+  height: auto;
+}
+
+/* x 1495 e y 1074 sobre 1920x1399. Ancorado pela esquerda, e nao pela direita,
+   para a pilula crescer para dentro da tela quando o rotulo entra. */
+.character-dialog .close-pill {
+  top: 76.77%;
+  left: 77.86vw;
+}
+
 @media (hover: none) {
   .character-card-cue {
     display: inline-flex;
