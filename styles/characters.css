@@ -472,3 +472,165 @@
 .character-drift {
   display: none;
 }
+
+@media (width < 64rem) {
+  .character-section {
+    /* O nono tom de tinta. Ele existe so aqui, para as palavras de fundo
+       ficarem UM passo abaixo do fundo da secao em vez de acima dele: e
+       textura, nao texto. Uma variavel de secao, e nao um token global, porque
+       nenhuma outra parte do site pede este tom. */
+    --ghost: #0e1014;
+  }
+
+  .character-stage {
+    --word: 12.48vw; /* 50,187 / 402 */
+    --card-h: min(47.3svh, calc(60.58vw / 0.5896));
+    --card-w: calc(var(--card-h) * 0.5896);
+    --radius: calc(var(--card-w) * 0.0871); /* 21,201 / 243,527 */
+    --deck-y: 53.35%;
+  }
+
+  /* No telefone a palavra deixa de ser o fundo e vira o titulo: branca,
+     pequena, centrada acima do deck. Continua sendo o mesmo <h2> -- esconder um
+     e mostrar outro deixaria o celular sem cabecalho nenhum. */
+  .character-word {
+    right: 0;
+    bottom: calc(46.65% + var(--card-h) / 2 + 8.7vw);
+    left: 0;
+    text-align: center;
+  }
+
+  /* A legenda sai de dentro da foto e vai para baixo dela, com o mesmo gesto:
+     emerge da borda de baixo e assenta a vista. Sem faixa e sem desfoque -- o
+     fundo ali ja e o palco. O overflow continua, e e ele que a esconde atras da
+     foto antes de subir. */
+  .character-cap {
+    top: calc(100% + 8.7vw); /* 35 / 402 */
+    right: auto;
+    bottom: auto;
+    left: 50%;
+    width: 90vw;
+    height: auto;
+    padding-bottom: 0;
+    border-radius: 0;
+    background: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    transform: translateX(-50%);
+  }
+
+  .character-cap-name {
+    font-size: 3.98vw; /* 16 / 402 */
+    color: var(--color-rose-400);
+  }
+
+  .character-cap-film {
+    font-size: 3.48vw; /* 14 / 402 */
+  }
+
+  /* As duas palavras de fundo. A de cima anda para a direita e a de baixo para
+     a esquerda, presas ao `u` do deck: 6vw por personagem, 42vw no percurso
+     inteiro. Param quando o oitavo trava, porque `u` para. Nada de laco de
+     tempo -- quem manda e o scroll, inclusive de volta. */
+  .character-drift {
+    position: absolute;
+    z-index: 0;
+    display: block;
+    margin: 0;
+    font-family: var(--font-editorial);
+    font-weight: 400;
+    font-size: 89.25vw; /* 358,778 / 402 */
+    line-height: 0.89;
+    letter-spacing: -0.0097em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--ghost);
+    pointer-events: none;
+  }
+
+  .character-drift-top {
+    top: 0;
+    left: -47.8vw; /* -192 / 402 */
+    transform: translateX(calc(var(--drift) * 1vw));
+  }
+
+  .character-drift-bottom {
+    top: 70svh; /* 612 / 874 */
+    left: -180.6vw; /* -726 / 402 */
+    transform: translateX(calc(var(--drift) * -1vw));
+  }
+
+  /* A tela expandida empilha: a foto toma tudo e o desfoque vira faixa subindo
+     do rodape. */
+  .character-dialog-veil {
+    top: auto;
+    bottom: 0;
+    width: 100%;
+    height: 72svh;
+    background-image: linear-gradient(
+      to top,
+      rgba(50, 50, 50, 0.86),
+      rgba(50, 50, 50, 0)
+    );
+  }
+
+  .character-dialog-text {
+    top: auto;
+    right: var(--gutter-page);
+    /* Acima do botao back, que por sua vez desvia da barra de gestos. */
+    bottom: calc(var(--gutter-page) + var(--safe-bottom) + var(--tap) + 4vw);
+    left: var(--gutter-page);
+    width: auto;
+    transform: translateX(-2vw);
+  }
+
+  .character-dialog-text[data-open] {
+    transform: translateX(0);
+  }
+
+  .character-dialog-name {
+    font-size: 9.95vw;
+  }
+
+  .character-dialog-film {
+    font-size: 8.95vw;
+  }
+
+  .character-dialog-story {
+    margin-top: 6vw;
+    max-width: none;
+    font-size: var(--type-read);
+    line-height: 1.55;
+    letter-spacing: 0.02em;
+  }
+
+  .character-dialog-credit {
+    margin-top: 5vw;
+    font-size: 4.2vw;
+  }
+
+  .character-dialog-imdb {
+    gap: 4vw;
+    margin-top: 6vw;
+  }
+
+  .character-dialog-imdb-logo {
+    width: 22vw;
+  }
+
+  .character-dialog-imdb-arrow {
+    width: 6vw;
+  }
+
+  /* Ancorado pela direita: assim a pilula cresce para dentro da tela quando o
+     rotulo entra, em vez de sair pela borda. O `--close-box` acompanha o da
+     filmografia no estreito -- sem ele a caixa cairia para 3,177vw, que sao
+     12px num telefone de 375, um quarto do alvo de toque que o projeto adota. */
+  .character-dialog .close-pill {
+    --close-box: max(11vw, var(--tap));
+    top: auto;
+    right: var(--gutter-page);
+    bottom: calc(var(--gutter-page) + var(--safe-bottom));
+    left: auto;
+  }
+}
