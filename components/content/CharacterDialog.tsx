@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { createPortal } from "react-dom";
 import { asset } from "@/lib/asset";
 import { clearInert, markOutsideInert } from "@/lib/inert";
 import { lockScroll } from "@/lib/scroll";
@@ -92,7 +93,17 @@ export function CharacterDialog({
     "--focus": character.focus ?? 0.5,
   } as CSSProperties;
 
-  return (
+  // Portalado para <body>, ao contrario do modal da filmografia. Ver o
+  // comentario de `.character-dialog` em styles/characters.css: a secao de
+  // Characters e um contexto de empilhamento (z-index 1 mais o `position:
+  // relative` do utilitario `grain`), entao um dialogo nascido dentro dela nao
+  // consegue pintar acima do header nem do botao de som, que sao `fixed` no
+  // contexto raiz. `markOutsideInert` nao se importa: a partir de <body> ele so
+  // anda menos niveis para marcar os mesmos irmaos.
+  //
+  // Sem guarda de SSR: o componente so e montado depois de um clique, e o
+  // `output: export` deste projeto nunca o renderiza no servidor.
+  return createPortal(
     <div
       ref={shell}
       role="dialog"
@@ -155,6 +166,7 @@ export function CharacterDialog({
         <span aria-hidden className="close-pill-x" />
         <span className="close-pill-label">back</span>
       </button>
-    </div>
+    </div>,
+    document.body,
   );
 }
