@@ -160,6 +160,15 @@
 .character-rail {
   position: absolute;
   inset: 0;
+  /* Contexto de empilhamento proprio, e e para isso que o z-index existe aqui.
+     O hook escreve z-index 100 a 70 em cada card para o centro ficar por cima
+     do vizinho mais externo. Sem esta linha, `.character-rail` fica em
+     `z-index: auto`, nao abre contexto nenhum, e aqueles numeros sobem para o
+     contexto de `.character-deck` -- onde disputam com o z-index 3 da legenda e
+     ganham. A legenda fica com opacidade 1, geometria certa e enterrada sob as
+     fotos. Com o contexto aqui, os 70-100 passam a ser locais ao trilho, e o
+     unico numero que o deck compara e o 1 deste trilho contra o 3 da legenda. */
+  z-index: 1;
 }
 
 .character-card {
