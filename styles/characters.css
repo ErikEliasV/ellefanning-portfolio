@@ -634,3 +634,13 @@
     left: auto;
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  /* A legenda continua aparecendo e sumindo com o scroll -- e como se sabe de
+     quem e o nome na tela -- mas sem o movimento de profundidade. So a
+     opacidade, no mesmo escalar. O `dim` dos cards fica: ele e informacao sobre
+     onde a foto esta no leque, nao movimento. */
+  .character-cap-block {
+    transform: none;
+  }
+}
