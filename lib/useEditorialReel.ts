@@ -4,6 +4,7 @@ import gsap from "gsap";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { isReduced, lockScroll, onTick } from "@/lib/scroll";
+import { onViewport, smallViewportHeight } from "@/lib/viewport";
 
 const CELL_VW = 0.3;
 const CELL_HOVER_VW = 0.7;
@@ -34,16 +35,6 @@ const LINE_PX = 16;
 
 function clamp01(value: number) {
   return value < 0 ? 0 : value > 1 ? 1 : value;
-}
-
-function smallViewportHeight() {
-  const probe = document.createElement("div");
-  probe.style.cssText =
-    "position:absolute;top:0;left:0;width:0;height:100svh;visibility:hidden;pointer-events:none";
-  document.body.appendChild(probe);
-  const height = probe.getBoundingClientRect().height;
-  probe.remove();
-  return height || window.innerHeight;
 }
 
 function fitTitle(title: HTMLElement | null, year: HTMLElement | null) {
@@ -302,10 +293,13 @@ export function useEditorialReel(frames: readonly number[]) {
     }
 
     measure();
+    // O observador do documentElement e o ouvinte de `resize` viraram uma
+    // inscricao so, com debounce e sem o ruido da barra de endereco (ver
+    // lib/viewport.ts). O do bloco da legenda fica: aquele reage ao CONTEUDO
+    // (o titulo troca de comprimento a cada foto) e nao a viewport.
+    const unwatch = onViewport(measure);
     const observer = new ResizeObserver(measure);
-    observer.observe(document.documentElement);
     if (capBlock.current) observer.observe(capBlock.current);
-    window.addEventListener("resize", measure);
     const untick = onTick(progress);
     window.addEventListener("keydown", onKey);
 
@@ -313,8 +307,8 @@ export function useEditorialReel(frames: readonly number[]) {
       untick();
       window.clearTimeout(idle.current);
       window.clearTimeout(exit.current);
+      unwatch();
       observer.disconnect();
-      window.removeEventListener("resize", measure);
       window.removeEventListener("keydown", onKey);
     };
   }, [count, close]);

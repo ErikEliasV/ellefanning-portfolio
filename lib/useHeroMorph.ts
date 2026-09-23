@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 
 import { onTick } from "@/lib/scroll";
+import { onViewport, smallViewportHeight } from "@/lib/viewport";
 
 const IMG_RATIO = 1900 / 1140;
 const SIL_RATIO = 1490 / 1054;
@@ -158,16 +159,6 @@ function imageBox(silWidth: number, silCenterX: number, silTop: number) {
   };
 }
 
-function smallViewportHeight() {
-  const probe = document.createElement("div");
-  probe.style.cssText =
-    "position:absolute;top:0;left:0;width:0;height:100svh;visibility:hidden;pointer-events:none";
-  document.body.appendChild(probe);
-  const height = probe.getBoundingClientRect().height;
-  probe.remove();
-  return height || window.innerHeight;
-}
-
 export function useHeroMorph(onProgress?: (value: number) => void) {
   const track = useRef<HTMLDivElement>(null);
 
@@ -281,16 +272,17 @@ export function useHeroMorph(onProgress?: (value: number) => void) {
       measure();
     });
 
-    const observer = new ResizeObserver(measure);
-    observer.observe(document.documentElement);
-    window.addEventListener("resize", measure);
+    // Uma inscricao so, com debounce e sem o ruido da barra de endereco do
+    // celular -- ver lib/viewport.ts. Aqui morava um ResizeObserver do
+    // documentElement MAIS um ouvinte de `resize`, e os dois disparavam a cada
+    // recolher da barra de URL para remedir numeros que nao tinham mudado.
+    const unwatch = onViewport(measure);
     const untick = onTick(progress);
 
     return () => {
       live = false;
       untick();
-      observer.disconnect();
-      window.removeEventListener("resize", measure);
+      unwatch();
     };
   }, [onProgress]);
 

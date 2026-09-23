@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { CURTAIN_OUT, NARROW_QUERY, canSkip, cursor, depth, geometry, trackVh } from "@/lib/filmStage";
 import { isReduced, onTick } from "@/lib/scroll";
+import { onViewport, smallViewportHeight } from "@/lib/viewport";
 import { reelTick } from "@/lib/audio";
 
 // O chiado contínuo do reel: um tique a cada 80px de deslocamento
@@ -16,21 +17,6 @@ const STRIDE = 80;
 // argumento, ganho 1.0) — assim "o TEK da trava é maior" sem precisar tocar
 // no volume da trava em si.
 const TRAVEL_EMPHASIS = 0.4;
-
-// Espelha `smallViewportHeight()` de `lib/useHeroMorph.ts` e
-// `lib/useEditorialReel.ts` (não está exportada de nenhum dos dois). Sonda
-// `100svh` com um elemento fora de tela e cai para `innerHeight` se o
-// navegador não suportar — é o padrão que o resto do site usa para não
-// pular quando a barra de URL do celular recolhe/expande.
-function smallViewportHeight() {
-  const probe = document.createElement("div");
-  probe.style.cssText =
-    "position:absolute;top:0;left:0;width:0;height:100svh;visibility:hidden;pointer-events:none";
-  document.body.appendChild(probe);
-  const height = probe.getBoundingClientRect().height;
-  probe.remove();
-  return height || window.innerHeight;
-}
 
 export function useFilmStage(count: number) {
   const track = useRef<HTMLDivElement>(null);
@@ -313,12 +299,12 @@ export function useFilmStage(count: number) {
 
     measure();
     const untick = onTick(paint);
-    window.addEventListener("resize", measure);
+    const unwatch = onViewport(measure);
     narrow.addEventListener("change", measure);
 
     return () => {
       untick();
-      window.removeEventListener("resize", measure);
+      unwatch();
       narrow.removeEventListener("change", measure);
       window.clearTimeout(kickTimer.current);
       if (kickCard.current) delete kickCard.current.dataset.kick;
