@@ -374,8 +374,11 @@
 }
 
 /* x 1495 e y 1074 sobre 1920x1399. Ancorado pela esquerda, e nao pela direita,
-   para a pilula crescer para dentro da tela quando o rotulo entra. */
+   para a pilula crescer para dentro da tela quando o rotulo entra.
+   O piso de toque mora aqui, e nao em styles/close.css: por em la mudaria o
+   modal da filmografia, que roda sem piso desde que foi ao ar. */
 .character-dialog .close-pill {
+  --close-box: max(var(--tap), 3.177vw);
   top: 76.77%;
   left: 77.86vw;
 }

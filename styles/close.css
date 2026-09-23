@@ -7,7 +7,12 @@
    Quem usa poe a POSICAO na propria folha; daqui sai so o botao. */
 
 .close-pill {
-  --close-box: max(var(--tap), 3.177vw); /* 61 / 1920, com piso de toque */
+  /* 61 / 1920, sem piso. O piso mora em quem usa, e nao aqui: a filmografia
+     roda com este valor puro desde que foi ao ar, e um `max(var(--tap), ...)`
+     nesta linha a engordaria de 40,7 para 44px em toda largura entre 1024 e
+     1385 -- laptops comuns. Mudanca de desenho que ninguem pediu, em codigo
+     que ja esta no ar. Cada modal declara o proprio piso na propria folha. */
+  --close-box: 3.177vw;
   --close-icon: calc(var(--close-box) * 0.5902); /* 36 / 61 */
   position: absolute;
   z-index: 2;
