@@ -102,7 +102,8 @@
   grid-template-columns: repeat(2, 1fr);
   justify-items: start;
   gap: clamp(12px, 3vw, 32px);
-  padding-inline: var(--gutter-page);
+  padding-inline: calc(var(--gutter-page) + var(--safe-left))
+    calc(var(--gutter-page) + var(--safe-right));
   font-family: var(--font-text);
   font-weight: 700;
   font-size: clamp(17px, 4.8vw, 34px);
@@ -156,7 +157,12 @@
   justify-content: center;
   min-height: clamp(96px, 10.8vw, 220px);
   margin: 0;
-  padding-inline: var(--gutter-page);
+  /* A ultima coisa da pagina: com viewport-fit: cover a barra de gestos do
+     aparelho passa por cima daqui. Os tres insets valem 0px em qualquer coisa
+     sem notch, entao o desktop nao se mexe. */
+  padding-bottom: var(--safe-bottom);
+  padding-inline: calc(var(--gutter-page) + var(--safe-left))
+    calc(var(--gutter-page) + var(--safe-right));
   font-family: var(--font-text);
   font-size: var(--text-label-sm);
   letter-spacing: var(--tracking-label);

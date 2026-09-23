@@ -189,6 +189,11 @@
   line-height: 0.92;
   text-transform: uppercase;
   color: var(--color-blush-300);
+  /* Guarda: o titulo vem dos dados, e o dia em que um filme tiver uma palavra
+     mais longa que a coluna (a ficha inteira mede 240px no piso do clamp) ela
+     estouraria a lateral em vez de quebrar. Nao muda nada com o titulo de
+     hoje, cuja palavra mais larga cabe com folga. */
+  overflow-wrap: break-word;
 }
 
 .now-list {
