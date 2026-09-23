@@ -3,12 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { asset } from "@/lib/asset";
 import { pixel } from "@/lib/audio";
-import { onTick } from "@/lib/scroll";
+import { coarseCols, gridCols } from "@/lib/heroGrid";
+import { isReduced, onTick } from "@/lib/scroll";
 
 export const HERO_FIELD = "/images/ellefanning-hero-field.webp";
 
-const BLOCKS_A = 67;
-const BLOCKS_B = 40;
 const WASH_PAPER = 0.86;
 const WASH_ROSE = 0.82;
 const CONTRAST = 1.12;
@@ -203,8 +202,8 @@ export function useHeroField(off = false) {
     let clock = 0;
     let last = 0;
 
-    let cols = BLOCKS_A;
-    let rows = BLOCKS_A;
+    let cols = 0;
+    let rows = 0;
     let atCol = -1;
     let atRow = -1;
 
@@ -232,7 +231,12 @@ export function useHeroField(off = false) {
       const p = value.current;
       const ramp = Math.min(Math.max((p - WASH_HOLD) / (1 - WASH_HOLD), 0), 1);
       const wash = ramp * ramp * (3 - 2 * ramp);
-      const cell = width / (BLOCKS_A + (BLOCKS_B - BLOCKS_A) * p);
+      // A contagem de colunas sai da tela, nao de uma constante: ver o porque
+      // em lib/heroGrid.ts. Medida em px de CSS (clientWidth), e nao nos px de
+      // dispositivo do canvas, senao o mesmo telefone teria mosaicos
+      // diferentes conforme o devicePixelRatio.
+      const rest = gridCols(node.clientWidth, node.clientHeight);
+      const cell = width / (rest + (coarseCols(rest) - rest) * p);
       const tint = blend(PAPER, ROSE, wash);
       const line = blend(LINE_PAPER, LINE_ROSE, wash);
 
@@ -256,6 +260,17 @@ export function useHeroField(off = false) {
     const frame = (now: number) => {
       const step = last ? Math.min((now - last) / 1000, 0.1) : 0;
       last = now;
+
+      // Com movimento reduzido o relogio nao anda: a onda de repouso e o
+      // ponteiro virtual que passeia sozinho param, e o que sobra e um mosaico
+      // parado que ainda responde a rolagem (o wash de papel para rosa) e ao
+      // dedo. Desligar o quadro inteiro tiraria a secao do ar; isto e a versao
+      // "muito reduzida" que o modo pede.
+      if (isReduced()) {
+        draw();
+        return;
+      }
+
       clock += step * WAVE_SPEED * Math.PI * 2;
 
       if (!lastInput) lastInput = now;

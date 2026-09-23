@@ -1,7 +1,7 @@
 import * as THREE from "three";
 
-const BLOCKS_A = 67;
-const BLOCKS_B = 40;
+import { BLOCKS_A, coarseCols, gridCols } from "@/lib/heroGrid";
+
 const WASH_PAPER = 0.86;
 const WASH_ROSE = 0.82;
 const CONTRAST = 1.12;
@@ -214,6 +214,14 @@ export function createCloud({
   let baseCols = BLOCKS_A;
   let rows = 0;
   let gridRows = BLOCKS_A;
+  // As duas pontas do mosaico nesta tela: em repouso e engrossado. Saem de
+  // lib/heroGrid.ts e sao remedidas no resize.
+  let restCols = BLOCKS_A;
+  let thickCols = coarseCols(BLOCKS_A);
+  // A ultima caixa desenhada. resize() e chamado por um ResizeObserver, e sem
+  // esta guarda ele refazia a malha inteira a cada tremor de layout -- no
+  // celular, a cada vez que a barra de endereco recolhe.
+  let seen = { w: 0, h: 0, dpr: 0 };
   let atCol = -1;
   let atRow = -1;
 
@@ -224,12 +232,15 @@ export function createCloud({
   let atY = 0.5;
   let atA = 0;
 
-  function build(gridCols: number, count: number) {
-    const cells = new Float32Array(gridCols * count * 2);
+  // `span` e a largura da malha CONSTRUIDA (ja com o excedente do uOver), nao a
+  // contagem visivel de colunas -- o nome nao pode ser `gridCols`, que agora e
+  // a funcao importada que decide essa contagem.
+  function build(span: number, count: number) {
+    const cells = new Float32Array(span * count * 2);
     let at = 0;
     for (let row = 0; row < count; row += 1) {
-      for (let col = 0; col < gridCols; col += 1) {
-        cells[at] = (col + 0.5) / gridCols;
+      for (let col = 0; col < span; col += 1) {
+        cells[at] = (col + 0.5) / span;
         cells[at + 1] = (row + 0.5) / count;
         at += 2;
       }
@@ -245,18 +256,24 @@ export function createCloud({
     geometry.setAttribute("position", box.attributes.position);
     geometry.setAttribute("normal", box.attributes.normal);
     geometry.setAttribute("aCell", new THREE.InstancedBufferAttribute(cells, 2));
-    geometry.instanceCount = gridCols * count;
+    geometry.instanceCount = span * count;
 
     mesh.geometry = geometry;
-    baseCols = gridCols;
-    uniforms.uBase.value.set(gridCols, count);
+    baseCols = span;
+    uniforms.uBase.value.set(span, count);
   }
 
   function resize() {
     const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
     const width = Math.max(canvas.clientWidth, 1);
     const height = Math.max(canvas.clientHeight, 1);
+    if (width === seen.w && height === seen.h && dpr === seen.dpr) return;
+    seen = { w: width, h: height, dpr };
+
     const aspect = width / height;
+
+    restCols = gridCols(width, height);
+    thickCols = coarseCols(restCols);
 
     renderer.setPixelRatio(dpr);
     renderer.setSize(width, height, false);
@@ -265,9 +282,9 @@ export function createCloud({
     camera.updateProjectionMatrix();
     uniforms.uAspect.value = aspect;
 
-    const wide = Math.ceil(BLOCKS_A * OVER);
+    const wide = Math.ceil(restCols * OVER);
     const tall = Math.min(Math.max(Math.ceil(wide / aspect), 1), MAX_ROWS);
-    if (tall !== rows) {
+    if (tall !== rows || wide !== baseCols) {
       rows = tall;
       build(wide, rows);
     }
@@ -312,7 +329,7 @@ export function createCloud({
     const wash = ramp * ramp * (3 - 2 * ramp);
     const aspect = uniforms.uAspect.value;
 
-    visCols = BLOCKS_A + (BLOCKS_B - BLOCKS_A) * progress;
+    visCols = restCols + (thickCols - restCols) * progress;
     cols = visCols * OVER;
     // Rows follow the grid that was actually built, not the aspect: when
     // MAX_ROWS clamps the build, deriving them again from the aspect would ask

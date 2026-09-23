@@ -15,6 +15,23 @@ const FRAME_W = 1920;
 const A_SIL_W_VW = 1.0342;
 const A_SIL_W_VH = 1.6;
 const A_SIL_W_MAX_VW = 1.9;
+
+// A entrada em tela estreita.
+//
+// A largura da silhueta e o maior entre um termo de largura (1,03vw) e um de
+// altura (1,6vh), com o teto de 1,9vw. Num 1440x900 quem ganha e o termo de
+// largura e a silhueta sai com 1,03x a largura da tela: a cabeca cabe no
+// quadro e o corte de baixo cai perto do nariz, que e o desenho. Num telefone
+// o termo de altura dispara (1,6 x 844 = 1350) e o teto passa a mandar --
+// medido em 390x844, a silhueta virava 741px, quase o dobro da tela, e o que
+// se via era o meio da cabeca com as duas laterais fora do quadro.
+//
+// O teto cai para perto do que o desktop ja entrega, e a fatia visivel sobe
+// junto: com a silhueta menor, mostrar so 37% dela deixaria o rosto do tamanho
+// de um detalhe. Os dois numeros andam sempre em par.
+const NARROW_MAX = 1023;
+const A_SIL_W_MAX_VW_NARROW = 1.25;
+const A_SIL_SHOW_NARROW = 0.62;
 // Fracao da altura do silhueta A visivel dentro do frame: o topo do
 // retrato ja nasce inteiro dentro do frame (nunca corta ali), so a base
 // e que estoura para fora e e cortada pelo overflow:hidden do
@@ -178,9 +195,13 @@ export function useHeroMorph(onProgress?: (value: number) => void) {
 
       const ub = vw / FRAME_W;
 
+      const narrow = vw <= NARROW_MAX;
+      const capVw = narrow ? A_SIL_W_MAX_VW_NARROW : A_SIL_W_MAX_VW;
+      const show = narrow ? A_SIL_SHOW_NARROW : A_SIL_SHOW;
+
       const silWa = Math.min(
         Math.max(A_SIL_W_VW * vw, A_SIL_W_VH * vh),
-        A_SIL_W_MAX_VW * vw,
+        capVw * vw,
       );
       const silHa = silWa / SIL_RATIO;
 
@@ -190,7 +211,7 @@ export function useHeroMorph(onProgress?: (value: number) => void) {
       const silTb = frameHb - silHb;
       const boxB = imageBox(silWb, vw / 2, silTb);
 
-      const silTa = Math.max(vh - A_SIL_SHOW * silHa, silTb + A_RISE_VH * vh);
+      const silTa = Math.max(vh - show * silHa, silTb + A_RISE_VH * vh);
       const boxA = imageBox(silWa, A_SIL_CX_VW * vw, silTa);
 
       morph = MORPH_VH * vh;
