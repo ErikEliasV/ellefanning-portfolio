@@ -46,6 +46,7 @@ export function usePreloader() {
     let untick: (() => void) | null = null;
     let landed = 0;
     let shown = 0;
+    let armed = false;
     let left = false;
 
     function land() {
@@ -79,6 +80,12 @@ export function usePreloader() {
     function leave() {
       if (!live || left) return;
       left = true;
+      // Sair e o fim da contagem: parar o tique aqui (e nao so em `tick`)
+      // fecha o caminho em que a rede de seguranca abaixo tira a placa, a aba
+      // volta a ter foco, o rAF destravado alcanca 100% e `arm()` remontaria
+      // o preloader por cima de uma pagina ja liberada.
+      untick?.();
+      untick = null;
       // The curtain and the hero entry overlap on purpose: the name is already
       // resolving behind the plate as it lifts, so the two read as one move.
       document.documentElement.dataset.entered = "";
@@ -96,6 +103,10 @@ export function usePreloader() {
     // O 100% precisa de uma batida parado antes de a cortina subir, senão o
     // número chega ao fim e sai de cena no mesmo quadro.
     function arm() {
+      if (left || armed) return;
+      armed = true;
+      untick?.();
+      untick = null;
       setPhase("ready");
       timers.push(window.setTimeout(leave, HOLD_MS));
     }
@@ -105,11 +116,7 @@ export function usePreloader() {
       shown += (goal - shown) * CHASE;
       if (goal - shown < 0.002) shown = goal;
       paint();
-      if (shown >= 1) {
-        untick?.();
-        untick = null;
-        arm();
-      }
+      if (shown >= 1) arm();
     }
 
     document.fonts.ready.then(typeset, typeset);
@@ -132,6 +139,16 @@ export function usePreloader() {
         landed = SIGNALS;
       }, CEIL_MS),
     );
+
+    // A rede de seguranca. `tick` corre no rAF compartilhado, e aba em segundo
+    // plano suspende rAF: a contagem congela onde estava, `arm()` nunca
+    // dispara e o scroll -- travado na montagem -- fica travado para sempre
+    // para quem abriu o site numa aba de fundo e so voltou depois. Um
+    // temporizador de tarefa nao e suspenso, entao passado o teto dos sinais
+    // mais a duracao minima da contagem e a batida do 100%, a placa sai de
+    // qualquer jeito. No caminho normal (~1,9s) isto nunca chega a disparar, e
+    // `leave()` ja e idempotente pelo proprio `left`.
+    timers.push(window.setTimeout(leave, CEIL_MS + MIN_MS + HOLD_MS));
 
     untick = onTick(tick);
 
