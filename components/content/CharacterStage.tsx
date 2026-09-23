@@ -4,12 +4,14 @@ import Image from "next/image";
 import { type CSSProperties } from "react";
 import { asset } from "@/lib/asset";
 import type { Character } from "@/lib/characters";
+import { useCharacterDeck } from "@/lib/useCharacterDeck";
 
 export function CharacterStage({ characters }: { characters: readonly Character[] }) {
-  const now = characters[0];
+  const { track, deck, rail, active } = useCharacterDeck(characters.length);
+  const now = characters[active];
 
   return (
-    <div className="character-track">
+    <div ref={track} className="character-track">
       {/* O palco e escuro desde o primeiro quadro em que se ve alguma coisa,
           entao a pele clara do cursor vale para tudo que estiver aqui dentro --
           nao ha mais o limiar que a varredura antiga precisava. */}
@@ -26,16 +28,16 @@ export function CharacterStage({ characters }: { characters: readonly Character[
             mostrar outro deixaria o celular sem cabecalho nenhum. */}
         <h2 className="character-word">Characters</h2>
 
-        <div className="character-deck">
-          <div className="character-rail">
+        <div ref={deck} className="character-deck">
+          <div ref={rail} className="character-rail">
             {characters.map((character, index) => (
               <button
                 key={character.id}
                 type="button"
                 className="character-card"
                 style={{ "--focus": character.focus ?? 0.5 } as CSSProperties}
-                data-live={index === 0 ? "" : undefined}
-                data-cursor={index === 0 ? "Open" : undefined}
+                data-live={index === active ? "" : undefined}
+                data-cursor={index === active ? "Open" : undefined}
                 aria-label={`${character.name} — ${character.film} (${character.year}), open details`}
               >
                 <Image
@@ -48,7 +50,7 @@ export function CharacterStage({ characters }: { characters: readonly Character[
                   draggable={false}
                   className="character-card-img"
                 />
-                {index === 0 ? (
+                {index === active ? (
                   <span aria-hidden className="character-card-cue">Open</span>
                 ) : null}
               </button>
