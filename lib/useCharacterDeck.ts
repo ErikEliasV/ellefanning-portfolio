@@ -68,22 +68,20 @@ export function useCharacterDeck(count: number) {
 
         // Fora da janela de render o card nao e desenhado. `live` e funcao pura
         // de `u`, entao isto desfaz sozinho subindo a pagina.
-        if (!d.live) {
-          card.style.visibility = "hidden";
-          continue;
-        }
-
-        card.style.visibility = "visible";
-        // A largura em px e a altura em porcentagem do trilho: e a largura que
-        // faz o card abrir, e e por ela que a foto recorta de novo. Ver o
-        // comentario em depth() sobre por que nao e um scaleX.
-        card.style.width = `${(d.width * cardW).toFixed(2)}px`;
-        card.style.height = `${(d.height * 100).toFixed(2)}%`;
+        // Tarefa 13: este laco inteiro vira um `transform` so. `live`,
+        // `width`, `height`, `zIndex` e `mirror` deixaram de existir em
+        // `depth()` -- a janela de render some (as oito sao sempre desenhadas),
+        // o encurtamento passa a vir do rotateY e a ordem, da profundidade.
+        // Comentado aqui apenas para a arvore compilar entre as duas tarefas.
+        //
+        // if (!d.live) { card.style.visibility = "hidden"; continue; }
+        // card.style.visibility = "visible";
+        // card.style.width = ...; card.style.height = ...;
+        // card.style.zIndex = String(d.z);
+        // card.style.setProperty("--mirror", d.mirror.toFixed(4));
         card.style.transform =
           `translate(calc(-50% + ${(d.x * cardW).toFixed(2)}px), -50%)`;
-        card.style.zIndex = String(d.z);
         card.style.setProperty("--dim", d.dim.toFixed(4));
-        card.style.setProperty("--mirror", d.mirror.toFixed(4));
       }
 
       if (c.active !== lastActive.current) {

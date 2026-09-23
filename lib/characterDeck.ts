@@ -3,6 +3,7 @@
 // custom properties e medidas de card. Ter isto separado e o que deixa a
 // coreografia conferivel sem abrir o hook.
 
+import { CHARACTERS } from "@/lib/characters";
 import { clamp01, easeOut4, smootherstep } from "@/lib/filmStage";
 
 // O limiar de tela estreita e o de lib/filmStage.ts, reexportado em vez de
@@ -10,49 +11,80 @@ import { clamp01, easeOut4, smootherstep } from "@/lib/filmStage";
 // tres meses.
 export { NARROW_QUERY, isNarrow } from "@/lib/filmStage";
 
-export const COUNT = 8;
+// Derivado, e nao 8 cravado. Antes havia duas fontes de verdade -- este modulo
+// dizia 8 e o palco passava `characters.length`. Apagar uma personagem de
+// lib/characters.ts deixava `active` valendo 7 com sete na lista, e `now.name`
+// estourava em tempo de render numa posicao especifica de scroll, sem que o
+// TypeScript pudesse ver; acrescentar uma a deixava inalcancavel em silencio.
+// Derivar torna a divergencia impossivel em vez de detectavel.
+//
+// O preco e o modulo de geometria importar o de dados, e ele e aceitavel:
+// lib/characters.ts e dado puro, sem DOM e sem React, e a checagem continua
+// rodando no node sem nada em volta.
+export const COUNT = CHARACTERS.length;
 
 export type Geometry = {
-  /** Largura sobre altura do card central. */
-  cardRatio: number;
-  /** Largura do lateral sobre a do central. */
+  /** Largura do lateral sobre a do central. So o CSS le. */
   sideRatio: number;
-  /** Altura do lateral sobre a do central. */
+  /** Altura do lateral sobre a do central. So o CSS le. */
   sideTall: number;
-  /** Raio sobre a largura do central. */
+  /** Passo angular por personagem, em graus. E a derivada do arco em zero. */
+  step: number;
+  /** Onde o arco satura e as fotos passam a se empilhar, em graus. */
+  thetaMax: number;
+  /** Raio do arco, em larguras do card central. */
   radius: number;
-  /** Centro vertical do deck, fracao da altura do palco. */
-  deckY: number;
-  /** Centros dos slots, em larguras do card central. */
-  slots: readonly number[];
+  /** Queda lateral, em alturas do card central. Positivo desce. */
+  drop: number;
+  /** Escrita no deck como --persp, em px. */
+  perspective: number;
+  /** Desfoque da foto mais distante, em px. */
+  blurMax: number;
 };
 
-// 649x649 no centro e 299x649 nos lados, sobre canvas de 1920x1431 (no
-// 2527:1629). Os slots sao os centros medidos -- 400,5, 566,5 e 715,5px do
-// centro do palco -- divididos pela largura do central. Expressar o leque em
-// larguras de card, e nao em vw, e o que o mantem igual a si mesmo em qualquer
-// tela: as fatias visiveis que isto produz sao 225, 166 e 149px, que e
-// exatamente o que se mede no no.
+// Numeros de PARTIDA, para afinar a olho contra a captura do no -- e nao
+// medidas extraidas dele. A razao esta na spec §4.3 e vale repetir aqui, porque
+// e a primeira pergunta de quem le este bloco: os tres slots do Figma
+// (0,6171 / 0,8729 / 1,1025 larguras de card) NAO sao a projecao de um circulo.
+// As duas primeiras distancias implicam 2*cos(passo) = 1,4145, ou seja um passo
+// de 45 graus; nesse passo a terceira teria que valer sin(135)/sin(45) = 1,0, e
+// o no diz 1,102. O no e uma maquete plana de um movimento que ele nao sabia
+// expressar. O quadro parado aproxima o no; nao bate com ele ao pixel.
+//
+// Estes valores foram rodados num script antes de entrar. No perfil largo, com
+// card de 564px, eles produzem as tres fatias que o no desenha e a pilha que a
+// §4.1.1 pede:
+//
+//   distancia      1     2    3    4    5   6   7
+//   passo (px)   334   208   93   34   12   4   1
+//   queda (px)     6    21   37   49   56  61  64
+//
+// As tres primeiras espiam, a quarta mal aparece, e da quinta em diante o passo
+// e de pixels: coberta. Mexer em qualquer um destes sete mexe na composicao
+// inteira, e e por isso que eles estao todos juntos num lugar so.
 const WIDE: Geometry = {
-  cardRatio: 1,
   sideRatio: 0.4607,
   sideTall: 1,
-  radius: 0.1001,
-  deckY: 0.5748,
-  slots: [0, 0.6171, 0.8729, 1.1025],
+  step: 20,
+  thetaMax: 66,
+  radius: 1.85,
+  drop: 0.18,
+  perspective: 1600,
+  blurMax: 10,
 };
 
-// 243,527x413,098 no centro e 124,131x421,294 nos lados, sobre canvas de
-// 402x874 (no 2527:1760). O leque e mais apertado -- 0,5107 contra 0,6171 no
-// primeiro slot -- porque ali o card e retrato e nao quadrado: a mesma fatia
-// visivel pede menos deslocamento.
+// O telefone quer o arco mais curto e mais apertado: ha menos largura para ele
+// acontecer, e uma perspectiva longa ali acha o movimento pequeno. O desfoque
+// cai porque as fatias tambem sao menores e um borrao de 10px as apagaria.
 const NARROW: Geometry = {
-  cardRatio: 0.5896,
   sideRatio: 0.5097,
   sideTall: 1.0198,
-  radius: 0.0871,
-  deckY: 0.5335,
-  slots: [0, 0.5107, 0.7762, 1.0417],
+  step: 22,
+  thetaMax: 64,
+  radius: 1.6,
+  drop: 0.14,
+  perspective: 1100,
+  blurMax: 6,
 };
 
 export function geometry(narrow: boolean): Geometry {
@@ -70,17 +102,18 @@ const CYCLE_REDUCED = 0.35;
 // Dentro de cada ciclo, os primeiros 20% nao movem nada: e a trava.
 const DWELL = 0.2;
 
-// Quanto o card mais distante escurece. Nao ha blur aqui, e o reel de filmes
-// tem: as fatias laterais medem 150px de largura e um desfoque de 9px as
-// borraria umas nas outras. La os vizinhos sao cards inteiros a 48vw de
-// distancia, e o desfoque tem onde acontecer.
+// Quanto o card mais distante escurece. Anda junto com o desfoque: os dois sao
+// profundidade, um em luz e outro em foco.
 const DIM = 0.28;
 
-// Onde a copia espelhada comeca a aparecer, em unidades de offset. 0,75 poe o
-// cruzamento no quarto externo do ultimo salto, com o card ainda estreito e em
-// boa parte coberto pelo vizinho -- e nao sobre um rosto inteiro no centro da
-// tela.
-const MIRROR_FROM = 0.75;
+// Degraus de meio pixel no desfoque. `filter: blur()` cujo raio muda a cada
+// quadro forca rerasterizacao; quantizado, o valor muda raramente em vez de
+// sempre. Foi a condicao para o desfoque progressivo entrar no desenho: a
+// objecao original -- fatias estreitas borrando uma na outra -- nao desapareceu,
+// virou tratamento.
+const BLUR_STEP = 0.5;
+
+const DEG = Math.PI / 180;
 
 // Quanto da fase `enter` o chao leva para terminar de virar tinta. Menos que a
 // fase inteira: a troca de cor tem que acabar antes de a palavra assentar,
@@ -178,7 +211,10 @@ export function cursor(p: number, reduced: boolean, narrow: boolean): Cursor {
   let travel: number;
 
   if (p < f.reel.from) {
-    u = 0;
+    // -1 a 0, e nao 0 fixo: em u = -1 a primeira personagem esta a um passo da
+    // direita, ou seja, as oito estao no monte e e de la que ela sai para o
+    // centro. Era isto que faltava para "no comeco tudo num canto so".
+    u = -1 + enter;
     travel = 0;
   } else if (p < f.reel.to) {
     const raw = span(p, f.reel) * (COUNT - 1);
@@ -188,11 +224,11 @@ export function cursor(p: number, reduced: boolean, narrow: boolean): Cursor {
     u = i + smootherstep(t);
     travel = frac < DWELL ? 0 : t;
   } else {
-    // Vale para `hold` e para `exit`: o oitavo fica travado no centro e quem
-    // tira o deck de cena e a translacao da caixa inteira, pelo `leave`. Fazer
-    // isso pelo `u` pediria um estouro de onze personagens inexistentes --
-    // os slots se afastam do centro a 0,23 largura de card por unidade.
-    u = COUNT - 1;
+    // COUNT-1 a COUNT: durante `hold` o oitavo fica travado no centro, e
+    // durante `exit` ele entra no monte da esquerda enquanto o deck inteiro sai
+    // de cena pela translacao da caixa. Simetrico com a entrada -- os dois
+    // extremos deixam tudo num canto so.
+    u = COUNT - 1 + leave;
     travel = 0;
   }
 
@@ -208,61 +244,76 @@ export function cursor(p: number, reduced: boolean, narrow: boolean): Cursor {
   // legenda muda enquanto ela esta invisivel, nunca a vista.
   const active = Math.min(Math.max(Math.round(u), 0), COUNT - 1);
 
-  return { u, active, enter, leave, floor, settle, drift: u * DRIFT_VW };
+  // A deriva nao acompanha o `u` negativo da entrada: as palavras de fundo
+  // comecariam deslocadas 6vw sem razao nenhuma.
+  return { u, active, enter, leave, floor, settle, drift: Math.max(0, u) * DRIFT_VW };
 }
 
-// A posicao do slot para uma distancia real, nao inteira: a tabela medida com
-// interpolacao linear entre as entradas. Alem da ultima a reta continua com a
-// inclinacao do ultimo trecho -- o card so precisa ter de onde vir, porque ali
-// ele ja nao e desenhado.
-export function slotAt(d: number, g: Geometry) {
-  const last = g.slots.length - 1;
-  if (d >= last) {
-    return g.slots[last] + (d - last) * (g.slots[last] - g.slots[last - 1]);
-  }
-  const i = Math.floor(d);
-  return g.slots[i] + (g.slots[i + 1] - g.slots[i]) * (d - i);
-}
-
-// Quanto da copia espelhada aparece. No Figma os cards da direita estao
-// espelhados e os da esquerda e o do centro nao; e o que deixa o leque
-// simetrico. Esquerda e centro ficam em 0, a direita inteira a partir de um
-// salto de distancia fica em 1, e entre 0,75 e 1 as duas copias se cruzam.
-export function mirror(offset: number) {
-  return offset <= 0 ? 0 : clamp01((offset - MIRROR_FROM) / (1 - MIRROR_FROM));
+// A posicao de uma foto no arco, em funcao da distancia assinada ao centro.
+//
+// A tanh e a peca central e resolve dois pedidos com uma conta so. Perto do
+// centro ela e praticamente linear -- a derivada em zero e exatamente `step`,
+// entao a foto percorre o arco com o passo pedido. Longe, satura em `thetaMax`,
+// e e isso que faz as fotos que ja passaram PARAREM de se afastar e se
+// acumularem na borda, uma cobrindo a outra. Sem a saturacao, um cilindro de
+// verdade levaria as fotos para tras da cena e elas voltariam pelo outro lado.
+//
+// O monte nao espalha, ele COBRE: no perfil largo os passos entre vizinhas caem
+// para 34, 12, 4 e 1px da quarta em diante. As tres de cima espiam, que e o que
+// o no do Figma desenha, e o resto fica atras. Nao ha corte nem regra de
+// "esconder alem de N" -- a saturacao produz isso sozinha, e foi justamente um
+// corte desses, na versao anterior, que fazia as fotos sumirem em vez de
+// empilhar (e que derrubava o foco do teclado junto).
+//
+// `y` positivo desce: o centro e o ponto alto da curva. Foi escolha do dono do
+// projeto entre as tres possiveis; o no estatico, com tudo na mesma altura, nao
+// decidia.
+export function arc(offset: number, g: Geometry) {
+  const theta = g.thetaMax * Math.tanh((offset * g.step) / g.thetaMax);
+  const r = theta * DEG;
+  return {
+    /** Graus. */
+    theta,
+    /** Em larguras do card central. */
+    x: g.radius * Math.sin(r),
+    /** Em alturas do card central, positivo para baixo. */
+    y: g.drop * (1 - Math.cos(r)),
+    /** Em larguras do card central, sempre <= 0. */
+    z: g.radius * (Math.cos(r) - 1),
+  };
 }
 
 export type Depth = {
-  /** Deslocamento do centro, em larguras do card central. */
+  theta: number;
   x: number;
-  /** Largura, em fracao da largura do card central. */
-  width: number;
-  /** Altura, em fracao da altura do card central. */
-  height: number;
-  dim: number;
-  mirror: number;
+  y: number;
   z: number;
-  /** Fora da janela de render o card nao e desenhado. */
-  live: boolean;
+  /** px, ja quantizado em degraus de meio pixel. */
+  blur: number;
+  dim: number;
 };
 
+// Nao devolve mais `live` nem `z-index`, e as duas ausencias sao a mudanca.
+//
+// `live` cortava tudo alem da terceira posicao. Era ela que fazia as fotos
+// sumirem em vez de empilhar, e era ela que derrubava o foco do teclado: um
+// card escondido com o foco dentro faz o browser soltar o foco para o <body>.
+//
+// `z-index` deixou de ser necessario porque o trilho e `preserve-3d`: ali os
+// filhos sao ordenados pela POSICAO em profundidade, nao por z-index. Como `z`
+// vale 0 no centro e fica mais negativo quanto mais na ponta, o centro e o mais
+// proximo e pinta por cima, e cada foto pinta sobre a vizinha mais externa. No
+// monte, duas vizinhas tem angulos quase iguais, mas a que passou mais
+// recentemente tem |theta| menor, logo z menos negativo, logo esta na frente. A
+// ordem que a versao anterior escrevia a mao virou consequencia da geometria.
 export function depth(i: number, u: number, g: Geometry): Depth {
   const offset = i - u;
   const d = Math.abs(offset);
-  const c = clamp01(d);
+  const a = arc(offset, g);
+  const blur = g.blurMax * clamp01(d / 3);
   return {
-    x: Math.sign(offset) * slotAt(d, g),
-    // O card nao escala: ele ABRE. No Figma o lateral e o central tem a mesma
-    // altura e larguras diferentes, entao o que anda entre os dois e a largura,
-    // com a foto em object-fit: cover recortando de novo a cada passo. Um
-    // scaleX esticaria o rosto.
-    width: 1 + (g.sideRatio - 1) * c,
-    height: 1 + (g.sideTall - 1) * c,
-    dim: 1 - DIM * c,
-    mirror: mirror(offset),
-    // O centro por cima, cada card sobre o vizinho mais externo. Inteiro
-    // porque z-index nao aceita fracao.
-    z: 100 - Math.round(d * 10),
-    live: d <= g.slots.length - 1,
+    ...a,
+    blur: Math.round(blur / BLUR_STEP) * BLUR_STEP,
+    dim: 1 - DIM * clamp01(d),
   };
 }
