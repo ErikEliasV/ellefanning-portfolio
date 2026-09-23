@@ -58,7 +58,7 @@ export const CHARACTERS: readonly Character[] = [
     still: "/images/characters/ginger-ginger-rosa.jpg",
     genre: "Drama",
     credit: "Directed by Sally Potter",
-    imdb: "https://www.imdb.com/title/tt2017486/",
+    imdb: "https://www.imdb.com/title/tt2115295/",
   },
   {
     id: "aurora",
@@ -97,7 +97,7 @@ export const CHARACTERS: readonly Character[] = [
     still: "/images/characters/alicia-the-beguiled.jpg",
     genre: "Drama / Thriller",
     credit: "Directed by Sofia Coppola",
-    imdb: "https://www.imdb.com/title/tt4340650/",
+    imdb: "https://www.imdb.com/title/tt5592248/",
   },
   {
     id: "violet",
@@ -110,7 +110,7 @@ export const CHARACTERS: readonly Character[] = [
     still: "/images/characters/violet-valenski-teen-spirit.avif",
     genre: "Drama / Music",
     credit: "Directed by Max Minghella",
-    imdb: "https://www.imdb.com/title/tt6911844/",
+    imdb: "https://www.imdb.com/title/tt6483364/",
   },
   {
     id: "catherine",
