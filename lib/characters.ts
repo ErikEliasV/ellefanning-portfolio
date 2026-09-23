@@ -6,7 +6,13 @@ export type Character = {
   note: string;
   story: string;
   still: string;
-  altStill?: string;
+  /** "Fantasy / Adventure" */
+  genre: string;
+  /** A frase inteira, nao so o nome: The Great e serie, e ali o que cabe e
+   *  "Created by" e nao "Directed by". */
+  credit: string;
+  /** URL do titulo no IMDb. */
+  imdb: string;
   /** Ponto focal horizontal da foto, 0 a 1. A tela expandida quer o rosto a
    *  direita, onde o painel de desfoque nao alcanca; o card do deck recorta em
    *  volta deste ponto. Mesma ideia do `focus` de lib/sections.ts. Padrao 0.5
@@ -24,6 +30,9 @@ export const CHARACTERS: readonly Character[] = [
     story:
       "Sofia Coppola gives her almost no dialogue and asks her to carry the film anyway. Cleo trails her father through the Chateau Marmont, cooks him eggs benedict, skates figures in an empty rink, and never once says out loud that he is disappearing. The whole performance lives in what she notices and decides not to mention.",
     still: "/images/characters/cleo-somewhere.jpg",
+    genre: "Drama",
+    credit: "Directed by Sofia Coppola",
+    imdb: "https://www.imdb.com/title/tt1421051/",
   },
   {
     id: "alice",
@@ -34,6 +43,9 @@ export const CHARACTERS: readonly Character[] = [
     story:
       "The film is about a monster, a train wreck and a group of boys with a camera. The scene everyone remembers is a rehearsal on a station platform, where Alice steps into their bad amateur movie and quietly turns it into acting. The boys stop breathing. So does the audience.",
     still: "/images/characters/alice-super8.webp",
+    genre: "Sci-Fi / Thriller",
+    credit: "Directed by J.J. Abrams",
+    imdb: "https://www.imdb.com/title/tt1650062/",
   },
   {
     id: "ginger",
@@ -44,6 +56,9 @@ export const CHARACTERS: readonly Character[] = [
     story:
       "London, 1962, with the missile crisis closing in. Ginger writes poems about nuclear annihilation partly because it is easier than writing about her best friend and her father. Sally Potter keeps the camera close, and Fanning holds an English accent and a slow collapse in the same shot.",
     still: "/images/characters/ginger-ginger-rosa.jpg",
+    genre: "Drama",
+    credit: "Directed by Sally Potter",
+    imdb: "https://www.imdb.com/title/tt2017486/",
   },
   {
     id: "aurora",
@@ -54,6 +69,9 @@ export const CHARACTERS: readonly Character[] = [
     story:
       "The part is a trap: a princess best known for sleeping through her own story, in a film that belongs to the woman who cursed her. Fanning plays her with no irony at all, and that straightness is exactly what lets the ending land as grief instead of camp.",
     still: "/images/characters/princess-aurora-maleficent.jpg",
+    genre: "Fantasy / Adventure",
+    credit: "Directed by Robert Stromberg",
+    imdb: "https://www.imdb.com/title/tt1587310/",
   },
   {
     id: "jesse",
@@ -64,6 +82,9 @@ export const CHARACTERS: readonly Character[] = [
     story:
       "A sixteen-year-old arrives in Los Angeles to model and the city sets about consuming her. Refn frames her as an object before he frames her as a person, and Fanning plays the precise moment innocence works out that it is worth something — and starts spending it.",
     still: "/images/characters/jesse-the-neon-demon.avif",
+    genre: "Horror / Thriller",
+    credit: "Directed by Nicolas Winding Refn",
+    imdb: "https://www.imdb.com/title/tt1974419/",
   },
   {
     id: "alicia",
@@ -74,6 +95,9 @@ export const CHARACTERS: readonly Character[] = [
     story:
       "The oldest girl in a Virginia seminary in the middle of the Civil War, watching a wounded Union soldier and doing arithmetic. Fanning gives boredom a temperature. Almost nothing she does is innocent, and almost nothing she does is explicit, which is the whole trick of the film.",
     still: "/images/characters/alicia-the-beguiled.jpg",
+    genre: "Drama / Thriller",
+    credit: "Directed by Sofia Coppola",
+    imdb: "https://www.imdb.com/title/tt4340650/",
   },
   {
     id: "violet",
@@ -84,6 +108,9 @@ export const CHARACTERS: readonly Character[] = [
     story:
       "A Polish girl on the Isle of Wight singing her way off a farm and onto a talent show stage. Fanning sang it herself, which matters: the film's argument is that the voice is simultaneously the way out and the next cage, and you can hear her decide to take it anyway.",
     still: "/images/characters/violet-valenski-teen-spirit.avif",
+    genre: "Drama / Music",
+    credit: "Directed by Max Minghella",
+    imdb: "https://www.imdb.com/title/tt6911844/",
   },
   {
     id: "catherine",
@@ -94,5 +121,8 @@ export const CHARACTERS: readonly Character[] = [
     story:
       "Tony McNamara's court runs on insult comedy delivered at a scream, and Fanning plays a young empress who is idealistic, monstrous, ridiculous and entirely serious about the enlightenment — frequently inside a single sentence. Three seasons of holding a tone almost nobody else could hold.",
     still: "/images/characters/catherine-the-great.jpg",
+    genre: "Comedy / Drama",
+    credit: "Created by Tony McNamara",
+    imdb: "https://www.imdb.com/title/tt2235759/",
   },
 ];
