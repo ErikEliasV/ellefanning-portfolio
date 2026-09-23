@@ -5,8 +5,13 @@ export type Character = {
   year: number;
   note: string;
   story: string;
-  still?: string;
+  still: string;
   altStill?: string;
+  /** Ponto focal horizontal da foto, 0 a 1. A tela expandida quer o rosto a
+   *  direita, onde o painel de desfoque nao alcanca; o card do deck recorta em
+   *  volta deste ponto. Mesma ideia do `focus` de lib/sections.ts. Padrao 0.5
+   *  ate a Tarefa 11 escolher o ponto de cada foto. */
+  focus?: number;
 };
 
 export const CHARACTERS: readonly Character[] = [

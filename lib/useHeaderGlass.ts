@@ -8,7 +8,7 @@ import { asset } from "@/lib/asset";
 import {
   entryLockAt,
   trackVh as characterTrackVh,
-} from "@/lib/characterStage";
+} from "@/lib/characterDeck";
 import { isNarrow, phases, trackVh } from "@/lib/filmStage";
 import { gooPath } from "@/lib/headerGoo";
 import { isLocked, isReduced, onTick, scrollTo } from "@/lib/scroll";
@@ -96,8 +96,8 @@ function filmEntryTarget(): string | number {
 // topo de `.character-section` nao e a secao, e a tela branca em que a
 // varredura preta ainda nem comecou -- e pior, ela agora sobe 100svh para
 // dentro do rabo da filmografia, entao `#characters` pousa dentro do palco
-// alheio. O alvo e `entryLockAt()`: a varredura fechada, o titulo parado e
-// branco no meio da tela.
+// alheio. O alvo e `entryLockAt()`: primeiro personagem travado no centro,
+// com a legenda ja assentada.
 //
 // O vh sai da altura JA APLICADA em `.character-track` dividida por
 // `trackVh()`, e nao de uma medicao nova, pelo mesmo motivo de la: e o unico
@@ -107,12 +107,13 @@ function characterEntryTarget(): string | number {
   if (!track) return "#characters";
 
   const reduced = isReduced();
+  const narrow = isNarrow();
   const rect = track.getBoundingClientRect();
-  const vh = rect.height / characterTrackVh(reduced);
+  const vh = rect.height / characterTrackVh(reduced, narrow);
   if (!vh) return "#characters";
 
   const trackTop = rect.top + window.scrollY;
-  return trackTop + entryLockAt(reduced) * vh;
+  return trackTop + entryLockAt(reduced, narrow) * vh;
 }
 
 export function useHeaderGlass() {

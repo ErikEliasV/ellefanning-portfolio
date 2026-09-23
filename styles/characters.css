@@ -1,230 +1,178 @@
-.character-section {
-  /* The heading is meant to bleed past the header padding, and at phone widths
-     the tail of the word reached past the viewport and opened a sideways
-     scroll. Clip rather than hide, so nothing here becomes a scrollport. */
-  overflow-x: clip;
-  background-color: var(--color-ink-900);
-  color: var(--color-paper-000);
+/* O palco de CHARACTERS: o leque de oito fotos que o scroll atravessa, a
+   palavra ao fundo e a legenda que sai de tras da foto do centro.
 
-  /* A seção sobe uma tela inteira para dentro do rabo da filmografia, e esta é
-     a correção do defeito que mais se sentia aqui.
+   Todo numero de geometria mora em lib/characterDeck.ts e chega aqui como
+   medida escrita pelo hook. O que fica no CSS sao as proporcoes que nao mudam
+   com o scroll -- tamanho do card, raio, faixa da legenda -- e elas saem dos
+   mesmos numeros do Figma que o modulo usa. Quando um lado mudar, o outro tem
+   que mudar junto: sao a mesma composicao medida duas vezes. */
 
-     O palco da filmografia é sticky e mede 100svh, então ele leva exatamente
-     uma tela para se desgrudar e sair de cena. Nesse trecho o pin já soltou e a
-     trilha de characters ainda não começou: medido, `--fall`, `--reveal` e
-     `--wipe` ficam todos em zero enquanto o palco desliza de 0 a -973px. É uma
-     tela de rolagem crua, a 1:1, logo depois de quinze filmes que passavam a
-     62vh cada -- e o salto de ritmo lê como o site apressando, ou quebrando.
-
-     Com o -100svh o palco daqui prende no exato quadro em que o de lá solta. A
-     saída da filmografia acontece escondida atrás deste palco, que é branco no
-     mesmo tom, e o buraco vira coreografia. Encurta a página em uma tela e
-     ainda assim dá o dobro de percurso animado.
-
-     O fundo preto da seção não vaza para cima por causa disto: o palco nasce na
-     borda de cima da seção e tem 100svh, então é sempre ele que se vê primeiro
-     quando a seção sobe pela base da tela. */
-  margin-top: -100svh;
-  /* Precisa pintar acima do .film-stage, que é sticky, enquanto os dois se
-     sobrepõem -- senão o painel preto entraria por baixo do palco de lá. */
-  z-index: 1;
-
-  /* O corpo do título e o respiro abaixo dele vivem aqui, e não soltos na
-     regra do .character-heading, porque o .character-shell precisa dos três
-     para calcular quanto subir. O respiro é o mesmo padding-block que o
-     .character-header usava antes do palco existir. */
-  --heading-size: 19.1vw;
-  --heading-line: 0.89;
-  --heading-gap: clamp(20px, 2.441vw, 47px);
-}
-
-.character-shell {
-  width: 94.27%;
-  margin-inline: auto;
-
-  /* A grade sobe para debaixo do palco. O título fica centrado no palco, então
-     a borda de baixo dele cai a meia linha do centro, e daí até o fim do palco
-     sobra quase meia tela de preto -- era esse o vão grande demais. Subindo
-     `50svh menos a meia linha`, a grade encosta exatamente na base do título; o
-     --heading-gap devolve o respiro que o cabeçalho antigo tinha.
-
-     A conta sai dos tokens, e não de um número medido numa tela só: mudar o
-     corpo do título reajusta o vão sozinho. Enquanto o palco está preso ele
-     cobre a tela inteira e esconde o que a grade invadiu -- sticky é
-     posicionado e o shell não, então o palco pinta por cima sem precisar de
-     z-index. */
-  margin-top: calc(
-    -50svh + (var(--heading-size) * var(--heading-line)) / 2 +
-      var(--heading-gap)
-  );
-}
-
-/* A entrada. `--slide` e `--wipe` são escritos a cada quadro por
-   lib/useCharacterStage.ts; 1 é o estado assentado, e é o valor inicial de
-   propósito -- sem JS a seção fica vestida, preta e com o título no lugar, em
-   vez de pré-armada esperando um sinal que não vem. */
-@property --slide {
+/* Os escalares do scroll. 1 e o estado assentado, e e o valor inicial de
+   proposito: sem JS a secao fica vestida -- preta, com a palavra no lugar e a
+   legenda a vista -- em vez de pre-armada esperando um sinal que nao vem. */
+@property --enter {
   syntax: "<number>";
   inherits: true;
   initial-value: 1;
 }
 
-@property --wipe {
-  syntax: "<number>";
-  inherits: true;
-  initial-value: 1;
-}
-
-.character-track {
-  position: relative;
-  /* A altura real é escrita pelo hook, em px, a partir de trackVh(). Este
-     fallback é o que o palco tem para desenhar antes da primeira medição, e
-     tem que acompanhar o ENTRY de lib/characterStage.ts: 1 de palco + 1 de
-     percurso. */
-  height: 200svh;
-}
-
-.character-stage {
-  position: sticky;
-  top: 0;
-  height: 100svh;
-  overflow: hidden;
-  isolation: isolate;
-  /* O alvo da varredura. A filmografia entrega a tela branca e o palco começa
-     na mesma cor, então a emenda entre as duas seções não existe -- o que se
-     vê é só o preto chegando por cima. */
-  background-color: var(--color-paper-000);
-}
-
-.character-panel {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  background-color: var(--color-ink-900);
-  /* Recorta pela direita: em --wipe 0 o inset é a largura inteira e não sobra
-     painel nenhum; em 1 o inset é zero e ele cobre tudo. A borda desse inset é
-     a linha que atravessa a tela, e ela anda da esquerda para a direita. */
-  clip-path: inset(0 calc((1 - var(--wipe)) * 100%) 0 0);
-}
-
-.character-veil {
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  /* Exatamente o mesmo recorte do painel, medido contra a mesma caixa. É isso
-     que faz a cópia branca aparecer no passo da borda do preto, glifo a glifo,
-     em vez de um crossfade entre as duas. */
-  clip-path: inset(0 calc((1 - var(--wipe)) * 100%) 0 0);
-  pointer-events: none;
-}
-
-.character-heading {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  margin: 0;
-  padding-inline: clamp(14px, 2.034vw, 39px);
-  font-family: var(--font-editorial);
-  font-weight: 400;
-  font-size: var(--heading-size);
-  line-height: var(--heading-line);
-  letter-spacing: -0.0097em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  /* 100vw e não 100%: a palavra é bem mais larga que a tela nesse corpo, e uma
-     porcentagem dela mediria contra a própria largura, dando uma distância de
-     entrada que muda com o tamanho da fonte. */
-  transform: translate(calc((1 - var(--slide)) * 100vw), -50%);
-  pointer-events: none;
-}
-
-.character-heading-ink {
-  z-index: 2;
-  color: var(--color-ink-900);
-}
-
-.character-heading-paper {
-  color: var(--color-paper-000);
-}
-
-.character-list {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  border-top: 1px solid var(--color-periwinkle-400);
-  border-left: 1px solid var(--color-periwinkle-400);
-}
-
-.character-cell {
-  min-width: 0;
-  border-right: 1px solid var(--color-periwinkle-400);
-  border-bottom: 1px solid var(--color-periwinkle-400);
-  /* Cada peça entra presa na própria moldura: sem isto os cartões viajam por
-     cima dos vizinhos no caminho, e duas fotos chegam a se sobrepor. Com o
-     recorte, o que se vê é a foto deslizando para dentro do seu quadro, que é
-     o encaixe que o movimento quer ser. O outline de foco é inset (-2px), e o
-     parallax da imagem já mora dentro do .character-shot, então nada do que
-     precisa aparecer é cortado junto. */
-  overflow: hidden;
-}
-
-.character-card {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  aspect-ratio: 604.667 / 648;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-  overflow: hidden;
-}
-
-.character-shot {
-  position: relative;
-  display: block;
-  height: 85.4%;
-  overflow: hidden;
-  background-color: var(--color-ink-800);
-  transition: height var(--duration-slow) var(--ease-out);
-}
-
-.character-card.is-open .character-shot {
-  height: 40.2%;
-}
-
-@property --sat {
-  syntax: "<number>";
-  inherits: true;
-  initial-value: 1;
-}
-
-/* Hover has to be able to overrule the scroll, so it rides its own scalar
-   instead of the filter: --sat is written every frame by the scrub and must
-   not carry a transition, --lift is the one that eases. */
-@property --lift {
+@property --leave {
   syntax: "<number>";
   inherits: true;
   initial-value: 0;
 }
 
-.character-image {
-  object-fit: cover;
-  filter: grayscale(clamp(0, calc(1 - var(--sat) - var(--lift)), 1))
-    contrast(calc(1.06 + var(--lift) * 0.1))
-    brightness(calc(1 + var(--lift) * 0.04));
-  transition: --lift var(--duration-base) var(--ease-out);
+@property --floor {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
 }
 
-@media (hover: hover) {
-  .character-card:hover .character-image {
-    --lift: 1;
-  }
+@property --settle {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+
+@property --drift {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+/* Estes dois sao por card, entao nao herdam: cada um recebe o seu do hook. */
+@property --dim {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
+
+@property --mirror {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+
+.character-section {
+  /* A palavra sangra alem do respiro da pagina, e no telefone o rabo dela
+     passava da borda e abria rolagem lateral. Clip, e nao hidden, para nada
+     aqui virar um scrollport. */
+  overflow-x: clip;
+  background-color: var(--color-ink-850);
+  color: var(--color-paper-000);
+
+  /* A secao sobe uma tela inteira para dentro do rabo da filmografia. O palco
+     de la e sticky e mede 100svh, entao leva exatamente uma tela para se
+     desgrudar e sair de cena; sem isto sobra uma tela de rolagem crua entre as
+     duas secoes, a 1:1, logo depois de quinze filmes passando a 62vh cada -- e
+     o salto de ritmo le como o site apressando. Com o -100svh o palco daqui
+     prende no exato quadro em que o de la solta. */
+  margin-top: -100svh;
+  /* Precisa pintar acima do .film-stage, que e sticky, enquanto os dois se
+     sobrepoem. */
+  z-index: 1;
+}
+
+.character-track {
+  position: relative;
+  /* A altura real e escrita pelo hook, em px, a partir de trackVh(). Este
+     fallback e o que o palco tem antes da primeira medicao, e acompanha o
+     perfil largo: 1 de palco + 5,34 de percurso. */
+  height: 634svh;
+}
+
+.character-stage {
+  /* A composicao inteira, medida do Figma. O corpo da palavra e a altura do
+     card ganham teto em svh porque numa tela larga e baixa (2560x1080) os
+     18,686vw dariam 478px de corpo e a palavra subiria para fora do palco. */
+  --word: min(18.686vw, 38svh);
+  --card-h: min(58svh, 46vw);
+  --card-w: var(--card-h); /* cardRatio 1 no perfil largo */
+  --radius: calc(var(--card-w) * 0.1001); /* 65 / 649 */
+  --band: calc(var(--card-h) * 0.3436); /* 223 / 649 */
+  --deck-y: 57.48%; /* (498 + 1147) / 2 sobre 1431 */
+
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow: hidden;
+  isolation: isolate;
+  /* O alvo da emenda: a filmografia entrega a tela nesta cor, entao o primeiro
+     quadro daqui nao tem costura. Quem traz a tinta e o .character-floor. */
+  background-color: var(--color-paper-000);
+}
+
+.character-floor {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-color: var(--color-ink-850);
+  opacity: var(--floor);
+}
+
+.character-word {
+  position: absolute;
+  z-index: 1;
+  left: 5vw; /* x 96 sobre 1920 */
+  /* A base da caixa de linha cai 0,303 corpos abaixo do topo do deck: e o que
+     poe a barriga das letras atras das fotos, como no no (caixa de linha
+     287,5..606,8, topo do card em 498). A conta mede o topo do deck a partir da
+     BASE do palco, porque e de la que o `bottom` conta. */
+  bottom: calc(42.52% + var(--card-h) / 2 - var(--word) * 0.303);
+  margin: 0;
+  font-family: var(--font-editorial);
+  font-weight: 400;
+  font-size: var(--word);
+  line-height: 0.89; /* 319,265 / 358,778 */
+  letter-spacing: -0.0097em; /* -3,4703 / 358,778 */
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--color-paper-000);
+  /* Entra pela direita e sai pela esquerda. 100vw e nao 100%: a palavra e bem
+     mais larga que a tela nesse corpo, e uma porcentagem dela mediria contra a
+     propria largura, dando uma distancia de entrada que muda com o corpo. */
+  transform: translateX(calc((1 - var(--enter)) * 100vw - var(--leave) * 100vw));
+  pointer-events: none;
+}
+
+.character-deck {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  top: var(--deck-y);
+  /* A caixa do deck E a caixa do card central. E dela que o hook le a largura
+     de referencia (offsetWidth), e e contra ela que os slots sao medidos. */
+  width: var(--card-w);
+  height: var(--card-h);
+  /* O deck inteiro sai de cena por translacao. Ver o comentario de `leave` em
+     lib/characterDeck.ts: fazer isso pelo `u` pediria um estouro de onze
+     personagens inexistentes. */
+  transform: translate(calc(-50% - var(--leave) * 120vw), -50%);
+}
+
+.character-rail {
+  position: absolute;
+  inset: 0;
+}
+
+.character-card {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  /* O repouso sem JS: todos no tamanho do central, empilhados no centro. O hook
+     escreve largura, altura, translacao e z-index por quadro; ate ele ligar, e
+     isto que se ve. */
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius);
+  background: none;
+  color: inherit;
+  font: inherit;
+  overflow: hidden;
+  cursor: pointer;
+  transform: translate(-50%, -50%);
 }
 
 .character-card:focus-visible {
@@ -232,208 +180,94 @@
   outline-offset: -2px;
 }
 
-/* On desktop the invitation is the cursor label; without a pointer the card
-   has to say it out loud. */
-.character-cue {
+.character-card-img {
+  object-fit: cover;
+  /* O ponto focal por personagem. A tela expandida quer o rosto a direita, onde
+     o painel de desfoque nao alcanca; o card recorta em volta deste ponto. */
+  object-position: calc(var(--focus, 0.5) * 100%) 50%;
+  filter: brightness(var(--dim));
+}
+
+/* No desktop o convite e o rotulo do cursor; sem ponteiro o card tem que dizer
+   em voz alta. Acompanha a legenda: durante a travessia nao ha o que abrir. */
+.character-card-cue {
   position: absolute;
   right: clamp(10px, 0.833vw, 16px);
   bottom: clamp(10px, 0.833vw, 16px);
   z-index: 2;
   display: none;
   align-items: center;
-  min-height: 32px;
+  min-height: var(--tap);
   border: 1px solid var(--color-rose-400);
   padding-inline: 14px;
   background-color: rgba(19, 19, 19, 0.72);
   font-family: var(--font-text);
   font-weight: 700;
-  font-size: var(--text-micro);
+  font-size: var(--text-label-sm);
   line-height: 1;
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
   color: var(--color-rose-400);
+  opacity: var(--settle);
 }
 
 @media (hover: none) {
-  .character-cue {
+  .character-card-cue {
     display: inline-flex;
   }
 }
 
-.character-plate {
-  position: relative;
+.character-cap {
+  position: absolute;
+  z-index: 3;
+  right: 0;
+  bottom: 0;
+  left: 0;
   display: flex;
-  flex: 1;
   flex-direction: column;
-  min-height: 0;
+  align-items: center;
+  justify-content: flex-end;
+  height: var(--band);
+  padding-bottom: calc(var(--card-h) * 0.072); /* 47 / 649 */
+  border-bottom-left-radius: var(--radius);
+  border-bottom-right-radius: var(--radius);
+  /* Quem trabalha e o desfoque, nao a cor: no Figma o fundo da faixa e
+     rgba(50,50,50,0.02), que sozinho nao se ve. */
+  background-color: rgba(50, 50, 50, 0.02);
+  /* O desfoque sobe junto com o texto: a faixa nao pode aparecer antes daquilo
+     que ela existe para sustentar. */
+  backdrop-filter: blur(calc(var(--settle) * 6.75px));
+  -webkit-backdrop-filter: blur(calc(var(--settle) * 6.75px));
+  /* E este overflow que faz o texto nascer ATRAS da borda de baixo da foto. */
   overflow: hidden;
-  padding-inline: clamp(14px, 1.927vw, 37px);
-  padding-block: clamp(8px, 0.573vw, 11px);
-  background-color: var(--color-ink-900);
-  transition:
-    padding-block var(--duration-slow) var(--ease-out),
-    transform var(--duration-base) var(--ease-out);
+  pointer-events: none;
 }
 
-@media (hover: hover) {
-  .character-card:hover .character-plate {
-    transform: translateY(calc(-1 * clamp(9px, 0.729vw, 14px)));
-  }
-}
-
-.character-card.is-open .character-plate {
-  padding-block: clamp(16px, 1.875vw, 36px);
-}
-
-.character-lead {
+.character-cap-block {
   display: flex;
   flex-direction: column;
-  gap: 0;
-  transition:
-    gap var(--duration-slow) var(--ease-out),
-    transform var(--duration-base) var(--ease-out);
+  align-items: center;
+  gap: calc(var(--card-h) * 0.0077); /* 5 / 649 */
+  text-align: center;
 }
 
-@media (hover: hover) {
-  .character-card:hover .character-lead {
-    transform: translateY(calc(-1 * clamp(3px, 0.26vw, 5px)));
-  }
-}
-
-.character-card.is-open .character-lead {
-  gap: clamp(4px, 0.365vw, 7px);
-}
-
-.character-index {
-  font-family: var(--font-text);
-  font-weight: 700;
-  font-size: var(--text-micro);
-  line-height: 1.6;
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-  color: var(--color-rose-400);
-  transition:
-    transform var(--duration-reveal) var(--ease-out),
-    opacity var(--duration-base) var(--ease-out);
-}
-
-.character-card.is-open .character-index {
-  transform: translateY(-120%);
-  opacity: 0;
-}
-
-.character-name {
+.character-cap-name {
   font-family: var(--font-text);
   font-weight: 400;
-  font-size: clamp(20px, 1.667vw, 32px);
-  line-height: 0.92;
-  text-transform: uppercase;
+  font-size: calc(var(--card-h) * 0.0575); /* 37,295 / 649 */
+  line-height: 1.15;
   color: var(--color-paper-000);
 }
 
-.character-credit {
-  font-family: var(--font-text);
-  font-weight: 300;
-  font-size: var(--text-micro);
-  line-height: 1.6;
-  letter-spacing: 0.8em;
-  text-transform: uppercase;
-  color: var(--color-rose-400);
-}
-
-.character-story {
-  flex: 1;
-  min-height: 0;
-  margin-top: 0;
-  overflow: hidden;
-  font-family: var(--font-text);
-  font-size: var(--text-micro);
-  line-height: 1.6;
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
+.character-cap-film {
+  font-family: var(--font-editorial);
+  font-weight: 400;
+  font-size: calc(var(--card-h) * 0.0575);
+  line-height: 1.15;
   color: var(--color-paper-000);
-  clip-path: inset(0 0 100% 0);
-  transition:
-    clip-path var(--duration-reveal) var(--ease-out),
-    margin-top var(--duration-slow) var(--ease-out);
 }
 
-.character-card.is-open .character-story {
-  margin-top: clamp(14px, 1.615vw, 31px);
-  clip-path: inset(0 0 0 0);
-}
-
-@media (width < 64rem) {
-  .character-list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  /* The card was a fixed-ratio box whose plate got a fixed share of the height.
-     That share only fits the credit line at desktop column widths; narrower
-     than that it cut the film and year off. Below 64rem the photo keeps the
-     ratio and the plate sizes to what it holds. */
-  .character-card {
-    aspect-ratio: auto;
-  }
-
-  .character-shot {
-    height: auto;
-    aspect-ratio: 604.667 / 553.4;
-  }
-
-  .character-card.is-open .character-shot {
-    height: auto;
-    aspect-ratio: 604.667 / 260.5;
-  }
-
-  .character-plate {
-    flex: 1 0 auto;
-  }
-
-  /* A grade passa a respirar o mesmo respiro lateral do resto da pagina, em
-     vez de uma porcentagem propria. 94.27% davam 10,5px de folga numa tela de
-     360 -- metade do --gutter-page que todas as outras secoes usam. */
-  .character-shell {
-    width: auto;
-    margin-inline: var(--gutter-page);
-  }
-
-  /* O paragrafo saia a 13px, e e o texto mais longo do site: sete linhas de
-     caixa-alta com tracking. A fonte e o tratamento ficam (sao a voz da
-     secao); o que muda e o corpo, o tracking, que aperta um pouco para nao
-     esticar a linha, e a entrelinha, que abre. */
-  .character-story {
-    flex: 0 0 auto;
-    height: 0;
-    font-size: var(--type-read);
-    line-height: 1.55;
-    letter-spacing: 0.06em;
-  }
-
-  .character-card.is-open .character-story {
-    height: auto;
-  }
-
-  /* Os dois rotulos do cabecalho da placa tambem saiam do piso: 10px com meio
-     em de tracking le como decoracao, nao como credito. */
-  .character-index,
-  .character-credit {
-    font-size: var(--text-label-sm);
-  }
-
-  /* O chip e o unico convite que existe no toque, e o projeto adota 44px. */
-  .character-cue {
-    min-height: var(--tap);
-    font-size: var(--text-label-sm);
-  }
-}
-
-@media (width < 40rem) {
-  .character-list {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .character-credit {
-    letter-spacing: 0.5em;
-  }
+/* Textura de fundo do telefone. Sem largura de tela estreita nao existem. */
+.character-drift {
+  display: none;
 }
