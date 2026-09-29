@@ -8,15 +8,14 @@ import { isReduced, onTick } from "@/lib/scroll";
 
 export const HERO_FIELD = "/images/ellefanning-hero-field.webp";
 
-const WASH_PAPER = 0.86;
+// O mosaico ja nasce rosa -- ver o mesmo par de constantes em lib/heroCloud.ts,
+// que tem de concordar com este. A lavagem de papel para rosa saiu junto com o
+// primeiro estado branco; o que continua andando com a rolagem e a grade.
 const WASH_ROSE = 0.82;
 const CONTRAST = 1.12;
 const LINE_PX = 2;
-const PAPER: [number, number, number] = [0.976, 0.949, 0.957];
 const ROSE: [number, number, number] = [0.859, 0.478, 0.592];
-const LINE_PAPER: [number, number, number] = [0.984, 0.969, 0.973];
 const LINE_ROSE: [number, number, number] = [0.914, 0.627, 0.71];
-const WASH_HOLD = 0.08;
 const MAX_DPR = 2;
 
 const WAVE_AMP = 0.019;
@@ -113,10 +112,6 @@ function compile(gl: WebGLRenderingContext, type: number, source: string) {
   return shader;
 }
 
-function blend(a: [number, number, number], b: [number, number, number], k: number) {
-  return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k];
-}
-
 // `off` is handed over once the point cloud has finished crossfading in, so
 // this renderer stops burning GPU and releases its WebGL context.
 export function useHeroField(off = false) {
@@ -187,6 +182,9 @@ export function useHeroField(off = false) {
     const uPointerA = gl.getUniformLocation(program, "uPointerA");
 
     gl.uniform1f(gl.getUniformLocation(program, "uContrast"), CONTRAST);
+    gl.uniform1f(uWash, WASH_ROSE);
+    gl.uniform3f(uTint, ROSE[0], ROSE[1], ROSE[2]);
+    gl.uniform3f(uLine, LINE_ROSE[0], LINE_ROSE[1], LINE_ROSE[2]);
 
     const texture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -229,16 +227,12 @@ export function useHeroField(off = false) {
       }
 
       const p = value.current;
-      const ramp = Math.min(Math.max((p - WASH_HOLD) / (1 - WASH_HOLD), 0), 1);
-      const wash = ramp * ramp * (3 - 2 * ramp);
       // A contagem de colunas sai da tela, nao de uma constante: ver o porque
       // em lib/heroGrid.ts. Medida em px de CSS (clientWidth), e nao nos px de
       // dispositivo do canvas, senao o mesmo telefone teria mosaicos
       // diferentes conforme o devicePixelRatio.
       const rest = gridCols(node.clientWidth, node.clientHeight);
       const cell = width / (rest + (coarseCols(rest) - rest) * p);
-      const tint = blend(PAPER, ROSE, wash);
-      const line = blend(LINE_PAPER, LINE_ROSE, wash);
 
       cols = Math.max(width / cell, 1);
       rows = Math.max(height / cell, 1);
@@ -248,9 +242,6 @@ export function useHeroField(off = false) {
       gl.uniform1f(uTexRatio, ratio);
       gl.uniform1f(uCell, cell);
       gl.uniform1f(uGap, (LINE_PX * dpr) / cell);
-      gl.uniform1f(uWash, WASH_PAPER + (WASH_ROSE - WASH_PAPER) * wash);
-      gl.uniform3f(uTint, tint[0], tint[1], tint[2]);
-      gl.uniform3f(uLine, line[0], line[1], line[2]);
       gl.uniform1f(uTime, clock);
       gl.uniform2f(uPointer, atX, atY);
       gl.uniform1f(uPointerA, atA);

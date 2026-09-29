@@ -4,12 +4,19 @@ import { useEffect, useRef, useState } from "react";
 import {
   NARROW_QUERY,
   cursor,
-  depth,
-  geometry,
+  deckGeometry,
+  entryLockAt,
+  pose,
   trackVh,
 } from "@/lib/characterDeck";
 import { isReduced, onTick } from "@/lib/scroll";
 import { onViewport, smallViewportHeight } from "@/lib/viewport";
+
+// Degraus de meio pixel no desfoque do pe. `backdrop-filter: blur()` cujo raio
+// muda a cada quadro forca rerasterizacao; quantizado, o valor muda raramente
+// em vez de sempre. Mesmo degrau que `depth()` aplica no arco do telefone, e
+// pela mesma razao.
+const HAZE_STEP = 0.5;
 
 export function useCharacterDeck(count: number) {
   const track = useRef<HTMLDivElement>(null);
@@ -23,22 +30,45 @@ export function useCharacterDeck(count: number) {
   const lastActive = useRef(0);
 
   useEffect(() => {
-    // Declarada antes de paint() porque manda na geometria E no tempo: o perfil
-    // estreito tem o leque mais apertado e o ciclo mais curto.
+    // Declarada antes de paint() porque manda na composicao E no tempo: o
+    // perfil estreito tem o arco, o ciclo mais curto e nenhuma rampa.
     const narrow = window.matchMedia(NARROW_QUERY);
 
     let vh = 0;
-    let cardW = 0;
+    let cardH = 0;
 
+    // Tres leituras de layout, e so na medicao -- nunca por quadro.
+    //
+    // Aqui moravam mais quatro. O trilho antigo precisava saber onde a fileira
+    // encostava na borda visivel, e tirava isso da caixa do <h2>: lia
+    // `offsetLeft`/`offsetWidth` da palavra, `offsetLeft`/`offsetTop` do deck e
+    // a altura do palco, e dali saiam `edge`, `fall` e o tamanho da rampa. Isso
+    // acabou junto com o trilho. O monte para sozinho no terceiro slot, que e
+    // uma constante de lib/characterDeck.ts, entao a altura da secao deixou de
+    // depender da largura da janela e da metrica da fonte. Foi com essas quatro
+    // leituras que saiu tambem o ResizeObserver que vigiava a palavra: ele
+    // existia porque a primeira medicao pegava o <h2> com a fonte de reserva e
+    // a fileira inteira ficava presa naquele numero. Sem ninguem medindo texto,
+    // nao ha o que re-medir quando a webfont chega.
     function measure() {
       const trackEl = track.current;
       const deckEl = deck.current;
       if (!trackEl || !deckEl) return;
+
       vh = smallViewportHeight();
-      trackEl.style.height = `${vh * trackVh(isReduced(), narrow.matches)}px`;
-      // A caixa do deck E a caixa do card central, e os slots sao medidos em
-      // larguras dela. Uma leitura de layout por medicao, nunca por quadro.
-      cardW = deckEl.offsetWidth;
+      // A ALTURA do card e a unidade de tudo no monte, porque e a unica medida
+      // que nao muda em fase nenhuma: a largura projetada sai do giro, e a
+      // caixa em si fica sempre do tamanho do hero.
+      cardH = deckEl.offsetHeight;
+
+      const phone = narrow.matches;
+      const reduced = isReduced();
+
+      trackEl.style.height = `${vh * trackVh(reduced, phone)}px`;
+      // O alvo do link CHARACTERS do header, em px a partir do topo da trilha.
+      // Ver `characterEntryTarget` em lib/useHeaderGlass.ts: ler a resposta
+      // pronta e o que impede os dois lados de discordarem sobre qual vh vale.
+      trackEl.dataset.entry = String(vh * entryLockAt(reduced, phone));
     }
 
     function paint() {
@@ -47,41 +77,69 @@ export function useCharacterDeck(count: number) {
       if (!trackEl || !railEl || vh === 0) return;
 
       const reduced = isReduced();
-      const g = geometry(narrow.matches);
+      const phone = narrow.matches;
       const p = -trackEl.getBoundingClientRect().top / vh;
-      const c = cursor(p, reduced, narrow.matches);
+      const c = cursor(p, reduced, phone);
 
       const set = (name: string, value: string) =>
         trackEl.style.setProperty(name, value);
 
+      // A ordem e a da coreografia, do primeiro tempo ao ultimo: a tinta, a
+      // palavra entrando, o monte subindo, o monte saindo, a palavra saindo.
+      set("--wipe", c.wipe.toFixed(4));
       set("--enter", c.enter.toFixed(4));
+      set("--rise", c.rise.toFixed(4));
+      set("--lift", c.lift.toFixed(4));
       set("--leave", c.leave.toFixed(4));
-      set("--floor", c.floor.toFixed(4));
       set("--settle", c.settle.toFixed(4));
       set("--drift", c.drift.toFixed(3));
 
+      const card = (i: number) => railEl.children[i] as HTMLElement | undefined;
+
+      const k = deckGeometry(phone);
+      // A perspectiva nao muda de card para card nem de quadro para quadro:
+      // uma conta so, fora do laco.
+      const persp = (k.persp * cardH).toFixed(0);
+
       for (let i = 0; i < count; i += 1) {
-        const card = railEl.children[i] as HTMLElement | undefined;
-        if (!card) continue;
+        const el = card(i);
+        if (!el) continue;
+        const q = pose(i - c.u, k);
 
-        const d = depth(i, c.u, g);
-
-        // Fora da janela de render o card nao e desenhado. `live` e funcao pura
-        // de `u`, entao isto desfaz sozinho subindo a pagina.
-        // Tarefa 13: este laco inteiro vira um `transform` so. `live`,
-        // `width`, `height`, `zIndex` e `mirror` deixaram de existir em
-        // `depth()` -- a janela de render some (as oito sao sempre desenhadas),
-        // o encurtamento passa a vir do rotateY e a ordem, da profundidade.
-        // Comentado aqui apenas para a arvore compilar entre as duas tarefas.
+        // A ORDEM e o assunto desta linha, e ela se le da direita para a
+        // esquerda -- a ultima funcao e a primeira a ser aplicada.
         //
-        // if (!d.live) { card.style.visibility = "hidden"; continue; }
-        // card.style.visibility = "visible";
-        // card.style.width = ...; card.style.height = ...;
-        // card.style.zIndex = String(d.z);
-        // card.style.setProperty("--mirror", d.mirror.toFixed(4));
-        card.style.transform =
-          `translate(calc(-50% + ${(d.x * cardW).toFixed(2)}px), -50%)`;
-        card.style.setProperty("--dim", d.dim.toFixed(4));
+        //   rotateY     gira a carta em torno do proprio eixo vertical;
+        //   perspective projeta esse giro, com o ponto de fuga no centro do
+        //               PROPRIO card, que e o que faz o trapezio ser igual em
+        //               qualquer x (ver o comentario de Z_TOP no modulo);
+        //   scale       devolve a aresta de perto a altura do hero, porque no
+        //               no os sete cards tem a mesma caixa;
+        //   translate   leva o resultado ja projetado para o lugar dele.
+        //
+        // Trocar `translate` de lado poria cada foto descrevendo um arco em
+        // volta do centro do palco em vez de girar onde esta; trocar `scale` de
+        // lado o faria escalar a carta ANTES da projecao, e a compensacao
+        // deixaria de compensar.
+        el.style.transform =
+          `translate(calc(-50% + ${(q.x * cardH).toFixed(2)}px), -50%)` +
+          ` scale(${q.scale.toFixed(4)})` +
+          ` perspective(${persp}px)` +
+          ` rotateY(${q.turn.toFixed(3)}deg)`;
+
+        el.style.zIndex = String(q.z);
+
+        // O raio do desfoque do pe. Quantizado porque `filter: blur()` cujo
+        // raio muda a cada quadro forca rerasterizacao -- e note que ele so
+        // muda enquanto |offset| < 1: passado o primeiro slot `pose()` devolve
+        // o maximo e nao mexe mais. Na pratica sao os dois cards em transito
+        // que recalculam, e os outros seis ficam parados.
+        const haze = Math.round((q.haze * cardH) / HAZE_STEP) * HAZE_STEP;
+        el.style.setProperty("--haze", `${haze}px`);
+        // Muda tres vezes no percurso inteiro (-1, 0, 1). Quem le e a sombra,
+        // que aponta para o centro dos dois lados, como no no.
+        el.style.setProperty("--side", String(q.side));
+        el.style.setProperty("--shade", q.shade.toFixed(4));
       }
 
       if (c.active !== lastActive.current) {
@@ -101,9 +159,27 @@ export function useCharacterDeck(count: number) {
       paint();
     });
 
+    // E `onViewport` tambem nao basta, porque ele so escuta a JANELA. `cardH` e
+    // a unidade de TODA a geometria do monte -- posicao, perspectiva e desfoque
+    // saem multiplicados por ela -- e a caixa do deck pode mudar de tamanho sem
+    // a janela mudar: uma barra de rolagem que aparece, o `svh` se acomodando
+    // quando a barra do navegador recolhe, um `--card-h` trocado a quente. Foi
+    // exatamente assim que isto apareceu: o CSS passou o card de 532 para 649
+    // por HMR, `measure()` nao rodou, e a fileira inteira ficou 18% curta com o
+    // palco pintando normalmente -- nenhum erro, so a composicao errada.
+    //
+    // Nao ha laco: o que `measure()` escreve e a altura da TRILHA, e a caixa do
+    // deck sai de vw e svh, que a altura da trilha nao move.
+    const watchDeck = new ResizeObserver(() => {
+      measure();
+      paint();
+    });
+    if (deck.current) watchDeck.observe(deck.current);
+
     return () => {
       untick();
       unwatch();
+      watchDeck.disconnect();
     };
   }, [count]);
 

@@ -144,29 +144,41 @@ export function SiteHeader() {
         <span className="pill-label">{menuOpen ? "Close" : "Menu"}</span>
       </button>
 
+      {/* O involucro e de tela cheia e transparente: ele so existe para pegar o
+          toque fora do painel, que agora nao cobre mais a tela. Mesma tecnica
+          do modal da personagem -- comparar target com currentTarget acerta o
+          fundo sem apanhar nenhum clique de dentro. */}
       <div
         ref={menuSheet}
         id="site-menu"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Menu"
         className="hdr-sheet"
         data-open={menuOpen ? "" : undefined}
+        onClick={(event) => {
+          if (event.target === event.currentTarget) menuClose();
+        }}
       >
-        <nav className="hdr-sheet-nav" aria-label="Sections">
-          {SECTIONS.map((section, index) => (
-            <a
-              key={section.id}
-              href={`#${section.id}`}
-              className="hdr-sheet-link"
-              style={{ "--at": index } as CSSProperties}
-              aria-current={active === section.id ? "true" : undefined}
-              onClick={(event) => jump(event, section.id)}
-            >
-              <span aria-hidden className="hdr-sheet-num">
-                {two(index + 1)}
-              </span>
-              <span className="hdr-sheet-word">{section.label}</span>
-            </a>
-          ))}
-        </nav>
+        <div className="hdr-sheet-panel">
+          <nav className="hdr-sheet-nav" aria-label="Sections">
+            {SECTIONS.map((section, index) => (
+              <a
+                key={section.id}
+                href={`#${section.id}`}
+                className="hdr-sheet-link"
+                style={{ "--at": index } as CSSProperties}
+                aria-current={active === section.id ? "true" : undefined}
+                onClick={(event) => jump(event, section.id)}
+              >
+                <span aria-hidden className="hdr-sheet-num">
+                  {two(index + 1)}
+                </span>
+                <span className="hdr-sheet-word">{section.label}</span>
+              </a>
+            ))}
+          </nav>
+        </div>
       </div>
     </>
   );

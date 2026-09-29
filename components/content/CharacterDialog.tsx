@@ -128,6 +128,15 @@ export function CharacterDialog({
         />
       </div>
 
+      {/* O desfoque da esquerda, em duas camadas, ANTES do veu -- e a ordem do
+          no, onde `Texto e desfoque` aplica o Background blur e so depois pinta
+          o proprio gradiente por cima. Invertido, o gradiente entraria no
+          backdrop e seria borrado junto. Ver o comentario de
+          `.character-dialog-haze` em styles/characters.css para por que sao
+          duas e nao uma. */}
+      <span aria-hidden className="character-dialog-haze character-dialog-haze-1" data-open={open ? "" : undefined} />
+      <span aria-hidden className="character-dialog-haze character-dialog-haze-2" data-open={open ? "" : undefined} />
+
       <div aria-hidden className="character-dialog-veil" data-open={open ? "" : undefined} />
 
       <div className="character-dialog-text" data-open={open ? "" : undefined}>

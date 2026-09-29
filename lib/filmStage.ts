@@ -5,40 +5,88 @@
 export type Geometry = {
   widthVw: number;
   ratio: number;
-  pitchVw: number;
+  /** Eixo do desfile. O largo atravessa a tela; o estreito sobe, de baixo
+   * para cima (node 2527:1748 do Figma). */
+  axis: "x" | "y";
+  /** Passo entre centros de vizinhos: fração de vw no eixo x, de vh no y.
+   * A unidade acompanha o eixo porque o que limita o percurso é a medida da
+   * tela naquela direção — num telefone em retrato um passo em vw seria
+   * curto demais para tirar o pôster de quadro. */
+  pitch: number;
   splitVw: number;
   /** Teto de altura do card, em fração de vh. Só a geometria estreita usa. */
   heightVh?: number;
+  /** Centro do card em relação ao centro do palco, em fração de vh. Positivo
+   * desce. O estreito sobe o pôster para abrir a faixa de baixo, onde agora
+   * mora a palavra. */
+  centerVh?: number;
+  /** Escala do vizinho imediato (a um passo de distância). */
+  nearScale: number;
+  /** Desfoque do vizinho imediato, em px. */
+  nearBlur: number;
+  /** Quanto de cor o vizinho imediato perde, 0 a 1. No Figma o pôster de trás
+   * é `mix-blend-mode: luminosity` sobre papel; como o papel é quase sem
+   * saturação, o resultado é cinza — e `saturate()` chega no mesmo lugar sendo
+   * interpolável e sem abrir contexto de empilhamento. */
+  nearFade: number;
 };
 
 // 539 × 812 sobre canvas de 1920 × 1083, centro exato do quadro. O passo de
 // 0.48 é 1881.5 − 960.5 = 921 entre centros de vizinhos, e o split é metade do
 // vão de 665 entre as palavras.
-const WIDE: Geometry = { widthVw: 0.281, ratio: 812 / 539, pitchVw: 0.48, splitVw: 0.173 };
-
-// Abaixo de 64rem o vão de 0.173 são 65px a 375 de largura e nenhum pôster
-// entra ali. A lógica se inverte: a palavra fica proporcionalmente maior que o
-// vão e o pôster sobrepõe as duas metades já em repouso, o que torna o recorte
-// branco permanente em vez de momentâneo.
-//
-// A resposta a isso não é um vão menor — é não partir a palavra. Medido em
-// 390, 430 e 768 de largura, o pôster caía exatamente sobre o vão e apagava
-// "graphy" e o ano: lia-se "FILMO … HY", ou só "FILMO". Com `splitVw: 0` as
-// duas metades encostam no centro e voltam a ser uma palavra só, que o CSS
-// pendura ACIMA do pôster (ver a media query em styles/filmography.css). Nada
-// mais se sobrepõe, e o recorte branco deixa de ter função.
-//
-// `heightVh` só existe aqui: em tela estreita a largura sozinha não basta para
-// dimensionar o card. Num tablet em retrato (768 × 1024) 0.68vw daria um
-// pôster de 787px de altura, e o título acima dele não teria onde caber. O
-// card passa a ser o menor entre o que a largura pede e o que a altura
-// permite.
-const NARROW: Geometry = {
-  widthVw: 0.68,
-  heightVh: 0.52,
+const WIDE: Geometry = {
+  widthVw: 0.281,
   ratio: 812 / 539,
-  pitchVw: 0.82,
+  axis: "x",
+  pitch: 0.48,
+  splitVw: 0.173,
+  // 0.58 em d = 1, que é exatamente 313/539 do Figma.
+  nearScale: 0.58,
+  nearBlur: 9,
+  nearFade: 0,
+};
+
+// O perfil de telefone, medido no node 2527:1748 do Figma sobre um quadro de
+// 402 x 874 (iPhone 16/17 Pro). Ele nao e o perfil largo encolhido: a
+// composicao inteira gira.
+//
+// O desfile passa a ser VERTICAL. No largo os posteres atravessam a tela e a
+// palavra se parte em volta deles; num telefone em retrato nao ha largura para
+// isso -- o vao de 0.173 sao 65px a 375 de largura e nenhum poster entra ali.
+// Entao o poster ocupa quase a tela toda (0.898vw, contra 0.281 do largo), sobe
+// pelo eixo y e a palavra desce para a faixa livre abaixo dele.
+//
+// `splitVw: 0` continua: as duas metades encostam no centro e voltam a ser uma
+// palavra so, FILMOGRAPHY, que o CSS pendura ABAIXO do poster (ver a media
+// query em styles/filmography.css). Sem sobreposicao, o recorte branco nao tem
+// o que carimbar e sai do ar.
+//
+// `heightVh` segue sendo o teto que a largura sozinha nao da: num tablet em
+// retrato (768 x 1024) 0.898vw daria um poster de 1040px de altura e a palavra
+// abaixo nao teria onde caber. O card e o menor entre o que a largura pede e o
+// que a altura permite -- e no quadro do Figma os dois dao exatamente 361px,
+// entao o telefone de referencia fica identico de qualquer lado que se meca.
+//
+// O vizinho quase nao encolhe (0.9723, contra 0.58 do largo) porque a
+// profundidade agora e dita por desfoque e cor, nao por tamanho: 15,5px de blur
+// e cinza total. E o que faz o proximo poster ler como "ainda nao chegou" sem
+// precisar ficar pequeno.
+const NARROW: Geometry = {
+  // 361 / 402
+  widthVw: 0.898,
+  // 544 / 874
+  heightVh: 0.6224,
+  ratio: 812 / 539,
+  axis: "y",
+  // 699 entre centros (o de baixo em 50% + 609, o travado em 50% - 90), / 874
+  pitch: 0.7998,
   splitVw: 0,
+  // -90 / 874
+  centerVh: -0.103,
+  // 351 / 361
+  nearScale: 0.9723,
+  nearBlur: 15.5,
+  nearFade: 1,
 };
 
 // Fonte única da geometria. O CSS não declara nenhuma destas medidas: custom
@@ -80,9 +128,6 @@ export const CURTAIN_OUT = 0.02;
 // em vez de solto. 20% ainda trava de verdade no centro, mas devolve 80% do
 // ciclo ao movimento.
 const DWELL = 0.2;
-// 0.58 em d = 1, que é exatamente 313/539 do Figma.
-const DEPTH_SCALE = 0.42;
-const DEPTH_BLUR = 9;
 
 export function clamp01(x: number) {
   return x < 0 ? 0 : x > 1 ? 1 : x;
@@ -257,21 +302,29 @@ export function cursor(p: number, reduced: boolean, narrow: boolean): Cursor {
 }
 
 export type Depth = {
-  /** Deslocamento horizontal do centro, em múltiplos de pitch. */
+  /** Deslocamento do centro ao longo do eixo do desfile, em múltiplos de
+   * pitch. Horizontal no perfil largo, vertical no estreito. */
   offset: number;
   scale: number;
   blur: number;
+  /** Quanto de cor o card perde, 0 a 1. Ver `nearFade` em Geometry. */
+  fade: number;
   /** Fora da janela de render o card não é desenhado. */
   live: boolean;
 };
 
-export function depth(i: number, u: number): Depth {
+// Recebe a geometria em vez de ler constantes de módulo: os dois perfis têm
+// profundidades que não se parecem (o largo encolhe o vizinho quase pela
+// metade, o estreito quase não o encolhe e apaga a cor). Mesma forma que
+// `depth()` em lib/characterDeck.ts já usa.
+export function depth(i: number, u: number, g: Geometry): Depth {
   const offset = i - u;
   const d = clamp01(Math.abs(offset));
   return {
     offset,
-    scale: 1 - DEPTH_SCALE * d,
-    blur: DEPTH_BLUR * d,
+    scale: 1 - (1 - g.nearScale) * d,
+    blur: g.nearBlur * d,
+    fade: g.nearFade * d,
     live: Math.abs(offset) <= 2,
   };
 }

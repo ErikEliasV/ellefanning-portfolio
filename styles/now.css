@@ -233,37 +233,113 @@
   color: var(--color-blush-300);
 }
 
+/* O telefone inverte a seção inteira — node 2527:1778 do Figma. No desktop a
+   Now é um cartão escuro com a ficha por cima da imagem; aqui ela vira uma
+   página de papel, com a imagem numa faixa própria no topo e tudo o que é
+   texto em tinta preta embaixo dela, empilhado. Nada mais se sobrepõe, então
+   o scrim que segurava a legibilidade sobre a foto deixa de ter função.
+
+   As medidas são as do Figma sobre um quadro de 402 de largura: 22px de
+   respiro lateral, faixa de 357 × 226, NOW a 149,873 e o resto descendo a
+   partir dali. */
 @media (width < 44rem) {
+  .now {
+    padding-inline: clamp(12px, 5.47vw, 26px);
+  }
+
+  /* O quadro deixa de ser objeto e vira só a coluna: sem cor de fundo, sem
+     respiro próprio (o da seção já basta) e sem proporção fixa — a altura
+     agora é a soma do que está dentro. */
   .now-frame {
-    aspect-ratio: 4 / 5;
-    justify-content: flex-end;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 2.4vw;
+    aspect-ratio: auto;
+    padding: 0;
+    background-color: transparent;
+  }
+
+  /* A imagem sai de trás de tudo e entra no fluxo, como primeira faixa. O
+     `position: relative` mantém o palco do vídeo, a capa e o scrim ancorados
+     nela, e o `transform` de assentamento que sections/Now.tsx escreve
+     continua valendo — transform não mexe em layout, então a faixa reserva a
+     altura final desde o primeiro quadro. */
+  .now-media {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    aspect-ratio: 357 / 226;
+  }
+
+  /* Sem texto por cima da foto, não há o que proteger. */
+  .now-scrim { display: none; }
+
+  /* O pill mora dentro da faixa de imagem. No topo, e não no pé como no
+     desktop: a altura da faixa vem de `aspect-ratio` sobre a LARGURA, e um
+     `bottom` contado a partir do quadro (que agora é bem mais alto que ela)
+     cairia no meio do texto. */
+  .now-sound {
+    top: clamp(10px, 1.54vw, 16px);
+    right: clamp(12px, 4vw, 20px);
   }
 
   .now-row {
     flex-direction: column;
     align-items: flex-start;
-    gap: clamp(18px, 5vw, 32px);
+    /* Da base de NOW até a primeira etiqueta. Desconta o pouco de entrelinha
+       que sobra abaixo da linha de base com `line-height: 0.78`. */
+    gap: 11.78vw;
   }
 
+  /* NOW enche a coluna: 37,28vw de corpo dão 88,7vw de tinta, que é
+     exatamente o que sobra entre os respiros laterais. E passa a ser preta —
+     o fundo agora é papel. */
   .now-word {
-    font-size: clamp(56px, 17vw, 120px);
+    font-size: 37.28vw;
+    color: var(--color-ink-850);
   }
 
   .now-meta {
     align-items: stretch;
     width: 100%;
+    gap: 7.14vw;
+  }
+
+  .now-tag {
+    border-color: var(--color-ink-850);
+    color: var(--color-ink-850);
+  }
+
+  .now-tag-accent {
+    background-color: var(--color-rose-400);
+  }
+
+  .now-tag-quiet {
+    background-color: var(--color-ink-850);
+    color: var(--color-paper-000);
+  }
+
+  .now-title {
+    font-size: 10.47vw;
+    color: var(--color-ink-850);
+  }
+
+  /* A ficha fica em Role e Director. Premiere e Original saem: no Figma a
+     lista do telefone tem duas linhas, e as outras duas já aparecem no modal
+     do filme. Uma linha só para devolvê-las, se a decisão mudar. */
+  .now-list-row:nth-child(n + 3) { display: none; }
+
+  .now-list dt,
+  .now-list dd {
+    color: var(--color-ink-850);
   }
 
   .now-note {
     width: 100%;
-  }
-
-  .now-scrim {
-    background-image: linear-gradient(
-      to top,
-      rgba(19, 19, 19, 0.74) 0%,
-      rgba(19, 19, 19, 0.4) 44%,
-      rgba(19, 19, 19, 0.06) 78%
-    );
+    /* 248,95 sobre 402: a medida da coluna de leitura no Figma, mais estreita
+       que a ficha acima dela. */
+    max-width: 61.9vw;
+    color: var(--color-ink-850);
   }
 }

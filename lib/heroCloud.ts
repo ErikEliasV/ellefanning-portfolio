@@ -2,15 +2,15 @@ import * as THREE from "three";
 
 import { BLOCKS_A, coarseCols, gridCols } from "@/lib/heroGrid";
 
-const WASH_PAPER = 0.86;
+// O mosaico ja nasce rosa. Ate aqui ele lavava de papel para rosa ao longo da
+// rolagem, e por isso havia um par de cores e uma rampa entre elas; o primeiro
+// estado agora e o rosa do segundo, entao sobrou uma cor so e ela nao se move.
+// O que continua andando com a rolagem e a grade engrossando.
 const WASH_ROSE = 0.82;
 const CONTRAST = 1.12;
 const LINE_PX = 2;
-const PAPER = new THREE.Color(0.976, 0.949, 0.957);
 const ROSE = new THREE.Color(0.859, 0.478, 0.592);
-const LINE_PAPER = new THREE.Color(0.984, 0.969, 0.973);
 const LINE_ROSE = new THREE.Color(0.914, 0.627, 0.71);
-const WASH_HOLD = 0.08;
 const MAX_DPR = 2;
 const MAX_ROWS = 220;
 
@@ -189,8 +189,8 @@ export function createCloud({
     uPointerA: { value: 0 },
     uGap: { value: 0.01 },
     uOver: { value: OVER },
-    uWash: { value: WASH_PAPER },
-    uTint: { value: PAPER.clone() },
+    uWash: { value: WASH_ROSE },
+    uTint: { value: ROSE.clone() },
   };
 
   const material = new THREE.ShaderMaterial({
@@ -204,8 +204,8 @@ export function createCloud({
   mesh.frustumCulled = false;
   scene.add(mesh);
 
-  const line = LINE_PAPER.clone();
-  renderer.setClearColor(line, 1);
+  // A calha entre os cubos nao e vazia: ela e a cor de linha, e agora e fixa.
+  renderer.setClearColor(LINE_ROSE, 1);
 
   let progress = 0;
   let clock = 0;
@@ -325,8 +325,6 @@ export function createCloud({
     atY += (aimY - atY) * ease;
     atA += (aimA - atA) * ease;
 
-    const ramp = Math.min(Math.max((progress - WASH_HOLD) / (1 - WASH_HOLD), 0), 1);
-    const wash = ramp * ramp * (3 - 2 * ramp);
     const aspect = uniforms.uAspect.value;
 
     visCols = restCols + (thickCols - restCols) * progress;
@@ -341,12 +339,6 @@ export function createCloud({
     uniforms.uTime.value = clock;
     uniforms.uPointer.value.set(atX, atY);
     uniforms.uPointerA.value = atA;
-    uniforms.uWash.value = WASH_PAPER + (WASH_ROSE - WASH_PAPER) * wash;
-    uniforms.uTint.value.copy(PAPER).lerp(ROSE, wash);
-
-    // The gutter between cubes is not empty in the flat shader either: it is
-    // the line colour, and it washes toward rose along with everything else.
-    renderer.setClearColor(line.copy(LINE_PAPER).lerp(LINE_ROSE, wash), 1);
 
     camera.position.z = fit * (1 + progress * DOLLY);
     camera.position.x = (atX - 0.5) * SWAY_X;

@@ -1,5 +1,13 @@
-/* O palco de CHARACTERS: o leque de oito fotos que o scroll atravessa, a
-   palavra ao fundo e a legenda que sai de tras da foto do centro.
+/* O palco de CHARACTERS: as oito fotos que o scroll atravessa, a palavra que
+   serve de regua para elas e a legenda que sai de tras da foto do centro.
+
+   Sao DUAS composicoes. No desktop e um MONTE: as oito fotos comecam
+   empilhadas na ponta direita, viradas de lado; o scroll tira uma de cada vez,
+   gira ela de frente ao passar pelo centro e a deposita no monte da esquerda.
+   A largura da foto e consequencia do giro, nao uma medida escrita -- por isso
+   nao ha mais nenhuma `width` vindo do hook. No telefone continua o arco, com
+   a palavra derivando ao fundo. A divisao esta na media query de 64rem, aqui e
+   em lib/characterDeck.ts.
 
    Todo numero de geometria mora em lib/characterDeck.ts e chega aqui como
    medida escrita pelo hook. O que fica no CSS sao as proporcoes que nao mudam
@@ -10,6 +18,21 @@
 /* Os escalares do scroll. 1 e o estado assentado, e e o valor inicial de
    proposito: sem JS a secao fica vestida -- preta, com a palavra no lugar e a
    legenda a vista -- em vez de pre-armada esperando um sinal que nao vem. */
+/* A varredura da tinta: 0 com o painel preto ainda fora, encostado na borda
+   esquerda; 1 com a tela toda preta. Ate 2026-09-28 isto se chamava `--floor` e
+   era uma OPACIDADE -- o chao virava tinta desmaiando no lugar. Agora e a
+   posicao de uma cortina que entra pela esquerda, e e ela que decide onde a
+   palavra e preta e onde e branca. */
+@property --wipe {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+
+/* A palavra entrando pela direita (`--enter`) e saindo pela esquerda
+   (`--leave`). Os dois valem nos DOIS tamanhos de tela desde 2026-09-28: no
+   perfil largo ela tinha parado de se mover enquanto era regua dos docks do
+   trilho antigo, e com o trilho fora voltou a deslizar. */
 @property --enter {
   syntax: "<number>";
   inherits: true;
@@ -22,10 +45,19 @@
   initial-value: 0;
 }
 
-@property --floor {
+/* O monte subindo de baixo (`--rise`) e saindo por cima (`--lift`). Movem a
+   CAIXA do deck, com a fileira parada dentro dela -- o `u` de
+   lib/characterDeck.ts nao anda em nenhuma das duas fases. */
+@property --rise {
   syntax: "<number>";
   inherits: true;
   initial-value: 1;
+}
+
+@property --lift {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
 }
 
 @property --settle {
@@ -40,24 +72,31 @@
   initial-value: 0;
 }
 
-/* Estes dois o hook escreve por card, mas quem os LE sao as <img> dentro do
-   card, e por isso eles herdam. Uma propriedade registrada com
-   `inherits: false` resolve para o initial-value em todo elemento que nao a
-   declara: o filtro ficaria preso em brightness(1) e o espelho em opacity 0
-   para sempre, sem erro, sem aviso de lint e sem sintoma visivel enquanto os
-   dois valores de repouso forem justamente esses. Herdando, o valor escrito no
-   botao desce para as imagens dele, e o de um card nunca alcanca outro porque
-   cada card escreve o seu. */
-@property --dim {
-  syntax: "<number>";
+/* O raio do desfoque do pe do card, ja em px e ja quantizado pelo hook. Zero no
+   centro -- a foto que esta de frente nao borra -- e 18px (na escala do no) no
+   monte. `inherits: false` de proposito: quem le e a camada dentro do card, e
+   o valor de um card nao tem o que fazer no outro. */
+@property --haze {
+  syntax: "<length>";
   inherits: true;
-  initial-value: 1;
+  initial-value: 0px;
 }
 
-@property --mirror {
+/* -1, 0 ou 1: de que lado do centro o card esta. So a sombra le. Registrada
+   como numero para poder entrar num calc() de comprimento. */
+@property --side {
   syntax: "<number>";
-  inherits: true;
+  inherits: false;
   initial-value: 0;
+}
+
+/* Quanto da sombra sobra. 1 ate o monte, 0 alguns slots depois dele -- ver o
+   comentario de `shade` em lib/characterDeck.ts: sem isto as oito sombras do
+   monte se somam e cercam a pilha de preto solido. */
+@property --shade {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
 }
 
 .character-section {
@@ -84,20 +123,62 @@
   position: relative;
   /* A altura real e escrita pelo hook, em px, a partir de trackVh(). Este
      fallback e o que o palco tem antes da primeira medicao, e acompanha o
-     perfil largo: 1 de palco + 5,34 de percurso. */
-  height: 634svh;
+     perfil largo: 1 de palco + 9,59 de percurso (0,65 de varredura + 0,4 de
+     subida + 1,85 de rampa + 4,32 de reel + 0,12 de trava + 1,85 de rampa +
+     0,4 de saida). */
+  height: 1059svh;
 }
 
 .character-stage {
-  /* A composicao inteira, medida do Figma. O corpo da palavra e a altura do
-     card ganham teto em svh porque numa tela larga e baixa (2560x1080) os
-     18,686vw dariam 478px de corpo e a palavra subiria para fora do palco. */
+  /* O corpo do Figma, intacto. As duas pontas da palavra sao as duas bordas do
+     trilho -- a foto entra pelo fim do S e sai pelo inicio do C -- e por um
+     momento se pensou que fosse preciso encolhe-la para as duas caberem no
+     quadro. Medido: nao e. O avanco medio destes glifos e 0,481em, entao
+     `CHARACTERS` mede 4,81 corpos, ou 1727px num quadro de 1920 -- o S termina
+     a 97px da borda. O teto em svh vale pela razao de sempre: numa tela larga e
+     baixa (2560x1080) os 18,686vw dariam 478px de corpo e a palavra subiria
+     para fora do palco. */
   --word: min(18.686vw, 38svh);
-  --card-h: min(58svh, 46vw);
-  --card-w: var(--card-h); /* cardRatio 1 no perfil largo */
-  --radius: calc(var(--card-w) * 0.1001); /* 65 / 649 */
+  /* Respiro acima da palavra. Ela e o primeiro elemento do palco. */
+  --word-top: 8svh;
+  /* A ALTURA e a unidade de tudo no monte, porque e a unica medida que nao muda
+     em fase nenhuma: a largura projetada sai do giro e a caixa fica sempre do
+     tamanho do hero.
+
+     Ancorada na LARGURA da janela, e nao na altura, e a troca foi medida. O no
+     poe o card em 649 sobre um canvas de 1920, ou seja 33,8% da largura -- e e
+     dessa razao que saem TODAS as distancias horizontais da composicao, porque
+     a fileira inteira e medida em alturas de card. Com os 58svh que estavam
+     aqui, num quadro de 1920x917 o card dava 434 em vez de 649: a fileira
+     encolhia junto e o monte parava a 79% da largura, onde o no o poe a 87%. A
+     secao inteira lia menos confiante que o desenho. Com 33,8vw ela bate ao
+     pixel nessa janela.
+
+     O teto em svh fica, pela razao de sempre e com o numero refeito: numa tela
+     larga e baixa (2560x1080) os 33,8vw dariam 865 de card num palco de 1080 e
+     a fileira sangraria por cima e por baixo. */
+  --card-h: min(33.8vw, 76svh);
+  /* A caixa do deck e a caixa do HERO: 651/649 da altura, do no. E contra ela
+     que a legenda se alinha, e e ela que o card do centro ocupa inteira. As
+     outras larguras -- a miniatura e tudo entre uma e outra -- o hook escreve
+     em px por quadro. */
+  --card-w: calc(var(--card-h) * 1.0031); /* 651 / 649 */
+  /* Preso a ALTURA, e nao a largura. A quina tem que ser a mesma na miniatura e
+     no hero; saindo da largura ela encolheria junto com a foto e a fileira
+     ficaria com oito arredondamentos diferentes. */
+  --radius: calc(var(--card-h) * 0.1001); /* 65 / 649 */
   --band: calc(var(--card-h) * 0.3436); /* 223 / 649 */
   --deck-y: 57.48%; /* (498 + 1147) / 2 sobre 1431 */
+  /* Quanto o deck anda para ficar INTEIRO fora do quadro -- para baixo antes de
+     subir, para cima ao sair. Os dois termos sao necessarios e nenhum sobra: o
+     `60svh` cobre a distancia do centro do deck ate a borda mais longe (57,48%
+     no desktop, 53,35% no telefone), e o `--card-h` cobre a meia altura da foto
+     mais a sombra, que se espalha 0,117 de altura de card. Somados, os dois
+     folgam em qualquer janela -- e como o card e a unidade da composicao, a
+     folga acompanha sozinha quando ele muda de tamanho. Cravar um numero de svh
+     deixaria a sombra aparecendo por baixo numa tela larga e baixa, onde o card
+     e grande em relacao ao palco. */
+  --fly: calc(60svh + var(--card-h));
 
   position: sticky;
   top: 0;
@@ -109,23 +190,56 @@
   background-color: var(--color-paper-000);
 }
 
+/* A CORTINA. Entra pela esquerda por translacao, e nao por opacidade: o pedido
+   era o fundo preto vindo de um lado, e uma opacidade nao vem de lado nenhum.
+
+   O `overflow: hidden` e a peca central desta transicao, e nao higiene. E ele
+   que recorta o que esta la dentro na aresta da tinta -- ver `.character-floor-fix`
+   logo abaixo. Sem ele a palavra branca apareceria inteira desde o primeiro
+   quadro, sobre a tela ainda clara da emenda com a filmografia.
+
+   z-index 1, ACIMA da copia preta da palavra (z-index 0). A ordem importa: onde
+   a tinta chegou, ela tem que cobrir a copia preta para so restar a branca que
+   ela mesma carrega. Invertida, a preta pintaria por cima da branca e a palavra
+   simplesmente sumiria dentro do preto. */
 .character-floor {
   position: absolute;
   inset: 0;
-  z-index: 0;
+  z-index: 1;
+  overflow: hidden;
   background-color: var(--color-ink-850);
-  opacity: var(--floor);
+  transform: translateX(calc((var(--wipe) - 1) * 100%));
+}
+
+/* A contra-translacao. Anula EXATAMENTE a da cortina, entao o que esta aqui
+   dentro fica parado no espaco da tela enquanto a caixa desliza por baixo.
+
+   Exata porque os dois `100%` medem a mesma largura: a cortina tem `inset: 0`
+   no palco e esta tem `inset: 0` na cortina, e um transform nao move caixa de
+   layout nenhuma -- o `inset: 0` daqui continua resolvendo contra a posicao
+   parada da cortina, nao contra a deslizada. Os dois numeros sao o mesmo
+   numero, e nao dois numeros que por acaso batem.
+
+   O que se ganha com isto e uma fronteira de recorte que e a propria borda da
+   tinta, de graca, so com transforms -- sem `clip-path` recalculado a 60/s e
+   sem `mix-blend-mode`, que devolveria um branco lavado (a diferenca contra
+   #17181c da #E8E7E3, nao #FFFBFC). */
+.character-floor-fix {
+  position: absolute;
+  inset: 0;
+  transform: translateX(calc((1 - var(--wipe)) * 100%));
 }
 
 .character-word {
   position: absolute;
   z-index: 1;
   left: 5vw; /* x 96 sobre 1920 */
-  /* A base da caixa de linha cai 0,303 corpos abaixo do topo do deck: e o que
-     poe a barriga das letras atras das fotos, como no no (caixa de linha
-     287,5..606,8, topo do card em 498). A conta mede o topo do deck a partir da
-     BASE do palco, porque e de la que o `bottom` conta. */
-  bottom: calc(42.52% + var(--card-h) / 2 - var(--word) * 0.303);
+  /* Ancorada pelo TOPO, e nao mais pela base contra o deck. A palavra deixou de
+     ser textura atras das fotos e virou a regua delas: o hook le esta caixa por
+     `offsetLeft`/`offsetTop`/`offsetWidth`/`offsetHeight` e tira dali os dois
+     docks. Por isso ela nao pode depender da posicao do deck -- seria o deck se
+     medindo contra si mesmo. */
+  top: var(--word-top);
   margin: 0;
   font-family: var(--font-editorial);
   font-weight: 400;
@@ -134,12 +248,46 @@
   letter-spacing: -0.0097em; /* -3,4703 / 358,778 */
   text-transform: uppercase;
   white-space: nowrap;
-  color: var(--color-paper-000);
-  /* Entra pela direita e sai pela esquerda. 100vw e nao 100%: a palavra e bem
-     mais larga que a tela nesse corpo, e uma porcentagem dela mediria contra a
-     propria largura, dando uma distancia de entrada que muda com o corpo. */
-  transform: translateX(calc((1 - var(--enter)) * 100vw - var(--leave) * 100vw));
+  /* Entra pela DIREITA e sai pela ESQUERDA, nos dois tamanhos de tela. Ate
+     2026-09-28 esta regra dizia "SEM transform": a palavra tinha virado a regua
+     dos docks do trilho antigo, e uma ancora que anda nao ancora nada. O trilho
+     saiu, o monte para sozinho no terceiro slot, e com nada mais medindo esta
+     caixa ela voltou a deslizar.
+
+     As duas distancias sao diferentes de proposito. Na entrada, `100vw` poe a
+     borda ESQUERDA da caixa em 105vw -- fora do quadro, qualquer que seja a
+     largura do texto. Na saida, a conta tem que levar a borda DIREITA para fora
+     do outro lado, e essa borda esta em `5vw + a largura da palavra`: dai o
+     `100% + 5vw`, com o `100%` medindo a propria caixa. Um `100vw` ali deixaria
+     o rabo do S a vista no desktop, onde a palavra mede uns 90vw.
+
+     As duas fases nunca se sobrepoem no tempo -- `--enter` satura em 1 na
+     varredura e `--leave` so sai do zero na subida final -- entao a soma nunca
+     mistura os dois gestos. */
+  transform: translateX(
+    calc((1 - var(--enter)) * 100vw - var(--leave) * (100% + 5vw))
+  );
   pointer-events: none;
+}
+
+/* As duas copias, e a unica diferenca entre elas e a cor e a camada.
+
+   A PRETA e o <h2> de verdade e mora fora da cortina, na camada 0: e o que se
+   ve enquanto a tela ainda e a branca que a filmografia entregou. A BRANCA e um
+   <p> dentro da cortina, na camada dela, e por isso so existe onde ha tinta.
+
+   Como as duas fazem o MESMO deslize (a regra acima, uma so), elas ficam
+   sobrepostas ao pixel em qualquer quadro: o que se ve e uma palavra unica indo
+   de preto a branco conforme o fundo passa por cima dela. Duas copias, e nao
+   uma com `mix-blend-mode`, porque assim as duas cores sao as cores do projeto
+   -- ink-850 e paper-000 -- e nao o que uma subtracao devolver. */
+.character-word-dark {
+  z-index: 0;
+  color: var(--color-ink-850);
+}
+
+.character-word-lit {
+  color: var(--color-paper-000);
 }
 
 .character-deck {
@@ -147,27 +295,42 @@
   z-index: 2;
   left: 50%;
   top: var(--deck-y);
-  /* A caixa do deck E a caixa do card central. E dela que o hook le a largura
-     de referencia (offsetWidth), e e contra ela que os slots sao medidos. */
+  /* A caixa do deck E a caixa do hero. E dela que o hook le a altura de
+     referencia (offsetHeight), e e contra ela que o trilho inteiro e medido. */
   width: var(--card-w);
   height: var(--card-h);
-  /* O deck inteiro sai de cena por translacao. Ver o comentario de `leave` em
-     lib/characterDeck.ts: fazer isso pelo `u` pediria um estouro de onze
-     personagens inexistentes. */
-  transform: translate(calc(-50% - var(--leave) * 120vw), -50%);
+  /* SEM a translacao de saida aqui: no trilho cada foto sai por conta propria,
+     mergulhando pela ponta do C, e ao fim da rampa nao sobrou nenhuma em cena
+     para a caixa levar embora. A translacao continua existindo no telefone,
+     onde a saida E a caixa inteira indo de lado -- ver a media query no fim
+     deste arquivo. */
+  /* A subida e a saida do monte: a caixa INTEIRA, com as oito fotos paradas na
+     pose que tiverem. Na entrada ela chega de baixo com o monte da direita ja
+     formado; na saida leva o monte da esquerda por cima. Entre as duas, `--rise`
+     vale 1 e `--lift` vale 0, e isto e exatamente `translate(-50%, -50%)`.
+
+     Os dois termos nao se sobrepoem no tempo (`--rise` satura antes de o reel
+     comecar, `--lift` so sai do zero depois que a ultima chega ao monte), entao
+     a soma nunca vale mais que um `--fly`. */
+  transform: translate(
+    -50%,
+    calc(-50% + (1 - var(--rise)) * var(--fly) - var(--lift) * var(--fly))
+  );
 }
 
 .character-rail {
   position: absolute;
   inset: 0;
   /* Contexto de empilhamento proprio, e e para isso que o z-index existe aqui.
-     O hook escreve z-index 100 a 70 em cada card para o centro ficar por cima
-     do vizinho mais externo. Sem esta linha, `.character-rail` fica em
+     No desktop o hook escreve z-index 1000 e descendo em cada card, para o do
+     centro ficar por cima de todos e cada foto cobrir a fatia da vizinha mais
+     externa. Sem esta linha, `.character-rail` fica em
      `z-index: auto`, nao abre contexto nenhum, e aqueles numeros sobem para o
      contexto de `.character-deck` -- onde disputam com o z-index 3 da legenda e
      ganham. A legenda fica com opacidade 1, geometria certa e enterrada sob as
-     fotos. Com o contexto aqui, os 70-100 passam a ser locais ao trilho, e o
-     unico numero que o deck compara e o 1 deste trilho contra o 3 da legenda. */
+     fotos. Com o contexto aqui, aqueles milhares passam a ser locais ao trilho,
+     e o unico numero que o deck compara e o 1 deste trilho contra o 3 da
+     legenda. */
   z-index: 1;
 }
 
@@ -175,9 +338,21 @@
   position: absolute;
   left: 50%;
   top: 50%;
-  /* O repouso sem JS: todos no tamanho do central, empilhados no centro. O hook
-     escreve largura, altura, translacao e z-index por quadro; ate ele ligar, e
-     isto que se ve. */
+  /* O repouso sem JS: todas na caixa do hero, empilhadas no centro. Por quadro
+     o hook escreve `transform`, `z-index`, `--haze`, `--side` e `--shade`; ate
+     ele ligar, e isto que se ve.
+
+     A caixa NAO muda de tamanho em fase nenhuma, e essa e a diferenca para a
+     versao do trilho, que escrevia uma `width` menor em px a cada quadro para a
+     foto virar fatia. Agora quem estreita a foto e o `rotateY`: a largura vista
+     e a projecao do giro, e sete escritas de layout por quadro viraram um
+     `transform` que o compositor resolve sozinho.
+
+     O giro e a escala pedem que a origem seja o centro da propria foto, que e o
+     padrao -- nao declarado aqui de proposito, para nao parecer que ha uma
+     escolha onde nao ha. O que NAO e padrao e a ordem no `transform` que o hook
+     monta: translada primeiro, gira depois. Invertida, cada foto descreveria um
+     arco em volta do centro do palco em vez de girar onde esta. */
   width: 100%;
   height: 100%;
   padding: 0;
@@ -189,6 +364,20 @@
   overflow: hidden;
   cursor: pointer;
   transform: translate(-50%, -50%);
+
+  /* A sombra do no: x 39, y 4, blur 76, #000 a 41%, sobre um card de 649.
+     Aponta para o CENTRO dos dois lados -- no Figma os cards da direita estao
+     girados 180 graus, o que inverte o x 39 deles -- e e por isso que ela
+     multiplica `--side` e nasce do lado oposto.
+
+     Estatica, e nao reescrita por quadro. Uma sombra de 76px de raio recalculada
+     a 60/s custa caro, e nao precisa: `box-shadow` e pintada na camada do
+     elemento ANTES do transform, entao o giro e a translacao a levam junto de
+     graca. O que ela nao faz e se deformar com a perspectiva, e num borrao de
+     76px isso nao se ve. */
+  box-shadow: calc(var(--side) * -0.0601 * var(--card-h))
+    calc(0.00616 * var(--card-h)) calc(0.1171 * var(--card-h))
+    rgb(0 0 0 / calc(var(--shade) * 0.41));
 }
 
 .character-card:focus-visible {
@@ -201,12 +390,60 @@
   /* O ponto focal por personagem. A tela expandida quer o rosto a direita, onde
      o painel de desfoque nao alcanca; o card recorta em volta deste ponto. */
   object-position: calc(var(--focus, 0.5) * 100%) 50%;
-  filter: brightness(var(--dim));
+  /* SEM `brightness`. Havia um `brightness(var(--dim))` aqui enquanto o
+     telefone rodava o arco, que usava o brilho para dizer profundidade. O arco
+     saiu; nos dois nos as fotos estao a 100 por cento, e quem separa uma da
+     outra e a sombra (no desktop) e o desfoque do pe. */
 }
 
-.character-card-img-mirror {
-  transform: scaleX(-1);
-  opacity: var(--mirror);
+/* O desfoque progressivo do pe do card: tres copias da foto, cada uma borrada
+   num raio FIXO em relacao a `--haze` e revelada por uma faixa da mascara. O
+   que se ve e a foto passando de nitida a borrada ao longo da altura, que e o
+   Layer blur progressivo do no.
+
+   Os raios sao 0,3 / 0,62 / 1,0 do cheio e as faixas se emendam: onde uma
+   termina de aparecer a seguinte ja comecou. Esse encavalamento e o que
+   substitui o degrau por uma rampa -- e como as vizinhas diferem pouco de raio,
+   a mistura nao dobra a imagem. Ver o comentario em CharacterStage.tsx para o
+   que acontecia com uma camada so.
+
+   As faixas comecam em 45% da altura, e nao no topo. O no ramifica o raio de 0
+   a 18 ao longo do card INTEIRO, mas lido assim o meio do card fica com 9px de
+   borrao e o rosto da personagem sai desfocado -- foi o que o dono do projeto
+   recusou ao ver rodando. O pedido dele e literal: borrado na PARTE DE BAIXO.
+   Entao a metade de cima fica intacta e a rampa acontece toda na de baixo.
+
+   `--haze` chega ja valendo 0 no centro, e `blur(0px)` sobre a mesma imagem e
+   uma copia identica: o card do centro fica exatamente como ficaria sem nada
+   disto. Ele nasce com o giro e some com ele.
+
+   SEM `transform: scale` nas camadas, e a ausencia e a correcao de um defeito:
+   com escala, a copia borrada fica deslocada da nitida e o cruzamento entre as
+   duas vira imagem dupla. O preco de nao escalar e a borda de baixo, onde o
+   blur transparenta a camada e a foto nitida reaparece ao longo do raio -- uns
+   18px num card de 649, 2,8% da altura. Isso le como a quina do card
+   continuando definida, que e melhor do que a quina se dissolvendo. */
+.character-card-haze {
+  z-index: 1;
+  pointer-events: none;
+}
+
+.character-card-haze-1 {
+  filter: blur(calc(var(--haze) * 0.3));
+  mask-image: linear-gradient(to bottom, transparent 45%, #000 65%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 45%, #000 65%);
+}
+
+.character-card-haze-2 {
+  filter: blur(calc(var(--haze) * 0.62));
+  mask-image: linear-gradient(to bottom, transparent 62%, #000 80%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 62%, #000 80%);
+}
+
+.character-card-haze-3 {
+  filter: blur(var(--haze));
+  mask-image: linear-gradient(to bottom, transparent 78%, #000 94%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 78%, #000 94%);
 }
 
 /* No desktop o convite e o rotulo do cursor; sem ponteiro o card tem que dizer
@@ -249,6 +486,24 @@
    o que impede o defeito de voltar se alguem mexer no z-index da secao.
    `markOutsideInert` continua certo a partir de <body>: so anda menos niveis. */
 .character-dialog {
+  /* UM pixel do quadro do no (1920 x 1399), traduzido para esta janela.
+     Tudo que veio medido de la e escrito em `calc(N * var(--u))`, entao a tela
+     expandida inteira encolhe junto em vez de cada peca decidir sozinha.
+
+     O `min` e a correcao do defeito. Antes cada medida era um `vw` -- 107/1920
+     para o nome, 727/1920 para a coluna -- o que acerta a LARGURA e ignora a
+     altura. Mas o no tem razao 1,37 e uma janela de desktop tem 2,09: a coluna
+     de texto mede 837 de altura no no, 60% daqueles 1399, e os mesmos 837px num
+     palco de 917 sao 91%. Nada encaixava, e por isso tudo parecia grande
+     demais. Com o `min`, numa janela de 1920x917 a unidade cai para 0,655 e a
+     composicao inteira cabe; numa de 1920x1399 ela vale 1 e bate com o no ao
+     pixel.
+
+     A foto de fundo NAO passa por aqui: ela sangra a tela toda (`cover`), que e
+     o que o no faz com `IMG: BG EXPAND` em 1919x1399. E o veu tambem nao, por
+     ser uma proporcao horizontal do quadro -- ver a regra dele. */
+  --u: min(100vw / 1920, 100svh / 1399);
+
   position: fixed;
   inset: 0;
   z-index: 95;
@@ -306,8 +561,6 @@
     rgba(50, 50, 50, 0.72),
     rgba(50, 50, 50, 0)
   );
-  backdrop-filter: blur(30.75px);
-  -webkit-backdrop-filter: blur(30.75px);
   opacity: 0;
   /* Decoracao `aria-hidden`, nada dentro e interativo: se ela receber o
      ponteiro, rouba o clique de fundo nos 71vw da esquerda. */
@@ -319,15 +572,66 @@
   opacity: 1;
 }
 
+/* O desfoque da esquerda, que saiu de dentro do veu para ter camada propria.
+   No no ele e um Background blur PROGRESSIVO de 0 a 61,5 sobre a mesma caixa de
+   1371 de largura: forte na borda esquerda e sumindo antes da direita. E o que
+   tira a foto de baixo do texto sem tirar a foto da tela -- o rosto continua
+   nitido no terco direito.
+
+   Duas camadas, e nao uma, pelo mesmo motivo do pe do card: uma so, cruzada por
+   opacidade entre o nitido e o borrado, mistura as duas versoes no meio do
+   caminho em vez de borrar. A diferenca e que aqui os raios se SOMAM, porque
+   cada camada filtra o que ja esta composto abaixo dela, e dois gaussianos de
+   r1 e r2 dao sqrt(r1^2 + r2^2). Os 30 e 45 daqui dao 54 na borda esquerda, e o
+   que falta para os 61,5 do no nao se distingue num borrao desse tamanho.
+
+   Os raios sao `vw`, e nao `--u`: eles acompanham o VEU, que e medido em
+   largura de tela, e nao a coluna de texto. */
+.character-dialog-haze {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 71.41vw; /* 1371 / 1920, a mesma caixa do veu */
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-modal) var(--ease-out);
+}
+
+.character-dialog-haze[data-open] {
+  opacity: 1;
+}
+
+.character-dialog-haze-1 {
+  /* O `-webkit-` vem ANTES do padrao, e a ordem NAO e estilo: o Lightning CSS
+     trata os dois como a mesma propriedade e mantem so o ULTIMO que aparece.
+     Com o padrao escrito por ultimo, o CSS servido leva os dois -- prefixado
+     para o Safari 16 e antes, padrao para todo o resto. Invertido, sobra so o
+     `-webkit-`, que o Chrome nao suporta: o desfoque simplesmente nao acontece,
+     sem erro nenhum. Foi assim que o desfoque da esquerda desta tela e o da
+     faixa da legenda passaram despercebidos. */
+  -webkit-backdrop-filter: blur(1.5625vw); /* 30 / 1920 */
+  backdrop-filter: blur(1.5625vw);
+  mask-image: linear-gradient(to right, #000 30%, transparent 72%);
+  -webkit-mask-image: linear-gradient(to right, #000 30%, transparent 72%);
+}
+
+.character-dialog-haze-2 {
+  -webkit-backdrop-filter: blur(2.344vw); /* 45 / 1920 */
+  backdrop-filter: blur(2.344vw);
+  mask-image: linear-gradient(to right, #000 12%, transparent 42%);
+  -webkit-mask-image: linear-gradient(to right, #000 12%, transparent 42%);
+}
+
 .character-dialog-text {
   position: absolute;
   top: 50%;
-  left: 12.29vw; /* 236 / 1920 */
+  left: calc(236 * var(--u));
   z-index: 1;
-  width: 37.86vw; /* 727 / 1920 */
+  width: calc(727 * var(--u));
   /* Entra junto com o crescimento, nao depois dele: o texto sobrepondo a foto
      que ainda cresce e o que faz a abertura ler como um movimento so. */
-  transform: translate(-2vw, -50%);
+  transform: translate(calc(-38 * var(--u)), -50%);
   opacity: 0;
   transition:
     opacity var(--duration-modal) var(--ease-out),
@@ -343,36 +647,36 @@
   margin: 0;
   font-family: var(--font-text);
   font-weight: 400;
-  font-size: 5.573vw; /* 107 / 1920 */
+  font-size: calc(107 * var(--u));
   line-height: 1.05;
   color: var(--color-paper-000);
 }
 
 .character-dialog-film {
-  margin: 0.75vw 0 0; /* 14,392 / 1920 */
+  margin: calc(14.392 * var(--u)) 0 0;
   font-family: var(--font-editorial);
   font-weight: 400;
-  font-size: 5.208vw; /* 100 / 1920 */
+  font-size: calc(100 * var(--u));
   line-height: 1.05;
   color: var(--color-paper-000);
 }
 
 .character-dialog-story {
-  margin: 5.52vw 0 0; /* 106 / 1920 */
-  max-width: 34.48vw; /* 662 / 1920 */
+  margin: calc(106 * var(--u)) 0 0;
+  max-width: calc(662 * var(--u));
   font-family: var(--font-text);
   font-weight: 300;
-  font-size: 1.5625vw; /* 30 / 1920 */
+  font-size: calc(30 * var(--u));
   line-height: 1.45;
   letter-spacing: 0.05em; /* 1,5 / 30 */
   color: var(--color-paper-000);
 }
 
 .character-dialog-credit {
-  margin: 5.52vw 0 0;
+  margin: calc(106 * var(--u)) 0 0;
   font-family: var(--font-editorial);
   font-weight: 400;
-  font-size: 1.875vw; /* 36 / 1920 */
+  font-size: calc(36 * var(--u));
   line-height: 1.3;
   color: var(--color-paper-000);
 }
@@ -380,17 +684,17 @@
 .character-dialog-imdb {
   display: inline-flex;
   align-items: center;
-  gap: 1.82vw; /* 35 / 1920 */
-  margin-top: 8.85vw; /* 170 / 1920 */
+  gap: calc(35 * var(--u));
+  margin-top: calc(170 * var(--u));
 }
 
 .character-dialog-imdb-logo {
-  width: 7.19vw; /* 138 / 1920 */
+  width: calc(138 * var(--u));
   height: auto;
 }
 
 .character-dialog-imdb-arrow {
-  width: 2vw; /* 38,333 / 1920 */
+  width: calc(38.333 * var(--u));
   height: auto;
 }
 
@@ -399,7 +703,7 @@
    O piso de toque mora aqui, e nao em styles/close.css: por em la mudaria o
    modal da filmografia, que roda sem piso desde que foi ao ar. */
 .character-dialog .close-pill {
-  --close-box: max(var(--tap), 3.177vw);
+  --close-box: max(var(--tap), calc(61 * var(--u)));
   top: 76.77%;
   left: 77.86vw;
 }
@@ -422,25 +726,74 @@
   justify-content: flex-end;
   height: var(--band);
   padding-bottom: calc(var(--card-h) * 0.072); /* 47 / 649 */
+  /* O raio fica mesmo sem fundo nenhum: quem o usa agora e o `overflow`, que
+     recorta o texto nas quinas de baixo da foto. */
   border-bottom-left-radius: var(--radius);
   border-bottom-right-radius: var(--radius);
-  /* Quem trabalha e o desfoque, nao a cor: no Figma o fundo da faixa e
-     rgba(50,50,50,0.02), que sozinho nao se ve. */
-  background-color: rgba(50, 50, 50, 0.02);
-  /* O desfoque sobe junto com o texto: a faixa nao pode aparecer antes daquilo
-     que ela existe para sustentar. */
-  backdrop-filter: blur(calc(var(--settle) * 6.75px));
-  -webkit-backdrop-filter: blur(calc(var(--settle) * 6.75px));
+  /* SEM background. Ele morava aqui -- `rgba(50,50,50,0.02)`, do Figma -- com o
+     argumento de que "sozinho nao se ve". Ve-se: 2% de rgb(50,50,50) sobre o
+     ink-850 sobe o canal de 23 para 24, e um degrau de UM nivel espalhado por
+     uma caixa de 651x223 com as quinas arredondadas le como um retangulo. Sobre
+     a foto ele some no ruido da imagem, e foi so por isso que passou.
+
+     E ele aparecia o tempo todo, porque esta faixa mora na caixa do deck e a
+     caixa do deck fica VAZIA em boa parte do percurso: a rampa de entrada
+     inteira (tres slots), a de saida, e o meio de cada travessia. Um retangulo
+     cinza pairando no preto sem foto nenhuma atras.
+
+     O fundo desceu para `.character-cap-haze`, que e a camada que ja existe
+     para pintar a faixa e que agora e gated pelo `--settle` -- ver la. */
   /* E este overflow que faz o texto nascer ATRAS da borda de baixo da foto. */
   overflow: hidden;
   pointer-events: none;
 }
 
+/* O desfoque da faixa, na camada dele.
+   No no e um Background blur PROGRESSIVO, de 0 no topo da faixa a 13,5px na
+   base -- 13,5/649 da altura do card. O CSS trazia 6,75px uniforme, que e
+   exatamente a media dos dois; o desenho agora pede o gradiente, e a tecnica e
+   a mesma do pe do card.
+
+   Sobe junto com o texto pelo `--settle`: a faixa nao pode aparecer antes
+   daquilo que ela existe para sustentar. */
+.character-cap-haze {
+  position: absolute;
+  inset: 0;
+  /* O tom do Figma, que antes morava em `.character-cap`. Aqui ele entra na
+     mesma mascara que o desfoque, entao a faixa inteira -- cor e borrao --
+     nasce do nada no topo e fecha na base, em vez de a cor ser um bloco chapado
+     sob um borrao em rampa. */
+  background-color: rgba(50, 50, 50, 0.02);
+  -webkit-backdrop-filter: blur(calc(var(--settle) * 0.0208 * var(--card-h)));
+  backdrop-filter: blur(calc(var(--settle) * 0.0208 * var(--card-h)));
+  mask-image: linear-gradient(to bottom, transparent, #000);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000);
+  /* O PORTAO da faixa, e nao um refinamento: sem ele a faixa pinta mesmo com a
+     caixa do deck vazia, e era esse o retangulo fantasma que se via durante as
+     rampas inteiras.
+
+     `--settle` e o escalar certo porque e literalmente "ha uma foto assentada no
+     centro": vale 0 nas duas rampas, 0 no meio de cada travessia e 1 na trava.
+     A faixa existe para sustentar a legenda, e agora nao pode existir sem ela.
+
+     Opacidade, e nao um alpha calculado na propria cor: `background-color` que
+     muda por quadro repinta a caixa, e `opacity` o compositor resolve sozinho.
+     Ela tambem zera o `backdrop-filter` de graca -- a 0 nao sobra nada desta
+     camada para compor.
+
+     O desfoque continua rampando por `--settle` TAMBEM, e a dupla rampa e de
+     proposito: a faixa fecha um pouco mais rapido que a legenda, que e o que
+     mantem o retangulo invisivel enquanto o texto ainda esta chegando. */
+  opacity: var(--settle);
+  pointer-events: none;
+}
+
 .character-cap-block {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: calc(var(--card-h) * 0.0077); /* 5 / 649 */
+  gap: calc(var(--card-h) * 0.0154); /* 10 / 649 -- o Frame 45 do no 2555:141 */
   text-align: center;
   opacity: var(--settle);
   /* Nasce atras da borda de baixo da foto (o overflow da faixa a esconde),
@@ -482,6 +835,41 @@
     --ghost: #0e1014;
   }
 
+  /* A saida do telefone ERA a caixa inteira indo de lado --
+     `translate(calc(-50% - var(--leave) * 120vw), -50%)` -- porque no arco nao
+     havia monte de onde sair. Saiu junto com o arco: agora as fotos entram e
+     saem uma a uma pelas duas pontas, como no desktop, e a caixa do deck fica
+     parada. A regra base ja e a certa.
+
+     A sombra, essa, continua sendo so do desktop: o no 2527:1761 poe Layer blur
+     nos cards do telefone e NENHUM drop shadow. */
+  .character-card {
+    box-shadow: none;
+  }
+
+  /* A legenda do telefone vive fora do card, no palco, entao nao ha o que
+     desfocar atras dela -- a faixa e o desfoque dela sao do desktop. O desfoque
+     do PE do card fica: ele esta no no dos dois lados. */
+  .character-cap-haze {
+    display: none;
+  }
+
+  /* DOIS degraus de desfoque aqui, e nao tres. O raio cheio do telefone e 8,5
+     contra 18 do desktop (nos 0 -> 8,5 do no 2527:1761), entao a rampa tem
+     menos distancia para percorrer e dois passos ja a cobrem sem a imagem
+     dobrar. O que se ganha sao oito <img> a menos com `filter: blur()` ativo,
+     no hardware que menos aguenta -- 16 em vez de 24.
+
+     Com o degrau do meio fora, o de baixo vira metade do cheio para os dois
+     passos ficarem igualmente espacados. */
+  .character-card-haze-1 {
+    filter: blur(calc(var(--haze) * 0.5));
+  }
+
+  .character-card-haze-2 {
+    display: none;
+  }
+
   .character-stage {
     --word: 12.48vw; /* 50,187 / 402 */
     --card-h: min(47.3svh, calc(60.58vw / 0.5896));
@@ -494,10 +882,24 @@
      pequena, centrada acima do deck. Continua sendo o mesmo <h2> -- esconder um
      e mostrar outro deixaria o celular sem cabecalho nenhum. */
   .character-word {
+    /* De volta a ancoragem pela base: aqui a palavra nao e regua de dock
+       nenhum -- o telefone manteve o deslize horizontal -- e o que importa e a
+       distancia dela ate o topo do deck. O `top: auto` desfaz o `--word-top`
+       da regra base; sem ele as duas ancoragens brigariam e a caixa esticaria
+       do topo ate aquele `bottom`. */
+    top: auto;
     right: 0;
     bottom: calc(46.65% + var(--card-h) / 2 + 8.7vw);
     left: 0;
     text-align: center;
+    /* SEM transform proprio. O telefone sempre deslizou a palavra, e por um
+       tempo esta media query foi a unica dona desse deslize -- o desktop tinha
+       parado a palavra para usa-la como regua. Agora os dois deslizam pela mesma
+       regra base, e repetir a conta aqui seria dois numeros para manter em fase.
+
+       A caixa aqui e `left: 0; right: 0`, entao o `100%` da regra base mede a
+       tela em vez da palavra; a distancia de saida sobra um pouco, e sobrar e o
+       lado certo de errar. */
   }
 
   /* A legenda sai de dentro da foto e vai para baixo dela, com o mesmo gesto:
@@ -513,10 +915,15 @@
     height: auto;
     padding-bottom: 0;
     border-radius: 0;
-    background: none;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+    /* O `background: none` que morava aqui saiu junto com o fundo da regra
+       base: nao ha mais o que desfazer. */
     transform: translateX(-50%);
+  }
+
+  /* 1,63 / 413,098, do Frame 44 do no 2527:1761. A regra base traz 10/649, que
+     e o vao do desktop: no telefone os dois nomes ficam quase colados. */
+  .character-cap-block {
+    gap: calc(var(--card-h) * 0.0039);
   }
 
   .character-cap-name {
@@ -548,16 +955,30 @@
     pointer-events: none;
   }
 
+  /* Cada palavra varre a PROPRIA largura ao longo da secao, e e por isso que a
+     distancia sai de `100% - 100vw` em vez de um numero de vw.
+
+     `100%` num translate resolve contra a largura do proprio elemento, e como o
+     <p> e absoluto e `nowrap` essa largura E a da palavra -- uns 430vw neste
+     corpo. Entao `100vw - 100%` e exatamente "o quanto sobra para fora da tela",
+     e varrer de 0 a esse valor mostra do comeco ao fim do nome. Medido pelo
+     elemento, e nao cravado, porque o corpo da palavra sai de vw e a metrica
+     muda com a fonte que carregar.
+
+     As posicoes de partida do no (x -192 e x -726) sairam junto: elas eram um
+     instante de uma varredura que o quadro parado nao sabia expressar, e quem
+     manda agora e o percurso. A de cima anda para a DIREITA, revelando do fim
+     do nome para o comeco; a de baixo para a ESQUERDA, do comeco para o fim. */
   .character-drift-top {
     top: 0;
-    left: -47.8vw; /* -192 / 402 */
-    transform: translateX(calc(var(--drift) * 1vw));
+    left: 0;
+    transform: translateX(calc((1 - var(--drift)) * (100vw - 100%)));
   }
 
   .character-drift-bottom {
     top: 70svh; /* 612 / 874 */
-    left: -180.6vw; /* -726 / 402 */
-    transform: translateX(calc(var(--drift) * -1vw));
+    left: 0;
+    transform: translateX(calc(var(--drift) * (100vw - 100%)));
   }
 
   /* A tela expandida empilha: a foto toma tudo e o desfoque vira faixa subindo
@@ -572,6 +993,26 @@
       rgba(50, 50, 50, 0.86),
       rgba(50, 50, 50, 0)
     );
+  }
+
+  /* A tela expandida empilha no telefone, entao o desfoque tambem gira: mesma
+     caixa do veu, e as mascaras passam a correr de baixo para cima. Os raios
+     ficam como estao -- sendo `vw`, eles ja encolhem junto com a tela. */
+  .character-dialog-haze {
+    top: auto;
+    bottom: 0;
+    width: 100%;
+    height: 72svh;
+  }
+
+  .character-dialog-haze-1 {
+    mask-image: linear-gradient(to top, #000 30%, transparent 72%);
+    -webkit-mask-image: linear-gradient(to top, #000 30%, transparent 72%);
+  }
+
+  .character-dialog-haze-2 {
+    mask-image: linear-gradient(to top, #000 12%, transparent 42%);
+    -webkit-mask-image: linear-gradient(to top, #000 12%, transparent 42%);
   }
 
   .character-dialog-text {
@@ -642,5 +1083,33 @@
      onde a foto esta no leque, nao movimento. */
   .character-cap-block {
     transform: none;
+  }
+
+  /* A emenda com a filmografia sem deslize nenhum. A cortina volta a ser uma
+     OPACIDADE, que e o que ela era ate 2026-09-28, e com isso a copia branca
+     que ela carrega cruza com a preta la embaixo em vez de varrer por cima
+     dela: a palavra troca de cor no lugar. O deck aparece e some pela mesma
+     porta.
+
+     A contra-translacao tem que ser zerada JUNTO com a da cortina. Sozinha ela
+     empurraria a palavra branca e as palavras de textura para fora do quadro
+     durante a varredura inteira, e nada apareceria ate o fim dela.
+
+     O `--rise` menos o `--lift` da 0 antes de subir, 1 no percurso e 0 de novo
+     depois de sair -- os dois nunca estao fora do repouso ao mesmo tempo, entao
+     a subtracao nunca fica negativa. */
+  .character-floor {
+    opacity: var(--wipe);
+    transform: none;
+  }
+
+  .character-floor-fix,
+  .character-word {
+    transform: none;
+  }
+
+  .character-deck {
+    opacity: calc(var(--rise) - var(--lift));
+    transform: translate(-50%, -50%);
   }
 }

@@ -19,6 +19,13 @@
   --fall: 0;
   --cut-l: 100%;
   --cut-r: 0px;
+
+  /* Deslocamento vertical do pôster em relação ao centro do palco, e a
+     correção que recentra a palavra quando as duas metades se encostam. Os
+     dois são 0 no perfil largo e só o estreito os usa — ver `centerVh` em
+     lib/filmStage.ts e `wordNudge()` em lib/useFilmStage.ts. */
+  --card-shift: 0px;
+  --word-nudge: 0px;
 }
 
 .film-stage {
@@ -69,7 +76,11 @@
      para vê-la vindo desde o início. 60vh (era 40vh) começa fora do quadro —
      pedido para vir de ainda mais embaixo. */
   transform:
-    translate3d(0, calc((1 - var(--rise)) * 60vh - var(--fall) * 80vh), 0)
+    translate3d(
+      var(--word-nudge, 0px),
+      calc((1 - var(--rise)) * 60vh - var(--fall) * 80vh),
+      0
+    )
     scale(calc(2.2 - 1.2 * var(--rise) + 1.2 * var(--fall)));
   white-space: nowrap;
   pointer-events: none;
@@ -170,7 +181,7 @@
 
 .film-card {
   position: absolute;
-  top: 50%;
+  top: calc(50% + var(--card-shift, 0px));
   left: 50%;
   width: var(--card-w);
   height: var(--card-h);
@@ -485,50 +496,100 @@
 }
 
 /* O breakpoint aqui tem que ser idêntico a `NARROW_QUERY` em `lib/filmStage.ts`.
-   Esta media query cuida só de tipografia e do layout do modal — a inversão da
-   composição (card maior, vão menor, pôster sobrepondo a palavra) já vem de
-   `geometry(true)`, lida pelo hook via `matchMedia(NARROW_QUERY)`. Redeclarar
-   `--card-w`, `--card-h` ou o passo aqui faria o CSS e o JS discordarem sobre
-   onde cada card está: custom property não resolve unidade, então o JS não
-   teria como ler `48vw` de volta para reconciliar. */
+   Esta media query cuida só de tipografia e de onde as coisas sentam — a
+   inversão da composição (pôster quase da largura da tela, desfile vertical,
+   vizinho cinza e borrado em vez de pequeno) já vem de `geometry(true)`, lida
+   pelo hook via `matchMedia(NARROW_QUERY)`. Redeclarar `--card-w`, `--card-h`,
+   o passo ou `--card-shift` aqui faria o CSS e o JS discordarem sobre onde cada
+   card está: custom property não resolve unidade, então o JS não teria como ler
+   `48vw` de volta para reconciliar. */
 @media (width < 64rem) {
-  /* A palavra deixa de se partir em volta do pôster e vira um título acima
-     dele.
+  /* A palavra deixa de se partir em volta do pôster e vira um bloco ABAIXO
+     dele — node 2527:1748 do Figma.
 
-     O vão estreito era 0.04vw — 15px numa tela de 390 — e o card mede 0.58vw.
-     Medido em 390, 430 e 768, o pôster caía exatamente sobre o vão e apagava
-     "graphy" e o ano: lia-se "FILMO … HY", ou só "FILMO". Com `splitVw: 0` em
-     `lib/filmStage.ts` as duas metades encostam no centro e voltam a ser uma
-     palavra só; aqui elas sobem para cima do pôster, onde nada as cobre.
+     O desfile agora sobe (ver NARROW em lib/filmStage.ts), e o pôster ocupa
+     quase a largura toda: 0.898vw contra 0.281 do perfil largo. Não sobra vão
+     lateral nenhum para a palavra se partir. O vão estreito antigo era 0.04vw
+     — 15px numa tela de 390 — e, medido em 390, 430 e 768, o pôster caía
+     exatamente sobre ele e apagava "graphy" e o ano: lia-se "FILMO … HY", ou
+     só "FILMO". Com `splitVw: 0` as duas metades encostam no centro e voltam a
+     ser uma palavra só, e aqui ela desce para a faixa livre debaixo do pôster,
+     onde nada a cobre.
 
-     Ancoradas por `bottom`, e não por `top`: assim a borda de baixo do bloco
-     fica a uma folga constante do topo do card e a caixa cresce para cima
-     sozinha, acompanhando o card em qualquer altura de tela sem um vh mágico.
-     A origem do `scale` passa a ser `bottom` pelo mesmo motivo — a junção das
-     duas metades continua presa no centro enquanto a palavra assenta, e o
-     crescimento acontece para cima em vez de invadir o pôster. */
+     Ancorada por `top` a partir da borda de baixo do card, e não por um vh
+     fixo: assim ela acompanha o pôster em qualquer altura de tela, inclusive
+     quando o teto de `heightVh` é quem dimensiona o card. A conta bate exata
+     no quadro do Figma — 437 − 90 + 272 + 37 = 656, que é o topo do bloco lá. */
   .film-word-back,
   .film-word-front {
-    top: auto;
-    bottom: calc(50% + var(--card-h) / 2 + clamp(14px, 3.4vw, 26px));
+    top: calc(
+      50% + var(--card-shift, 0px) + var(--card-h) / 2 +
+        clamp(18px, 4.23svh, 44px)
+    );
+    bottom: auto;
   }
 
-  .film-word-back { transform-origin: right bottom; }
-  .film-word-front { transform-origin: left bottom; }
+  /* A palavra cresce para BAIXO ao assentar, para dentro da faixa livre, em vez
+     de subir contra o pôster. A junção das duas metades continua presa no
+     centro porque as origens seguem opostas no eixo x. */
+  .film-word-back { transform-origin: right top; }
+  .film-word-front { transform-origin: left top; }
+
+  /* O contador e o ano trocam de lado. No perfil largo eles moram nas pontas
+     de fora da palavra, um em cada metade; aqui têm que se encontrar no centro,
+     numa linha só: `01 /16` e depois `2001`. `.film-word-back` termina no
+     centro e `.film-word-front` começa nele, então basta alinhar cada um à sua
+     borda de junção. A palavra em si não se move — ela é o filho mais largo dos
+     dois containers, então ocupa a largura inteira de qualquer jeito.
+
+     As margens são o vão do Figma partido em torno do centro: 8,4px de um lado
+     e 23,8px do outro, sobre 402 de largura. */
+  .film-word-back { align-items: flex-end; }
+  .film-word-front { align-items: flex-start; }
 
   /* A cópia branca recortada na caixa do card existia porque o pôster passava
-     POR CIMA da palavra. Com o título acima dele não há sobreposição nenhuma
+     POR CIMA da palavra. Com a palavra abaixo dele não há sobreposição nenhuma
      para recortar. O paint() de lib/useFilmStage.ts também para de calcular o
      recorte quando esta caixa não tem largura. */
   .film-word-cut { display: none; }
 
   /* Os corpos saem do menor entre a largura e a altura. Só o vw deixava a
-     palavra alta demais num tablet em paisagem estreita (1023 × 768): 13vw são
-     133px de corpo, e o bloco inteiro não cabia acima do card. */
-  .film-word { font-size: min(11.6vw, 11svh); }
-  .film-count-now { font-size: min(7vw, 6.6svh); }
-  .film-count-all { font-size: min(2.6vw, 2.4svh); }
-  .film-year { font-size: min(8vw, 7.5svh); }
+     palavra alta demais num tablet em paisagem estreita (1023 × 768): 13,5vw
+     são 138px de corpo e o bloco inteiro não cabia abaixo do card.
+
+     As razões entre eles são as do Figma sobre o corpo da palavra (54,181px):
+     0,815 no contador, 0,204 na fração e 0,466 no ano. */
+  .film-word { font-size: min(13.48vw, 12.8svh); }
+  .film-count-now { font-size: min(10.99vw, 10.43svh); }
+  .film-count-all { font-size: min(2.75vw, 2.61svh); }
+
+  /* "/ 16" é sobrescrito, não assentado na linha de base do "01": no Figma ele
+     encosta no topo da caixa do contador, a 6,024px de um corpo de 11,043 —
+     daí o 0,545em, medido no próprio tipo pequeno para escalar junto com ele. */
+  .film-count {
+    align-items: flex-start;
+    margin-top: 1.99vw;
+    margin-right: 2.09vw;
+  }
+
+  .film-count-all {
+    padding-top: 0.545em;
+    font-weight: 700;
+    letter-spacing: var(--tracking-label-wide);
+    text-transform: uppercase;
+  }
+
+  /* O ano senta na mesma linha do contador. O 0,25em extra centra a caixa dele
+     (25,24 × 1,25) contra a do "01" (44,173 × 1), que é mais alta: os dois
+     partem do mesmo topo, então sem isso os centros ficariam 6,3px fora. */
+  .film-year {
+    margin-top: calc(1.99vw + 0.25em);
+    margin-left: 5.92vw;
+    font-size: min(6.28vw, 5.96svh);
+    font-weight: 500;
+    line-height: 1.25;
+    letter-spacing: var(--tracking-label);
+  }
 
   /* O pé da tela é onde mora a faixa de gestos do aparelho. */
   .film-skip {

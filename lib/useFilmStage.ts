@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { Geometry } from "@/lib/filmStage";
 import { CURTAIN_OUT, NARROW_QUERY, canSkip, cursor, depth, geometry, trackVh } from "@/lib/filmStage";
 import { isReduced, onTick } from "@/lib/scroll";
 import { onViewport, smallViewportHeight } from "@/lib/viewport";
@@ -17,6 +18,27 @@ const STRIDE = 80;
 // argumento, ganho 1.0) — assim "o TEK da trava é maior" sem precisar tocar
 // no volume da trava em si.
 const TRAVEL_EMPHASIS = 0.4;
+
+// Em tela estreita `--split` e 0: as duas metades encostam no centro e voltam a
+// ser uma palavra so, FILMOGRAPHY. Mas o ponto de JUNCAO e que esta no centro da
+// tela, nao o centro da palavra -- "GRAPHY" tem uma letra a mais que "FILMO", e
+// o conjunto pende uns 5% da propria largura para a direita (uns 15px num
+// telefone). No Figma (node 2527:1748) a palavra esta centrada no quadro.
+//
+// A correcao e meia diferenca entre as duas metades, e so da para saber
+// medindo: nenhuma unidade de CSS resolve largura de texto. Mede os `.film-word`
+// em si, nao os containers, porque o container e tao largo quanto o mais largo
+// entre a palavra e o contador que mora embaixo dela.
+//
+// No perfil largo devolve 0 -- la as metades estao afastadas por `--split` e
+// cada uma tem a sua propria ancora.
+function wordNudge(trackEl: HTMLElement, g: Geometry) {
+  if (g.axis !== "y") return 0;
+  const back = trackEl.querySelector<HTMLElement>(".film-word-back .film-word");
+  const front = trackEl.querySelector<HTMLElement>(".film-word-front .film-word");
+  if (!back || !front) return 0;
+  return (back.offsetWidth - front.offsetWidth) / 2;
+}
 
 export function useFilmStage(count: number) {
   const track = useRef<HTMLDivElement>(null);
@@ -76,6 +98,10 @@ export function useFilmStage(count: number) {
     let cardW = 0;
     let cardH = 0;
     let splitMax = 0;
+    // A geometria do quadro atual. `paint()` precisa dela por causa de
+    // `depth()` (os dois perfis têm profundidades diferentes) e do eixo do
+    // desfile; `measure()` é quem a troca quando o breakpoint vira.
+    let geo: Geometry = geometry(narrow.matches);
 
     function paint() {
       const trackEl = track.current;
@@ -144,7 +170,7 @@ export function useFilmStage(count: number) {
         const card = railEl.children[i] as HTMLElement | undefined;
         if (!card) continue;
 
-        const d = depth(i, c.u);
+        const d = depth(i, c.u, geo);
         // Enquanto o 1º pôster ainda está subindo pelo vão (c.enter < 1), os
         // vizinhos não podem aparecer: `depth(1, 0).live` já é `true` a um
         // passo de distância, mas o primeiro filme ainda nem entrou em quadro.
@@ -159,14 +185,30 @@ export function useFilmStage(count: number) {
         // O primeiro pôster sobe pelo vão que a palavra acabou de abrir. São
         // 120% da própria altura, não 100%: o card é centrado na tela, então
         // empurrá-lo só uma altura deixaria o topo dele aparecendo na borda de
-        // baixo antes da hora.
-        const lift = i === 0 ? (1 - c.enter) * 120 : 0;
+        // baixo antes da hora. Em px (era `%` no transform) porque no eixo
+        // vertical ele soma com o percurso, que é px — e `%` num translate
+        // resolve contra a altura do próprio elemento, não dá para somar os
+        // dois sem calc.
+        const lift = i === 0 ? (1 - c.enter) * 1.2 * cardH : 0;
+        const along = d.offset * pitch;
 
         card.style.visibility = "visible";
+        // No perfil estreito o desfile já é vertical e a entrada vem da mesma
+        // direção, então os dois se somam no mesmo eixo: o pôster sobe de
+        // baixo para o lugar e continua subindo quando o próximo o empurra.
         card.style.transform =
-          `translate3d(${(d.offset * pitch).toFixed(2)}px, ${lift.toFixed(2)}%, 0)` +
+          (geo.axis === "y"
+            ? `translate3d(0, ${(along + lift).toFixed(2)}px, 0)`
+            : `translate3d(${along.toFixed(2)}px, ${lift.toFixed(2)}px, 0)`) +
           ` scale(${d.scale.toFixed(4)})`;
-        card.style.filter = reduced || d.blur < 0.1 ? "" : `blur(${d.blur.toFixed(2)}px)`;
+
+        // Desfoque e dessaturação são a profundidade do perfil estreito (o
+        // vizinho quase não encolhe lá). O blur cai sob movimento reduzido
+        // como sempre; a cor não, porque perder saturação não é movimento.
+        const grade: string[] = [];
+        if (!reduced && d.blur >= 0.1) grade.push(`blur(${d.blur.toFixed(2)}px)`);
+        if (d.fade >= 0.01) grade.push(`saturate(${(1 - d.fade).toFixed(3)})`);
+        card.style.filter = grade.join(" ");
       }
 
       // FILMO branca só aparece onde há pôster atrás dela. O recorte segue a caixa do
@@ -213,7 +255,7 @@ export function useFilmStage(count: number) {
           if (gap < best) { best = gap; near = i; }
         }
 
-        const d = depth(near, c.u);
+        const d = depth(near, c.u, geo);
         const half = (cardW * d.scale) / 2;
         const cx = mid + d.offset * pitch;
 
@@ -223,9 +265,9 @@ export function useFilmStage(count: number) {
         // `translate3d` resolve contra a altura do próprio elemento (`cardH`
         // sem escala), então o deslocamento em px é `lift% × cardH` — igual
         // ao que o CSS aplica no card de verdade.
-        const liftNear = near === 0 ? (1 - c.enter) * 120 : 0;
+        const liftNear = near === 0 ? (1 - c.enter) * 1.2 * cardH : 0;
         const halfH = (cardH * d.scale) / 2;
-        const cy = stageBox.top + stageBox.height / 2 + (liftNear / 100) * cardH;
+        const cy = stageBox.top + stageBox.height / 2 + liftNear;
         const overlapsVertically = cy + halfH > box.top && cy - halfH < box.bottom;
 
         const l = overlapsVertically
@@ -291,12 +333,15 @@ export function useFilmStage(count: number) {
 
       const vw = window.innerWidth;
       const g = geometry(narrow.matches);
+      geo = g;
 
       vh = smallViewportHeight();
-      pitch = g.pitchVw * vw;
+      // O passo acompanha o eixo: quem desfila na horizontal mede contra a
+      // largura, quem sobe mede contra a altura. Ver `pitch` em Geometry.
+      pitch = g.pitch * (g.axis === "y" ? vh : vw);
       // Em tela estreita a largura sozinha nao dimensiona o card: num tablet
-      // em retrato ela daria um poster mais alto que a tela, e o titulo que
-      // agora mora ACIMA dele nao teria onde caber. O teto de altura so existe
+      // em retrato ela daria um poster mais alto que a tela, e a palavra que
+      // mora abaixo dele nao teria onde caber. O teto de altura so existe
       // na geometria estreita -- ver NARROW em lib/filmStage.ts.
       cardW = g.widthVw * vw;
       if (g.heightVh) cardW = Math.min(cardW, (g.heightVh * vh) / g.ratio);
@@ -305,16 +350,32 @@ export function useFilmStage(count: number) {
 
       trackEl.style.setProperty("--card-w", `${cardW.toFixed(2)}px`);
       trackEl.style.setProperty("--card-h", `${cardH.toFixed(2)}px`);
+      // Quanto o poster sai do centro do palco. O CSS pendura a palavra na
+      // borda de baixo do card, entao ela viaja junto sem repetir a conta.
+      trackEl.style.setProperty(
+        "--card-shift",
+        `${((g.centerVh ?? 0) * vh).toFixed(2)}px`,
+      );
+      trackEl.style.setProperty("--word-nudge", `${wordNudge(trackEl, g).toFixed(2)}px`);
       trackEl.style.height = `${vh * trackVh(isReduced(), narrow.matches)}px`;
       paint();
     }
 
+    let live = true;
     measure();
+    // As duas metades da palavra so tem largura depois que a fonte de verdade
+    // chega: medir no mount le os glifos do fallback e o nudge sai errado por
+    // dezenas de pixels. Mesmo compasso que lib/useHeroMorph.ts usa para medir
+    // o lockup.
+    document.fonts.ready.then(() => {
+      if (live) measure();
+    });
     const untick = onTick(paint);
     const unwatch = onViewport(measure);
     narrow.addEventListener("change", measure);
 
     return () => {
+      live = false;
       untick();
       unwatch();
       narrow.removeEventListener("change", measure);
