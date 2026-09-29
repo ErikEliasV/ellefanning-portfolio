@@ -61,23 +61,15 @@ export function Hero() {
           <span aria-hidden className="hero-veil" />
         </div>
 
-        <h1 className="hero-title hero-title-entry">
-          <span className="hero-wipe hero-wipe-g">
-            <span className="hero-face hero-face-g">Elle Fanning</span>
-          </span>
-          <span aria-hidden className="hero-wipe hero-wipe-e">
-            <span className="hero-face hero-face-e">Elle Fanning</span>
-          </span>
-        </h1>
-
-        <p aria-hidden className="hero-title hero-title-lockup">
-          <span className="hero-face hero-face-e">
+        <h1 className="hero-title">
+          <span className="sr-only">Elle Fanning</span>
+          <span aria-hidden className="hero-face">
             <span>Elle</span>
             <span>
               Fanning<span className="hero-dot">.</span>
             </span>
           </span>
-        </p>
+        </h1>
 
         <div className="hero-portrait">
           <Image

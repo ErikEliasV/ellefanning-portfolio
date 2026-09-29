@@ -3,48 +3,16 @@
 import Image from "next/image";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { asset } from "@/lib/asset";
+import { clearInert, markOutsideInert } from "@/lib/inert";
 import { lockScroll } from "@/lib/scroll";
 import type { Film } from "@/lib/films";
+import "@/styles/close.css";
 
 // A caixa do card travado no instante do clique, em coordenadas de viewport
 // (`getBoundingClientRect()`). É dali que o pôster cresce até virar o fundo do
 // modal — ver o comentário maior junto a `.film-dialog-grow` em
 // styles/filmography.css.
 export type Origin = { top: number; left: number; width: number; height: number };
-
-// O modal não é portalado para <body>: ele mora dentro de .film-track, vários
-// níveis abaixo do header e do botão de som. "Marcar os irmãos" não basta,
-// porque em cada nível intermediário (.film-track, a <section>, <main>,
-// <body>) há um conjunto diferente de irmãos para inertizar. Esta função sobe
-// da caixa do modal até <body>, e em cada parada marca todo mundo que não é
-// o próprio caminho até o modal — inclusive .film-stage (os cards atrás do
-// fundo escurecido), o header e o botão de som, que vivem em `<body>`.
-//
-// Devolve a lista do que foi marcado, e é essa lista — não um novo passeio
-// pela árvore — que o cleanup usa para desmarcar. Motivo: no desmonte, o
-// React já removeu `node` do documento antes de rodar a limpeza do efeito, e
-// `node.parentElement` de um nó destacado é `null` — um novo passeio a partir
-// dele não encontra mais nada para desmarcar, e o `inert` fica esquecido para
-// sempre no header, no som e no palco.
-function markOutsideInert(node: HTMLElement): HTMLElement[] {
-  const marked: HTMLElement[] = [];
-  let child: Element = node;
-  while (child !== document.body && child.parentElement) {
-    const parent = child.parentElement;
-    for (const sibling of Array.from(parent.children)) {
-      if (sibling === child) continue;
-      const el = sibling as HTMLElement;
-      el.setAttribute("inert", "");
-      marked.push(el);
-    }
-    child = parent;
-  }
-  return marked;
-}
-
-function clearInert(elements: readonly HTMLElement[]) {
-  for (const el of elements) el.removeAttribute("inert");
-}
 
 export function FilmDialog({
   film,
@@ -171,12 +139,12 @@ export function FilmDialog({
       <button
         ref={close}
         type="button"
-        className="film-dialog-close"
+        className="close-pill"
         data-cursor="Close"
         onClick={onClose}
       >
-        <span aria-hidden className="film-dialog-x" />
-        <span className="film-dialog-back">back</span>
+        <span aria-hidden className="close-pill-x" />
+        <span className="close-pill-label">back</span>
       </button>
 
       <div className="film-dialog-text" data-open={open ? "" : undefined}>

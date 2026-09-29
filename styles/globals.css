@@ -116,6 +116,31 @@
 
 :root {
   --gutter-page: 22px;
+
+  /* As bordas seguras do aparelho: zero em qualquer coisa sem notch, e por
+     isso podem ficar aqui sem media query nenhuma -- no desktop os quatro
+     valem 0px e nao mudam um pixel do que ja existe. Quem e fixo (a barra do
+     header, o menu, os pills) soma estes tokens em vez de repetir `env()` a
+     cada regra, e assim so ha um lugar para conferir quando o notch entra na
+     conta. */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+
+  /* O piso de alvo de toque que o projeto adota. Vinha repetido como `44px`
+     literal em seis arquivos (o pill, o skip, o close do editorial, os links
+     do rodape, o botao do modal de filme); agora sai de um lugar so. */
+  --tap: 44px;
+
+  /* Escalas fluidas de tipo. Existem para os corpos que precisam atravessar
+     de 360px a 1920px sem estourar a lateral nem virar um fio no telefone --
+     o teto de cada uma e exatamente o valor que o desenho ja tinha na largura
+     em que foi feito, entao o desktop nao se mexe. */
+  --type-sheet: clamp(34px, 11.2vw, 64px);
+  --type-heading: clamp(28px, 7.4vw, 44px);
+  --type-read: clamp(16px, 4.2vw, 18px);
+
   --duration-instant: 80ms;
   --duration-fast: 140ms;
   --duration-base: 220ms;

@@ -10,19 +10,10 @@
   initial-value: 1;
 }
 
+/* A hero nao usa mais o --t: ele movia a costura entre a face grotesca e a
+   serifada do titulo de entrada, que saiu. O registro fica porque
+   styles/editorial.css calcula o --t dele proprio e conta com ele. */
 @property --t {
-  syntax: "<number>";
-  inherits: true;
-  initial-value: 0;
-}
-
-@property --entry-a {
-  syntax: "<number>";
-  inherits: true;
-  initial-value: 1;
-}
-
-@property --lock-a {
   syntax: "<number>";
   inherits: true;
   initial-value: 0;
@@ -32,12 +23,6 @@
   position: relative;
   flex: none;
   height: calc(var(--morph, 90svh) + var(--frame-h-b, 100svh));
-  --t: clamp(0, calc((var(--p) - 0.05) / 0.5), 1);
-  --entry-a: clamp(0, calc((0.62 - var(--p)) / 0.2), 1);
-  --lock-a: clamp(0, calc((var(--p) - 0.42) / 0.2), 1);
-  --entry-k: calc(1 + var(--p) * 1.6);
-  --seam-a: calc((1 - var(--t)) * 118% - 18%);
-  --seam-b: calc((1 - var(--t)) * 118%);
 }
 
 .hero-frame {
@@ -48,7 +33,7 @@
     var(--frame-h-b, 100svh) - var(--inv) *
       (var(--frame-h-b, 100svh) - var(--frame-h-a, 100svh))
   );
-  background-color: var(--color-blush-100);
+  background-color: var(--color-rose-400);
 }
 
 .hero-track:not([data-ready]) .hero-frame > *:not(.hero-field) {
@@ -86,111 +71,63 @@
   image-rendering: pixelated;
 }
 
+/* O caminho de reserva, sem WebGL. O tinte era um color-mix que andava com o
+   --p porque o mosaico lavava de papel para rosa; agora ele ja nasce rosa e o
+   que sobra e uma cor chapada -- ver lib/useHeroField.ts. */
 .hero-field:has(.hero-field-flat)::after {
   content: "";
   position: absolute;
   inset: 0;
-  background-color: color-mix(
-    in srgb,
-    var(--color-blush-100),
-    var(--color-rose-400) calc(var(--p) * 100%)
-  );
+  background-color: var(--color-rose-400);
   opacity: 0.82;
 }
 
+/* O titulo, um so do inicio ao fim. Ate aqui eram dois: um de entrada, em
+   grotesco que se trocava por serifado num wipe, e o lockup grande que
+   aparecia por cima na segunda metade da rolagem. Agora a palavra e a mesma
+   nos dois estados e a rolagem so faz ela crescer -- a geometria dos dois
+   extremos sai medida de lib/useHeroMorph.ts. */
 .hero-title {
   position: absolute;
   inset: 0;
+  z-index: 10;
   margin: 0;
+  color: var(--color-paper-000);
   pointer-events: none;
 }
 
 .hero-face {
   position: absolute;
+  left: var(--paper-left);
+  top: var(--paper-top);
   display: block;
+  font-family: var(--font-editorial);
+  font-size: var(--paper-size);
   font-weight: 400;
+  line-height: var(--paper-line);
   letter-spacing: -0.01em;
   text-transform: uppercase;
   white-space: nowrap;
   transform-origin: 0 0;
+  transform: translate(
+      calc(var(--inv) * var(--lock-dx)),
+      calc(var(--inv) * var(--lock-dy))
+    )
+    scale(calc(1 - var(--inv) * (1 - var(--lock-k, 1))));
 }
 
 .hero-face > span {
   display: block;
 }
 
-.hero-wipe {
-  position: absolute;
-  inset: 0;
-  display: block;
+/* Uma escala nao mexe em entrelinha, e o primeiro estado tem as duas linhas
+   quase coladas contra as soltas do segundo. A segunda linha sobe sozinha,
+   nas unidades de dentro da face, para o scale de cima carregar ela junto. */
+.hero-face > span + span {
+  transform: translateY(calc(var(--inv) * var(--lock-close, 0px)));
 }
 
-.hero-wipe-g {
-  -webkit-mask-image: linear-gradient(90deg, #000 var(--seam-a), transparent var(--seam-b));
-  mask-image: linear-gradient(90deg, #000 var(--seam-a), transparent var(--seam-b));
-}
-
-.hero-wipe-e {
-  -webkit-mask-image: linear-gradient(90deg, transparent var(--seam-a), #000 var(--seam-b));
-  mask-image: linear-gradient(90deg, transparent var(--seam-a), #000 var(--seam-b));
-}
-
-.hero-face-g {
-  font-family: var(--font-text);
-}
-
-.hero-face-e {
-  font-family: var(--font-editorial);
-}
-
-.hero-title-entry {
-  z-index: 5;
-  color: var(--color-rose-400);
-  opacity: var(--entry-a);
-}
-
-.hero-title-entry .hero-wipe {
-  left: var(--entry-left);
-  right: auto;
-  width: var(--entry-width);
-  transform-origin: 50% var(--entry-origin);
-  transform: scale(var(--entry-k));
-}
-
-.hero-title-entry .hero-face {
-  line-height: 1;
-}
-
-.hero-title-entry .hero-face-g {
-  left: var(--entry-g-left);
-  top: var(--entry-g-top);
-  font-size: var(--entry-g-size);
-  letter-spacing: var(--entry-g-track);
-}
-
-.hero-title-entry .hero-face-e {
-  left: var(--entry-e-left);
-  top: var(--entry-e-top);
-  font-size: var(--entry-e-size);
-  letter-spacing: var(--entry-e-track);
-}
-
-.hero-title-lockup {
-  z-index: 10;
-  color: var(--color-paper-100);
-  opacity: var(--lock-a);
-}
-
-.hero-title-lockup .hero-face-e {
-  left: var(--paper-left);
-  top: var(--paper-top);
-  font-size: var(--paper-size);
-  line-height: var(--paper-line);
-  transform-origin: 50% 50%;
-  transform: scale(calc(1 - var(--inv) * (1 - var(--paper-k))));
-}
-
-.hero-title-lockup .hero-dot {
+.hero-dot {
   color: var(--color-rose-500);
 }
 
@@ -214,7 +151,7 @@
 }
 
 /* The mosaic used to run straight into the header. It now dissolves into the
-   frame colour at the top, which follows the same rose wash as everything else. */
+   frame colour at the top, which is the same rose as everything else. */
 .hero-veil {
   position: absolute;
   inset: 0;
@@ -222,12 +159,7 @@
   pointer-events: none;
   background-image: linear-gradient(
     to bottom,
-    color-mix(
-        in srgb,
-        var(--color-blush-100),
-        var(--color-rose-400) calc(var(--p) * 100%)
-      )
-      0%,
+    var(--color-rose-400) 0%,
     transparent 24%
   );
 }
@@ -251,13 +183,13 @@
 }
 
 /* A entrada, em dois tempos que se sobrepõem: a cópia macia resolve para fora
-   do campo primeiro e a nítida assenta um tempo depois. Os dois correm em
-   propriedades que o morph não possui — o transform do invólucro do wipe é do
-   morph, então os tempos do título usam filter, opacity e um translate nas
-   faces de dentro. A foto entrava num terceiro tempo, subindo de translateY(18%)
-   no próprio elemento da imagem; o dono do projeto pediu que ela ficasse
-   parada, então ela agora chega já no lugar. Nada fica pré-armado: sem sinal de
-   entrada a hero simplesmente está lá, vestida. */
+   do campo primeiro e a nítida assenta um tempo depois. Os dois correm no
+   elemento do título, e não na face, porque a face é de quem o morph escreve o
+   transform — um translate aqui em cima apagaria o translate+scale de lá. A
+   foto entrava num terceiro tempo, subindo de translateY(18%) no próprio
+   elemento da imagem; o dono do projeto pediu que ela ficasse parada, então ela
+   agora chega já no lugar. Nada fica pré-armado: sem sinal de entrada a hero
+   simplesmente está lá, vestida. */
 @keyframes hero-soft {
   from {
     opacity: 0;
@@ -271,23 +203,21 @@
 
 @keyframes hero-sharp {
   from {
-    transform: translateY(0.06em);
+    transform: translateY(var(--lock-settle, 0px));
   }
   to {
     transform: translateY(0);
   }
 }
 
-html[data-entered] .hero-track[data-ready] .hero-title-entry .hero-wipe {
-  animation: hero-soft var(--duration-anchor) var(--ease-out) both;
-}
-
-html[data-entered] .hero-track[data-ready] .hero-title-entry .hero-face {
-  animation: hero-sharp var(--duration-reveal) var(--ease-out) 260ms both;
+html[data-entered] .hero-track[data-ready] .hero-title {
+  animation:
+    hero-soft var(--duration-anchor) var(--ease-out) both,
+    hero-sharp var(--duration-reveal) var(--ease-out) 260ms both;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html[data-entered] .hero-track[data-ready] .hero-title-entry .hero-face {
+  html[data-entered] .hero-track[data-ready] .hero-title {
     animation-delay: 0s;
   }
 }

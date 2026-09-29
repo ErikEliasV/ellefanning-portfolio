@@ -3,10 +3,13 @@
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-import type { Vector } from "@/lib/characterStage";
 import { isReduced } from "@/lib/scroll";
 
 export type Kill = () => void;
+
+// De onde cada peca parte numa entrada em voo: porcentagem do proprio tamanho
+// (xPercent/yPercent do GSAP) ou escala, para quem cresce em vez de viajar.
+export type Vector = { x?: number; y?: number; scale?: number };
 
 // The shared grammar. Each section plays its own mechanism, but all of them
 // borrow this curve, these duration bands, this stagger and this trigger point,

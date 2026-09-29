@@ -5,11 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { MouseEvent } from "react";
 
 import { asset } from "@/lib/asset";
-import {
-  entryLockAt,
-  trackVh as characterTrackVh,
-} from "@/lib/characterStage";
-import { phases, trackVh } from "@/lib/filmStage";
+import { isNarrow, phases, trackVh } from "@/lib/filmStage";
 import { gooPath } from "@/lib/headerGoo";
 import { isLocked, isReduced, onTick, scrollTo } from "@/lib/scroll";
 import { SECTIONS } from "@/lib/sections";
@@ -82,35 +78,39 @@ function filmEntryTarget(): string | number {
   const track = document.querySelector<HTMLElement>(".film-track");
   if (!track) return "#filmography";
 
+  const reduced = isReduced();
+  const narrow = isNarrow();
   const rect = track.getBoundingClientRect();
-  const vh = rect.height / trackVh(isReduced());
+  const vh = rect.height / trackVh(reduced, narrow);
   if (!vh) return "#filmography";
 
   const trackTop = rect.top + window.scrollY;
-  return trackTop + phases(isReduced()).reel.from * vh;
+  return trackTop + phases(reduced, narrow).reel.from * vh;
 }
 
-// O mesmo raciocinio do filmEntryTarget acima, para a entrada de CHARACTERS: o
-// topo de `.character-section` nao e a secao, e a tela branca em que a
-// varredura preta ainda nem comecou -- e pior, ela agora sobe 100svh para
-// dentro do rabo da filmografia, entao `#characters` pousa dentro do palco
-// alheio. O alvo e `entryLockAt()`: a varredura fechada, o titulo parado e
-// branco no meio da tela.
+// O mesmo problema do filmEntryTarget acima, para a entrada de CHARACTERS: o
+// topo de `.character-section` nao e a secao, e a tela branca em que a emenda
+// com a filmografia ainda nem comecou -- e pior, ela sobe 100svh para dentro do
+// rabo daquela secao, entao `#characters` pousa dentro do palco alheio. O alvo
+// e a primeira personagem travada no centro, com a legenda ja assentada.
 //
-// O vh sai da altura JA APLICADA em `.character-track` dividida por
-// `trackVh()`, e nao de uma medicao nova, pelo mesmo motivo de la: e o unico
-// jeito de os dois lados concordarem sobre qual vh vale sem medir duas vezes.
+// A resposta vem PRONTA, em px a partir do topo da trilha, escrita por
+// lib/useCharacterDeck.ts na mesma medicao que dimensionou a trilha. Aqui saia
+// uma reconstrucao -- lia-se a altura aplicada, dividia-se por `trackVh()` para
+// recuperar o vh e multiplicava-se por `entryLockAt()`. Isso parou de funcionar
+// quando a altura da secao passou a depender de quantas fotos cabem por lado no
+// trilho, que e medido contra a caixa do titulo: este lado nao tem como chegar
+// aquele numero. Ler a resposta em vez de refaze-la tambem acaba com a chance
+// de os dois lados discordarem, que era o risco que o comentario antigo
+// confessava.
 function characterEntryTarget(): string | number {
   const track = document.querySelector<HTMLElement>(".character-track");
   if (!track) return "#characters";
 
-  const reduced = isReduced();
-  const rect = track.getBoundingClientRect();
-  const vh = rect.height / characterTrackVh(reduced);
-  if (!vh) return "#characters";
+  const entry = Number(track.dataset.entry);
+  if (!Number.isFinite(entry) || entry <= 0) return "#characters";
 
-  const trackTop = rect.top + window.scrollY;
-  return trackTop + entryLockAt(reduced) * vh;
+  return track.getBoundingClientRect().top + window.scrollY + entry;
 }
 
 export function useHeaderGlass() {
@@ -142,6 +142,17 @@ export function useHeaderGlass() {
   const spot = useRef({ x: 0, y: 0 });
 
   const open = hot !== null;
+
+  // A hero e dona da tela: nos dois estados dela nao ha barra. O sinal e o
+  // proprio espiao de secao la embaixo -- `active` so deixa de ser "hero"
+  // quando a filmografia cobre a faixa do meio da tela, que e onde o header
+  // volta. O `null` entra junto porque `active` nasce assim e so recebe valor
+  // quando o observador dispara: sem ele a barra piscaria no primeiro quadro.
+  //
+  // Por cima do `hidden` da rolagem, e nao no lugar dele: dentro da hero,
+  // subir de volta ou passar o ponteiro pela faixa do topo nao traz a barra;
+  // fora dela tudo se comporta como antes.
+  const furled = hidden || active === null || active === "hero";
 
   // Espelhos, para o loop da gosma ler o estado sem remontar a cada mudanca.
   const live = useRef({ open: false, awake: false });
@@ -217,6 +228,23 @@ export function useHeaderGlass() {
     live.current.open = open;
     live.current.awake = awake;
   }, [open, awake]);
+
+  // O mesmo `hidden` que recolhe a barra precisa alcancar dois elementos que
+  // NAO moram dentro de <header>: o botao do menu e o pill de musica, que no
+  // celular sentam sobre a barra mas sao fixos por conta propria (o .hdr tem
+  // `transform`, e isso o torna bloco de contencao de qualquer `fixed` que
+  // caia dentro dele -- por isso eles ficam de fora). Sem este espelho, rolar
+  // para baixo levava a nav embora e deixava os dois pendurados sozinhos no
+  // alto da tela.
+  useEffect(() => {
+    const root = document.documentElement;
+    if (furled) root.dataset.chromeHidden = "";
+    else delete root.dataset.chromeHidden;
+
+    return () => {
+      delete root.dataset.chromeHidden;
+    };
+  }, [furled]);
 
   useEffect(() => {
     const query = window.matchMedia("(pointer: fine)");
@@ -606,7 +634,7 @@ export function useHeaderGlass() {
     active,
     awake,
     open,
-    hidden,
+    hidden: furled,
     painted,
     ride,
     bind,

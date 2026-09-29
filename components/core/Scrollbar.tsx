@@ -4,8 +4,12 @@ import { useScrollbar } from "@/lib/useScrollbar";
 import "@/styles/scrollbar.css";
 
 export function Scrollbar() {
-  const { rail, thumb, live, drag, onThumbDown, onThumbMove, onThumbUp, onRailDown } =
+  const { rail, thumb, fine, live, drag, onThumbDown, onThumbMove, onThumbUp, onRailDown } =
     useScrollbar();
+
+  // Mesma regra do cursor custom: sem ponteiro fino nao ha barra nativa a
+  // substituir, e o trilho so roubaria o toque na borda direita da tela.
+  if (!fine) return null;
 
   // aria-hidden como o cursor customizado: isto e o desenho da rolagem, nao a
   // rolagem. A nativa continua inteira -- roda, teclado, Page Up/Down, barra de

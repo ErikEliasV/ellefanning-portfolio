@@ -1,0 +1,111 @@
+/* O botao de voltar dos modais. Nasceu na filmografia e ganhou um segundo
+   consumidor com a tela expandida de Characters, entao saiu de la para ca.
+   O no do Figma (2345:122) traz duas variantes do mesmo componente: uma caixa
+   cinza com um X e uma pilula rosa com um + e o rotulo. Elas sao o repouso e o
+   hover do mesmo botao, e e assim que estao implementadas aqui.
+
+   Quem usa poe a POSICAO na propria folha; daqui sai so o botao. */
+
+.close-pill {
+  /* 61 / 1920, sem piso. O piso mora em quem usa, e nao aqui: a filmografia
+     roda com este valor puro desde que foi ao ar, e um `max(var(--tap), ...)`
+     nesta linha a engordaria de 40,7 para 44px em toda largura entre 1024 e
+     1385 -- laptops comuns. Mudanca de desenho que ninguem pediu, em codigo
+     que ja esta no ar. Cada modal declara o proprio piso na propria folha. */
+  --close-box: 3.177vw;
+  --close-icon: calc(var(--close-box) * 0.5902); /* 36 / 61 */
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--close-box) * 0.1639); /* 10 / 61 */
+  width: var(--close-box);
+  height: var(--close-box);
+  padding-right: 0;
+  padding-left: calc((var(--close-box) - var(--close-icon)) / 2);
+  border: 0;
+  border-radius: calc(var(--close-box) * 0.1803); /* 11 / 61 */
+  background-color: rgba(92, 92, 92, 0.55);
+  color: var(--color-paper-000);
+  overflow: hidden;
+  cursor: pointer;
+  transition:
+    width var(--duration-base) var(--ease-out),
+    padding-left var(--duration-base) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
+}
+
+/* 61 × 61 em repouso, 171,6 × 61 aberto: o X gira 45° e vira +, o rotulo entra.
+   A largura aberta e um numero, nao `max-content`, porque `width` nao
+   transiciona para tamanho intrinseco. Ele saiu de medir BACK renderizado: 9 de
+   respiro + 36 de icone + 10 de gap + 101,58 de rotulo + 15 de respiro = 171,6,
+   ou 2,8128 caixas. O rotulo escala junto com a caixa, entao a razao vale em
+   qualquer largura; trocar a PALAVRA e que pede medir de novo. */
+.close-pill:hover,
+.close-pill:focus-visible {
+  width: calc(var(--close-box) * 2.8128);
+  padding-left: calc(var(--close-box) * 0.1475); /* 9 / 61 */
+}
+
+.close-pill:active {
+  background-color: rgba(224, 114, 149, 0.55);
+}
+
+/* Todo o resto do modal desfaz o movimento de entrada quando `closing` liga, e
+   isso leva --duration-modal inteiro. Este botao nao acompanha: ele e o que
+   voce acabou de clicar, e ve-lo pendurado em opacidade cheia sobre a foto
+   encolhendo le como se o clique nao tivesse pego. Sem transicao de proposito
+   -- some no instante do clique. O visibility mata junto o ponteiro e o rotulo
+   do cursor, entao nada fica sobrando por cima da saida. */
+[data-closing] > .close-pill {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.close-pill-x {
+  position: relative;
+  flex: none;
+  width: var(--close-icon);
+  height: var(--close-icon);
+  rotate: 45deg;
+  transition: rotate var(--duration-base) var(--ease-out);
+}
+
+/* O traco tem 1px no Figma e continua em 1px aqui, nao em vw: e uma linha de
+   hairline, nao uma medida da composicao. O translate sobe a linha meio pixel
+   para o traco ficar centrado na caixa em vez de comecar nela. */
+.close-pill-x::before,
+.close-pill-x::after {
+  content: "";
+  position: absolute;
+  inset: 50% 0 auto;
+  height: 1px;
+  translate: 0 -50%;
+  background-color: currentColor;
+}
+
+.close-pill-x::after {
+  rotate: 90deg;
+}
+
+.close-pill:hover .close-pill-x,
+.close-pill:focus-visible .close-pill-x {
+  rotate: 0deg;
+}
+
+.close-pill-label {
+  font-family: var(--font-text);
+  font-weight: 500;
+  font-size: calc(var(--close-box) * 0.4443); /* 27,104 / 61 */
+  line-height: 1;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+.close-pill:hover .close-pill-label,
+.close-pill:focus-visible .close-pill-label {
+  opacity: 1;
+}

@@ -5,20 +5,89 @@
 export type Geometry = {
   widthVw: number;
   ratio: number;
-  pitchVw: number;
+  /** Eixo do desfile. O largo atravessa a tela; o estreito sobe, de baixo
+   * para cima (node 2527:1748 do Figma). */
+  axis: "x" | "y";
+  /** Passo entre centros de vizinhos: fração de vw no eixo x, de vh no y.
+   * A unidade acompanha o eixo porque o que limita o percurso é a medida da
+   * tela naquela direção — num telefone em retrato um passo em vw seria
+   * curto demais para tirar o pôster de quadro. */
+  pitch: number;
   splitVw: number;
+  /** Teto de altura do card, em fração de vh. Só a geometria estreita usa. */
+  heightVh?: number;
+  /** Centro do card em relação ao centro do palco, em fração de vh. Positivo
+   * desce. O estreito sobe o pôster para abrir a faixa de baixo, onde agora
+   * mora a palavra. */
+  centerVh?: number;
+  /** Escala do vizinho imediato (a um passo de distância). */
+  nearScale: number;
+  /** Desfoque do vizinho imediato, em px. */
+  nearBlur: number;
+  /** Quanto de cor o vizinho imediato perde, 0 a 1. No Figma o pôster de trás
+   * é `mix-blend-mode: luminosity` sobre papel; como o papel é quase sem
+   * saturação, o resultado é cinza — e `saturate()` chega no mesmo lugar sendo
+   * interpolável e sem abrir contexto de empilhamento. */
+  nearFade: number;
 };
 
 // 539 × 812 sobre canvas de 1920 × 1083, centro exato do quadro. O passo de
 // 0.48 é 1881.5 − 960.5 = 921 entre centros de vizinhos, e o split é metade do
 // vão de 665 entre as palavras.
-const WIDE: Geometry = { widthVw: 0.281, ratio: 812 / 539, pitchVw: 0.48, splitVw: 0.173 };
+const WIDE: Geometry = {
+  widthVw: 0.281,
+  ratio: 812 / 539,
+  axis: "x",
+  pitch: 0.48,
+  splitVw: 0.173,
+  // 0.58 em d = 1, que é exatamente 313/539 do Figma.
+  nearScale: 0.58,
+  nearBlur: 9,
+  nearFade: 0,
+};
 
-// Abaixo de 64rem o vão de 0.173 são 65px a 375 de largura e nenhum pôster
-// entra ali. A lógica se inverte: a palavra fica proporcionalmente maior que o
-// vão e o pôster sobrepõe as duas metades já em repouso, o que torna o recorte
-// branco permanente em vez de momentâneo.
-const NARROW: Geometry = { widthVw: 0.58, ratio: 812 / 539, pitchVw: 0.82, splitVw: 0.04 };
+// O perfil de telefone, medido no node 2527:1748 do Figma sobre um quadro de
+// 402 x 874 (iPhone 16/17 Pro). Ele nao e o perfil largo encolhido: a
+// composicao inteira gira.
+//
+// O desfile passa a ser VERTICAL. No largo os posteres atravessam a tela e a
+// palavra se parte em volta deles; num telefone em retrato nao ha largura para
+// isso -- o vao de 0.173 sao 65px a 375 de largura e nenhum poster entra ali.
+// Entao o poster ocupa quase a tela toda (0.898vw, contra 0.281 do largo), sobe
+// pelo eixo y e a palavra desce para a faixa livre abaixo dele.
+//
+// `splitVw: 0` continua: as duas metades encostam no centro e voltam a ser uma
+// palavra so, FILMOGRAPHY, que o CSS pendura ABAIXO do poster (ver a media
+// query em styles/filmography.css). Sem sobreposicao, o recorte branco nao tem
+// o que carimbar e sai do ar.
+//
+// `heightVh` segue sendo o teto que a largura sozinha nao da: num tablet em
+// retrato (768 x 1024) 0.898vw daria um poster de 1040px de altura e a palavra
+// abaixo nao teria onde caber. O card e o menor entre o que a largura pede e o
+// que a altura permite -- e no quadro do Figma os dois dao exatamente 361px,
+// entao o telefone de referencia fica identico de qualquer lado que se meca.
+//
+// O vizinho quase nao encolhe (0.9723, contra 0.58 do largo) porque a
+// profundidade agora e dita por desfoque e cor, nao por tamanho: 15,5px de blur
+// e cinza total. E o que faz o proximo poster ler como "ainda nao chegou" sem
+// precisar ficar pequeno.
+const NARROW: Geometry = {
+  // 361 / 402
+  widthVw: 0.898,
+  // 544 / 874
+  heightVh: 0.6224,
+  ratio: 812 / 539,
+  axis: "y",
+  // 699 entre centros (o de baixo em 50% + 609, o travado em 50% - 90), / 874
+  pitch: 0.7998,
+  splitVw: 0,
+  // -90 / 874
+  centerVh: -0.103,
+  // 351 / 361
+  nearScale: 0.9723,
+  nearBlur: 15.5,
+  nearFade: 1,
+};
 
 // Fonte única da geometria. O CSS não declara nenhuma destas medidas: custom
 // property não resolve unidade, então o JS não conseguiria ler `48vw` de volta,
@@ -29,6 +98,16 @@ export function geometry(narrow: boolean): Geometry {
 }
 
 export const NARROW_QUERY = "(width < 64rem)";
+
+// Quem chama `phases()` precisa saber se a tela é estreita, e nem todos os
+// chamadores têm um matchMedia à mão — `filmEntryTarget()` em
+// lib/useHeaderGlass.ts mede a trilha de fora da seção. O teste mora aqui,
+// junto do NARROW_QUERY que ele usa, para os dois lados nunca discordarem
+// sobre o limiar. Fora do browser devolve `false`, que é o perfil largo: é o
+// que o `output: export` renderiza no build.
+export function isNarrow() {
+  return typeof window !== "undefined" && window.matchMedia(NARROW_QUERY).matches;
+}
 
 export const COUNT = 16;
 
@@ -49,9 +128,6 @@ export const CURTAIN_OUT = 0.02;
 // em vez de solto. 20% ainda trava de verdade no centro, mas devolve 80% do
 // ciclo ao movimento.
 const DWELL = 0.2;
-// 0.58 em d = 1, que é exatamente 313/539 do Figma.
-const DEPTH_SCALE = 0.42;
-const DEPTH_BLUR = 9;
 
 export function clamp01(x: number) {
   return x < 0 ? 0 : x > 1 ? 1 : x;
@@ -92,9 +168,17 @@ export type Phases = {
 // Movimento reduzido não pode apagar o mapeamento — ele É a navegação. Encolhe:
 // o ciclo cai de 0.6167 para 0.35 e as fases de coreografia caem pela metade,
 // porque prender quem pediu menos movimento em doze telas contraria o pedido.
-export function phases(reduced: boolean): Phases {
-  const cycle = reduced ? 0.35 : 0.6167;
-  const k = reduced ? 0.5 : 1;
+export function phases(reduced: boolean, narrow: boolean): Phases {
+  // Três perfis, do mais longo ao mais curto. `cycle` é quanto de rolagem cada
+  // filme pede; `k` encolhe as fases de coreografia em volta do reel.
+  //
+  // O estreito é novo. A trilha inteira media 12,79 telas, e num telefone isso
+  // são 10.800px — 57% da página só nesta seção, percorridos com o polegar.
+  // Com 0.34 cada filme pede ~290px num aparelho de 844 de altura: ainda trava
+  // em cada um, sem virar uma corrida, e a trilha cai para 7,9 telas. Movimento
+  // reduzido continua ganhando dos dois, porque ali o pedido é outro.
+  const cycle = reduced ? 0.35 : narrow ? 0.34 : 0.6167;
+  const k = reduced ? 0.5 : narrow ? 0.7 : 1;
 
   // `curtain.to` era -1.0*k -> -0.35*k, depois -0.7*k -> -0.2*k: a cortina
   // saturava e ficava parada, branca, sem nada acontecendo, até `rise.from`
@@ -125,24 +209,24 @@ export function phases(reduced: boolean): Phases {
 }
 
 // Altura da trilha em múltiplos de vh: o palco sticky (1) mais o percurso.
-export function trackVh(reduced: boolean) {
-  return 1 + phases(reduced).reveal.to;
+export function trackVh(reduced: boolean, narrow: boolean) {
+  return 1 + phases(reduced, narrow).reveal.to;
 }
 
 // O `p` em que o último filme está travado. A fase `hold` existe só para dar a
 // ele o mesmo dwell dos outros quinze (ver `cursor()`), então o meio dela é o
 // ponto mais folgado dentro dessa trava — cair na borda deixaria o pulo a um
 // pixel de scroll de destravar.
-export function lastLockAt(reduced: boolean) {
-  const f = phases(reduced);
+export function lastLockAt(reduced: boolean, narrow: boolean) {
+  const f = phases(reduced, narrow);
   return (f.hold.from + f.hold.to) / 2;
 }
 
 // Há para onde pular: o reel já começou e o último ainda não travou. Sai daqui,
 // e não de uma comparação com `lock`, porque `lock` é -1 em trânsito entre duas
 // travas e o botão piscaria a cada passagem.
-export function canSkip(p: number, reduced: boolean) {
-  const f = phases(reduced);
+export function canSkip(p: number, reduced: boolean, narrow: boolean) {
+  const f = phases(reduced, narrow);
   return p >= f.reel.from && p < f.hold.from;
 }
 
@@ -166,8 +250,8 @@ export type Cursor = {
   reveal: number;
 };
 
-export function cursor(p: number, reduced: boolean): Cursor {
-  const f = phases(reduced);
+export function cursor(p: number, reduced: boolean, narrow: boolean): Cursor {
+  const f = phases(reduced, narrow);
 
   const curtain = span(p, f.curtain);
   const rise = span(p, f.rise);
@@ -218,21 +302,29 @@ export function cursor(p: number, reduced: boolean): Cursor {
 }
 
 export type Depth = {
-  /** Deslocamento horizontal do centro, em múltiplos de pitch. */
+  /** Deslocamento do centro ao longo do eixo do desfile, em múltiplos de
+   * pitch. Horizontal no perfil largo, vertical no estreito. */
   offset: number;
   scale: number;
   blur: number;
+  /** Quanto de cor o card perde, 0 a 1. Ver `nearFade` em Geometry. */
+  fade: number;
   /** Fora da janela de render o card não é desenhado. */
   live: boolean;
 };
 
-export function depth(i: number, u: number): Depth {
+// Recebe a geometria em vez de ler constantes de módulo: os dois perfis têm
+// profundidades que não se parecem (o largo encolhe o vizinho quase pela
+// metade, o estreito quase não o encolhe e apaga a cor). Mesma forma que
+// `depth()` em lib/characterDeck.ts já usa.
+export function depth(i: number, u: number, g: Geometry): Depth {
   const offset = i - u;
   const d = clamp01(Math.abs(offset));
   return {
     offset,
-    scale: 1 - DEPTH_SCALE * d,
-    blur: DEPTH_BLUR * d,
+    scale: 1 - (1 - g.nearScale) * d,
+    blur: g.nearBlur * d,
+    fade: g.nearFade * d,
     live: Math.abs(offset) <= 2,
   };
 }

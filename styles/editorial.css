@@ -376,9 +376,13 @@
     width: min(58vw, calc(var(--band) * var(--ar)));
   }
 
+  /* O pin mede 100svh e, com viewport-fit: cover, isso inclui as faixas
+     seguras do aparelho -- o recorte da camera em cima e a barra de gestos
+     embaixo. Tudo que encosta nas bordas aqui desconta as duas. */
   .ed-caption-wrap {
-    left: 22px;
-    width: calc(100% - 44px);
+    left: calc(22px + var(--safe-left));
+    width: calc(100% - 44px - var(--safe-left) - var(--safe-right));
+    bottom: calc(11.45svh + var(--safe-bottom));
   }
 
   .ed-title {
@@ -405,7 +409,11 @@
 
   .ed-close {
     top: auto;
-    bottom: 3.5svh;
-    right: 22px;
+    bottom: calc(3.5svh + var(--safe-bottom));
+    right: calc(22px + var(--safe-right));
+  }
+
+  .ed-hint {
+    right: calc(5.573vw + var(--safe-right));
   }
 }
