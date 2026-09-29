@@ -20,6 +20,14 @@ export function useScrollbar() {
 
   const [live, setLive] = useState(false);
   const [drag, setDrag] = useState(false);
+  // Mesmo portao do cursor custom (lib/useCursor.ts): esta barra existe para
+  // substituir a nativa, que so aparece em ponteiro fino. No toque nao ha
+  // barra nenhuma a substituir -- o que havia era uma faixa de 16px com
+  // `pointer-events: auto` correndo a borda direita da tela inteira, engolindo
+  // o toque em tudo que encostasse ali (as celulas do editorial e os cartoes
+  // das personagens chegam na borda). Sem desenho, tambem nao ha observador
+  // nem rAF rodando a toa no aparelho mais fraco.
+  const [fine, setFine] = useState(false);
 
   // Num ref, e nao em estado: o arrasto le os dois a cada pointermove e nada
   // renderiza a partir deles.
@@ -58,6 +66,18 @@ export function useScrollbar() {
   }, []);
 
   useEffect(() => {
+    const query = window.matchMedia("(pointer: fine)");
+    const read = () => setFine(query.matches);
+
+    read();
+    query.addEventListener("change", read);
+
+    return () => query.removeEventListener("change", read);
+  }, []);
+
+  useEffect(() => {
+    if (!fine) return;
+
     // Fora do corpo do efeito: paint() chama setState, e faze-lo de forma
     // sincrona aqui encadeia um render extra (o lint reclama com razao).
     // setTimeout e nao rAF pelo mesmo motivo de components/content/FilmDialog:
@@ -90,7 +110,7 @@ export function useScrollbar() {
       sizer.disconnect();
       watch.disconnect();
     };
-  }, [paint]);
+  }, [paint, fine]);
 
   const ride = useCallback((clientY: number) => {
     const railEl = rail.current;
@@ -149,5 +169,5 @@ export function useScrollbar() {
     [ride],
   );
 
-  return { rail, thumb, live, drag, onThumbDown, onThumbMove, onThumbUp, onRailDown };
+  return { rail, thumb, fine, live, drag, onThumbDown, onThumbMove, onThumbUp, onRailDown };
 }

@@ -43,10 +43,27 @@
   initial-value: 0px;
 }
 
-.hdr {
+/* A geometria da barra sobe para a raiz porque dois elementos que NAO sao
+   filhos de <header> precisam dela para sentar na mesma linha: o botao do menu
+   e o pill de musica (ver o bloco de tela estreita no fim deste arquivo e
+   styles/pill.css). Eles sao `fixed` por fora justamente porque o .hdr tem
+   `transform`, o que o tornaria bloco de contencao deles. Declarar aqui nao
+   muda nada do que ja existia: o .hdr herda os mesmos valores, e o
+   getComputedStyle de lib/useHeaderGlass.ts continua lendo os mesmos pixels. */
+:root {
   --hdr-inset-x: clamp(14px, 2.9vw, 56px);
-  --hdr-top: clamp(10px, 1.9vw, 36px);
+  /* O --safe-top vale 0px em tudo que nao tem notch, entao esta soma nao muda
+     um pixel do desktop -- e no telefone e o que impede a barra de nascer por
+     baixo do recorte da camera. */
+  --hdr-top: calc(clamp(10px, 1.9vw, 36px) + var(--safe-top));
   --hdr-h: clamp(44px, 4.1vw, 78px);
+  --hdr-pad-x: clamp(12px, 1.6vw, 30.7px);
+  /* Aqui pelo mesmo motivo do resto do bloco: o painel do menu tambem veste
+     este vidro, e ele e irmao de <header>, nao filho. */
+  --hdr-blur: 10.15px;
+}
+
+.hdr {
   --hdr-open-h: clamp(280px, 28vw, 538px);
   /* Folgas nos quatro lados, para a bolha ter para onde sair do retangulo sem
      ser cortada pela propria caixa. O topo e o mais apertado: alem da folga,
@@ -54,12 +71,10 @@
   --hdr-lip: 48px;
   --hdr-slack: 160px;
   --hdr-wing: 44px;
-  --hdr-pad-x: clamp(12px, 1.6vw, 30.7px);
   --hdr-pad-y: clamp(7px, 0.72vw, 13.8px);
   --hdr-type: clamp(13px, 1.66vw, 31.9px);
   --hdr-lead: 1.592;
   --hdr-grow: 1.18;
-  --hdr-blur: 10.15px;
   --hdr-reveal: var(--hdr-h);
 
   position: fixed;
@@ -281,5 +296,278 @@
 @media (hover: none) {
   .hdr-spec {
     display: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   O menu de tela estreita.
+
+   Abaixo de 64rem os cinco rotulos nao cabem numa fileira: medido em 360px de
+   largura, eles iam de x=26 a x=334 com corpo de 13px e alvos de 38x21px --
+   metade do minimo de toque, e sem respiro nenhum nas pontas. A fileira sai, e
+   no lugar dela fica um botao que abre a lista num modal.
+
+   E sai com ela a barra inteira: aqui o header e so os dois pills, o do menu e
+   o da musica. Nao ha vidro, tinte nem backdrop-filter no telefone.
+
+   O botao veste .pill, o mesmo desenho dos outros controles flutuantes do site
+   (musica, skip da filmografia): assim os dois que sentam sobre a barra de
+   vidro sao irmaos visuais em vez de dois desenhos diferentes no mesmo lugar.
+
+   O limiar e o mesmo de lib/filmStage.ts (NARROW_QUERY), de characters.css e
+   de footer.css. Acima dele nada aqui existe -- o desktop nao ve uma linha
+   deste bloco.
+   ------------------------------------------------------------------------- */
+
+.hdr-menu,
+.hdr-sheet {
+  display: none;
+}
+
+@media (width < 64rem) {
+  /* Nao e so a fileira de links que sai: o vidro, o tinte e o backdrop-filter
+     vao junto, e no telefone esse filtro e a parte mais cara da barra. Os dois
+     pills nunca moraram dentro de <header> -- sao irmaos dele, fixos por conta
+     propria -- entao nao sentem nada: continuam na linha que --hdr-top e
+     --hdr-h desenham, e continuam recolhendo juntos pelo data-chrome-hidden. */
+  .hdr {
+    display: none;
+  }
+
+  .hdr-menu {
+    position: fixed;
+    /* A mesma linha da barra: o topo dela mais a folga que centra o pill
+       dentro dos --hdr-h de altura. */
+    top: calc(var(--hdr-top) + (var(--hdr-h) - var(--pill-h)) / 2);
+    right: calc(var(--hdr-inset-x) + var(--hdr-pad-x) + var(--safe-right));
+    z-index: 98;
+    display: inline-flex;
+    transition:
+      background-color var(--duration-fast) var(--ease-out),
+      transform var(--duration-base) var(--ease-out);
+  }
+
+  /* Acompanha o recolher da barra. O atributo vem de lib/useHeaderGlass.ts,
+     que espelha o proprio `hidden` do header no <html> justamente porque
+     este elemento mora fora de <header>. O par do pill de musica esta em
+     styles/pill.css, junto da regra que o posiciona. */
+  html[data-chrome-hidden] .hdr-menu {
+    transform: translate3d(0, calc(-1 * (var(--hdr-top) + var(--hdr-h) + 24px)), 0);
+  }
+
+  /* Duas reguas que viram X. Nao ha icone: o traco e o material do site. */
+  .hdr-menu-mark {
+    position: relative;
+  }
+
+  .hdr-menu-mark::before,
+  .hdr-menu-mark::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: currentColor;
+    transition:
+      top var(--duration-base) var(--ease-out),
+      rotate var(--duration-base) var(--ease-out);
+  }
+
+  .hdr-menu-mark::before {
+    top: 4px;
+  }
+
+  .hdr-menu-mark::after {
+    top: 12px;
+  }
+
+  .hdr-menu[aria-expanded="true"] .hdr-menu-mark::before,
+  .hdr-menu[aria-expanded="true"] .hdr-menu-mark::after {
+    top: 8px;
+  }
+
+  .hdr-menu[aria-expanded="true"] .hdr-menu-mark::before {
+    rotate: 45deg;
+  }
+
+  .hdr-menu[aria-expanded="true"] .hdr-menu-mark::after {
+    rotate: -45deg;
+  }
+
+  .hdr-menu:focus-visible {
+    outline: 2px solid var(--color-rose-400);
+    outline-offset: 3px;
+  }
+
+  /* O modal. O .hdr-sheet nao e mais o painel: ele e a camada de tela cheia,
+     transparente, que existe so para pegar o toque fora -- o mesmo arranjo do
+     modal da personagem (components/content/CharacterDialog.tsx), onde o
+     proprio involucro compara target com currentTarget. Quem tem corpo e o
+     .hdr-sheet-panel aqui embaixo.
+
+     96 fica acima do header (80), do som (90) e do modal do filme (95, que de
+     todo modo inertiza o menu antes de abrir), e abaixo do preloader (100) e
+     do cursor (200) -- o mesmo mapa de camadas documentado em
+     styles/filmography.css. O botao do menu esta em 98, de proposito: ele
+     fica por cima desta camada e continua sendo o "Close".
+
+     O `visibility` fica aqui, e nao no painel, por dois motivos: ele tira os
+     links da ordem de tabulacao com o menu fechado, e tira a camada inteira do
+     teste de acerto -- senao ela comeria os toques da pagina o tempo todo.
+     `visibility` no lugar de `display` para a transicao existir, que e o mesmo
+     motivo por que .film-skip e .now-sound fazem assim.
+
+     O `visibility` transiciona em 0s com atraso, e nao junto do clip-path.
+     Interpolado, ele so vale `visible` a partir de progresso > 0, e o painel
+     abre no mesmo quadro em que o efeito de useHeaderMenu chama `focus()` no
+     primeiro link -- medido, o foco caia no vazio e ficava no botao, porque
+     para o browser o painel ainda estava invisivel naquele instante. Com 0s
+     sem atraso na abertura ele fica visivel na hora; com 0s atrasado de uma
+     varredura inteira no fechamento ele so some quando a varredura termina. */
+  .hdr-sheet {
+    position: fixed;
+    inset: 0;
+    z-index: 96;
+    /* Contra o `display: none` da regra base, logo acima do @media: fora da
+       tela estreita nada disto existe. */
+    display: block;
+    visibility: hidden;
+    transition: visibility 0s linear var(--duration-slow);
+  }
+
+  .hdr-sheet[data-open] {
+    visibility: visible;
+    transition: visibility 0s linear 0s;
+  }
+
+  /* O painel nasce numa linha e desce, que e o mesmo gesto do desktop -- la
+     quem cresce e a propria casca de vidro, por --hdr-reveal, e aqui e um
+     irmao dela, no mesmo tempo (--duration-slow).
+
+     Sem a barra nao ha mais nada em que encostar, entao ele se mede pelos
+     pills: 10px abaixo do pe deles, e as laterais na mesma margem em que os
+     dois comecam e terminam (--hdr-inset-x mais --hdr-pad-x, que e onde o
+     botao do menu e o da musica se sentam). A quina e o mesmo 7px do .pill.
+     Os tres leem como uma coluna so.
+
+     A altura sai do conteudo: os cinco itens no corpo que eles ja tinham. O
+     max-height e so rede para aparelho muito baixo -- este painel nao foi
+     feito para cobrir a tela, e a pagina corre por baixo dele. */
+  .hdr-sheet-panel {
+    --sheet-top: calc(
+      var(--hdr-top) + (var(--hdr-h) + var(--pill-h)) / 2 + 10px
+    );
+
+    position: absolute;
+    top: var(--sheet-top);
+    left: calc(var(--hdr-inset-x) + var(--hdr-pad-x) + var(--safe-left));
+    right: calc(var(--hdr-inset-x) + var(--hdr-pad-x) + var(--safe-right));
+    max-height: calc(100svh - var(--sheet-top) - var(--safe-bottom) - 24px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border-radius: 7px;
+    padding: clamp(10px, 2.8vw, 18px) var(--hdr-pad-x) clamp(14px, 3.4vw, 24px);
+    background-color: color-mix(
+      in srgb,
+      var(--color-periwinkle-400) 51%,
+      transparent
+    );
+    -webkit-backdrop-filter: blur(var(--hdr-blur)) saturate(1.18) brightness(0.74);
+    backdrop-filter: blur(var(--hdr-blur)) saturate(1.18) brightness(0.74);
+    /* O `round` acompanha a varredura: com um inset liso a quina ficaria viva
+       durante a abertura e so arredondaria no fim. */
+    clip-path: inset(0 0 100% 0 round 7px);
+    transition: clip-path var(--duration-slow) var(--ease-out);
+  }
+
+  .hdr-sheet[data-open] .hdr-sheet-panel {
+    clip-path: inset(0 round 7px);
+  }
+
+  /* O par da regra de .hdr-tint la em cima: sem desfoque atras, 51% nao segura
+     o texto branco. */
+  @supports not (
+    (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+  ) {
+    .hdr-sheet-panel {
+      background-color: color-mix(
+        in srgb,
+        var(--color-periwinkle-400) 78%,
+        transparent
+      );
+    }
+  }
+
+  .hdr-sheet-nav {
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid var(--color-line-invert);
+  }
+
+  .hdr-sheet-link {
+    display: flex;
+    align-items: baseline;
+    gap: clamp(12px, 3.4vw, 20px);
+    min-height: var(--tap);
+    padding-block: clamp(10px, 2.6vw, 18px);
+    border-bottom: 1px solid var(--color-line-invert);
+    color: var(--color-paper-000);
+    text-decoration: none;
+    /* Os itens chegam um atras do outro, na ordem da lista. O atraso sai de
+       --at (o indice, escrito pelo componente) para nao virar uma regra por
+       item. */
+    opacity: 0;
+    translate: 0 12px;
+    transition:
+      opacity var(--duration-base) var(--ease-out),
+      translate var(--duration-base) var(--ease-out),
+      color var(--duration-fast) var(--ease-out);
+  }
+
+  .hdr-sheet[data-open] .hdr-sheet-link {
+    opacity: 1;
+    translate: 0 0;
+    transition-delay: calc(var(--at) * 45ms + 90ms);
+  }
+
+  .hdr-sheet-num {
+    flex: none;
+    font-family: var(--font-text);
+    font-weight: 700;
+    font-size: var(--text-micro);
+    line-height: 1;
+    letter-spacing: var(--tracking-label);
+    color: var(--color-rose-400);
+  }
+
+  .hdr-sheet-word {
+    font-family: var(--font-editorial);
+    font-weight: 400;
+    font-size: var(--type-sheet);
+    line-height: 0.92;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+    overflow-wrap: break-word;
+  }
+
+  .hdr-sheet-link[aria-current] {
+    color: var(--color-rose-400);
+  }
+
+  .hdr-sheet-link:focus-visible {
+    outline: 2px solid var(--color-rose-400);
+    outline-offset: -2px;
+  }
+}
+
+@media (width < 64rem) and (prefers-reduced-motion: reduce) {
+  .hdr-sheet,
+  .hdr-sheet-panel,
+  .hdr-sheet-link {
+    transition-duration: 0ms;
+  }
+
+  .hdr-sheet[data-open] .hdr-sheet-link {
+    transition-delay: 0ms;
   }
 }

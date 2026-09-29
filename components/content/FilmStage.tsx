@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react
 import { asset } from "@/lib/asset";
 import { FilmDialog, type Origin } from "@/components/content/FilmDialog";
 import type { Film } from "@/lib/films";
-import { lastLockAt, trackVh } from "@/lib/filmStage";
+import { isNarrow, lastLockAt, trackVh } from "@/lib/filmStage";
 import { isReduced, scrollTo } from "@/lib/scroll";
 import { useFilmStage } from "@/lib/useFilmStage";
 import "@/styles/pill.css";
@@ -86,9 +86,10 @@ export function FilmStage({ films }: { films: readonly Film[] }) {
     const trackEl = track.current;
     if (!trackEl) return;
     const reduced = isReduced();
-    const vh = trackEl.offsetHeight / trackVh(reduced);
+    const narrow = isNarrow();
+    const vh = trackEl.offsetHeight / trackVh(reduced, narrow);
     const top = trackEl.getBoundingClientRect().top + window.scrollY;
-    scrollTo(top + lastLockAt(reduced) * vh);
+    scrollTo(top + lastLockAt(reduced, narrow) * vh);
   }, [track]);
 
   useEffect(() => {

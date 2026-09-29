@@ -55,6 +55,15 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  /* A chapa e paisagem (3:2) e a tela do telefone e retrato: `cover` mostra
+     so ~31% da largura do arquivo, e centrado esse recorte caia na bochecha
+     esquerda -- o cabelo do lado direito e a orelha ficavam de fora. O centro
+     da cabeca esta em 52% da largura do arquivo, nao em 50%, entao e dali que
+     o recorte tem de partir. Nao ha par vertical: nessa proporcao a altura
+     inteira ja cabe, e mexer em Y nao mudaria nada. Em tela larga os dois
+     valores coincidem com o antigo `50% 50%` porque ali sobra largura e o
+     deslocamento de 2% nao tem o que cortar. */
+  object-position: 52% 50%;
   /* O Figma vai de 100% a 33%, mas ele foi desenhado sobre um still escuro de
      cinema. A chapa daqui é alta-chave -- 215 de média num máximo de 255 --, e
      nesse intervalo o branco do primeiro estado ficaria invisível sobre a

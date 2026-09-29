@@ -1,16 +1,16 @@
 import * as THREE from "three";
 
-const BLOCKS_A = 67;
-const BLOCKS_B = 40;
-const WASH_PAPER = 0.86;
+import { BLOCKS_A, coarseCols, gridCols } from "@/lib/heroGrid";
+
+// O mosaico ja nasce rosa. Ate aqui ele lavava de papel para rosa ao longo da
+// rolagem, e por isso havia um par de cores e uma rampa entre elas; o primeiro
+// estado agora e o rosa do segundo, entao sobrou uma cor so e ela nao se move.
+// O que continua andando com a rolagem e a grade engrossando.
 const WASH_ROSE = 0.82;
 const CONTRAST = 1.12;
 const LINE_PX = 2;
-const PAPER = new THREE.Color(0.976, 0.949, 0.957);
 const ROSE = new THREE.Color(0.859, 0.478, 0.592);
-const LINE_PAPER = new THREE.Color(0.984, 0.969, 0.973);
 const LINE_ROSE = new THREE.Color(0.914, 0.627, 0.71);
-const WASH_HOLD = 0.08;
 const MAX_DPR = 2;
 const MAX_ROWS = 220;
 
@@ -189,8 +189,8 @@ export function createCloud({
     uPointerA: { value: 0 },
     uGap: { value: 0.01 },
     uOver: { value: OVER },
-    uWash: { value: WASH_PAPER },
-    uTint: { value: PAPER.clone() },
+    uWash: { value: WASH_ROSE },
+    uTint: { value: ROSE.clone() },
   };
 
   const material = new THREE.ShaderMaterial({
@@ -204,8 +204,8 @@ export function createCloud({
   mesh.frustumCulled = false;
   scene.add(mesh);
 
-  const line = LINE_PAPER.clone();
-  renderer.setClearColor(line, 1);
+  // A calha entre os cubos nao e vazia: ela e a cor de linha, e agora e fixa.
+  renderer.setClearColor(LINE_ROSE, 1);
 
   let progress = 0;
   let clock = 0;
@@ -214,6 +214,14 @@ export function createCloud({
   let baseCols = BLOCKS_A;
   let rows = 0;
   let gridRows = BLOCKS_A;
+  // As duas pontas do mosaico nesta tela: em repouso e engrossado. Saem de
+  // lib/heroGrid.ts e sao remedidas no resize.
+  let restCols = BLOCKS_A;
+  let thickCols = coarseCols(BLOCKS_A);
+  // A ultima caixa desenhada. resize() e chamado por um ResizeObserver, e sem
+  // esta guarda ele refazia a malha inteira a cada tremor de layout -- no
+  // celular, a cada vez que a barra de endereco recolhe.
+  let seen = { w: 0, h: 0, dpr: 0 };
   let atCol = -1;
   let atRow = -1;
 
@@ -224,12 +232,15 @@ export function createCloud({
   let atY = 0.5;
   let atA = 0;
 
-  function build(gridCols: number, count: number) {
-    const cells = new Float32Array(gridCols * count * 2);
+  // `span` e a largura da malha CONSTRUIDA (ja com o excedente do uOver), nao a
+  // contagem visivel de colunas -- o nome nao pode ser `gridCols`, que agora e
+  // a funcao importada que decide essa contagem.
+  function build(span: number, count: number) {
+    const cells = new Float32Array(span * count * 2);
     let at = 0;
     for (let row = 0; row < count; row += 1) {
-      for (let col = 0; col < gridCols; col += 1) {
-        cells[at] = (col + 0.5) / gridCols;
+      for (let col = 0; col < span; col += 1) {
+        cells[at] = (col + 0.5) / span;
         cells[at + 1] = (row + 0.5) / count;
         at += 2;
       }
@@ -245,18 +256,24 @@ export function createCloud({
     geometry.setAttribute("position", box.attributes.position);
     geometry.setAttribute("normal", box.attributes.normal);
     geometry.setAttribute("aCell", new THREE.InstancedBufferAttribute(cells, 2));
-    geometry.instanceCount = gridCols * count;
+    geometry.instanceCount = span * count;
 
     mesh.geometry = geometry;
-    baseCols = gridCols;
-    uniforms.uBase.value.set(gridCols, count);
+    baseCols = span;
+    uniforms.uBase.value.set(span, count);
   }
 
   function resize() {
     const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
     const width = Math.max(canvas.clientWidth, 1);
     const height = Math.max(canvas.clientHeight, 1);
+    if (width === seen.w && height === seen.h && dpr === seen.dpr) return;
+    seen = { w: width, h: height, dpr };
+
     const aspect = width / height;
+
+    restCols = gridCols(width, height);
+    thickCols = coarseCols(restCols);
 
     renderer.setPixelRatio(dpr);
     renderer.setSize(width, height, false);
@@ -265,9 +282,9 @@ export function createCloud({
     camera.updateProjectionMatrix();
     uniforms.uAspect.value = aspect;
 
-    const wide = Math.ceil(BLOCKS_A * OVER);
+    const wide = Math.ceil(restCols * OVER);
     const tall = Math.min(Math.max(Math.ceil(wide / aspect), 1), MAX_ROWS);
-    if (tall !== rows) {
+    if (tall !== rows || wide !== baseCols) {
       rows = tall;
       build(wide, rows);
     }
@@ -308,11 +325,9 @@ export function createCloud({
     atY += (aimY - atY) * ease;
     atA += (aimA - atA) * ease;
 
-    const ramp = Math.min(Math.max((progress - WASH_HOLD) / (1 - WASH_HOLD), 0), 1);
-    const wash = ramp * ramp * (3 - 2 * ramp);
     const aspect = uniforms.uAspect.value;
 
-    visCols = BLOCKS_A + (BLOCKS_B - BLOCKS_A) * progress;
+    visCols = restCols + (thickCols - restCols) * progress;
     cols = visCols * OVER;
     // Rows follow the grid that was actually built, not the aspect: when
     // MAX_ROWS clamps the build, deriving them again from the aspect would ask
@@ -324,12 +339,6 @@ export function createCloud({
     uniforms.uTime.value = clock;
     uniforms.uPointer.value.set(atX, atY);
     uniforms.uPointerA.value = atA;
-    uniforms.uWash.value = WASH_PAPER + (WASH_ROSE - WASH_PAPER) * wash;
-    uniforms.uTint.value.copy(PAPER).lerp(ROSE, wash);
-
-    // The gutter between cubes is not empty in the flat shader either: it is
-    // the line colour, and it washes toward rose along with everything else.
-    renderer.setClearColor(line.copy(LINE_PAPER).lerp(LINE_ROSE, wash), 1);
 
     camera.position.z = fit * (1 + progress * DOLLY);
     camera.position.x = (atX - 0.5) * SWAY_X;

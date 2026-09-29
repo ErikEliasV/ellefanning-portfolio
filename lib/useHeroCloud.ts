@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { asset } from "@/lib/asset";
 import { pixel } from "@/lib/audio";
-import { onTick } from "@/lib/scroll";
+import { isReduced, onTick } from "@/lib/scroll";
 import { HERO_FIELD } from "@/lib/useHeroField";
 import type { Cloud } from "@/lib/heroCloud";
 
@@ -48,6 +48,21 @@ export function useHeroCloud() {
 
       const step = last ? Math.min((now - last) / 1000, 0.1) : 0;
       last = now;
+
+      // Par do mesmo corte em lib/useHeroField.ts: com movimento reduzido o
+      // passo de tempo vira zero, entao a onda de repouso, os aneis do
+      // ponteiro e a caminhada automatica param. O quadro continua sendo
+      // desenhado porque a rolagem ainda manda no wash e na grossura do
+      // mosaico -- o mosaico fica parado, nao ausente.
+      if (isReduced()) {
+        cloud.setProgress(value.current);
+        cloud.frame(0);
+        if (!painted) {
+          painted = true;
+          setReady(true);
+        }
+        return;
+      }
 
       if (!lastInput) lastInput = now;
       const wait = coarse ? DRIFT_WAIT_COARSE : DRIFT_WAIT_FINE;
