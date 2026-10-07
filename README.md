@@ -16,7 +16,7 @@ npm run dev
 ## Estrutura
 
 ```
-public/                 imagens, videos, audio e icones servidos como estaticos
+public/                 imagens em webp, videos, audio e icones servidos como estaticos
 src/
   app/                  layout, pagina, icones e fontes locais
   sections/             uma secao do site por arquivo

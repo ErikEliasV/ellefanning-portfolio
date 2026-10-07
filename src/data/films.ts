@@ -18,7 +18,7 @@ export const FILMS: readonly Film[] = [
     year: 2001,
     character: "Lucy Dawson",
     director: "Jessie Nelson",
-    poster: "/images/films/i-am-sam.jpg",
+    poster: "/images/films/i-am-sam.webp",
     youtubeId: "dAlYuokC9R0",
     summary:
       "A custody fight over a father with a developmental disability, told through the daughter who outgrows him.",
@@ -29,7 +29,7 @@ export const FILMS: readonly Film[] = [
     year: 2006,
     character: "Debbie Jones",
     director: "Alejandro G. Iñárritu",
-    poster: "/images/films/babel.jpg",
+    poster: "/images/films/babel.webp",
     youtubeId: "gxkWMFSWx10",
     summary:
       "One rifle shot in the Moroccan desert sets four stories colliding across three continents.",
@@ -40,7 +40,7 @@ export const FILMS: readonly Film[] = [
     year: 2008,
     character: "Daisy",
     director: "David Fincher",
-    poster: "/images/films/benjamin-button.jpg",
+    poster: "/images/films/benjamin-button.webp",
     youtubeId: "yLz4s4M7VXE",
     clipStart: 76,
     summary:
@@ -52,7 +52,7 @@ export const FILMS: readonly Film[] = [
     year: 2008,
     character: "Phoebe Lichten",
     director: "Daniel Barnz",
-    poster: "/images/films/phoebe-in-wonderland.jpg",
+    poster: "/images/films/phoebe-in-wonderland.webp",
     youtubeId: "jLkBC6ZVbOk",
     summary:
       "A girl who cannot follow the rules finds room to breathe in a school staging of Alice in Wonderland.",
@@ -63,7 +63,7 @@ export const FILMS: readonly Film[] = [
     year: 2010,
     character: "Cleo",
     director: "Sofia Coppola",
-    poster: "/images/films/somewhere.jpg",
+    poster: "/images/films/somewhere.webp",
     youtubeId: "iEga7Hz9a3U",
     summary:
       "A film star drifting through the Chateau Marmont is pulled back to earth by the daughter he barely knows.",
@@ -74,7 +74,7 @@ export const FILMS: readonly Film[] = [
     year: 2011,
     character: "Alice Dainard",
     director: "J. J. Abrams",
-    poster: "/images/films/super-8.jpg",
+    poster: "/images/films/super-8.webp",
     youtubeId: "DRGjkQ_iBL8",
     summary:
       "Kids shooting a zombie movie on Super 8 film a train crash — and whatever the wreck sets loose.",
@@ -85,7 +85,7 @@ export const FILMS: readonly Film[] = [
     year: 2012,
     character: "Ginger",
     director: "Sally Potter",
-    poster: "/images/films/ginger-and-rosa.jpg",
+    poster: "/images/films/ginger-and-rosa.webp",
     youtubeId: "tFYeYKAGVek",
     summary:
       "Two inseparable girls in 1962 London drift apart under the shadow of the bomb.",
@@ -96,7 +96,7 @@ export const FILMS: readonly Film[] = [
     year: 2014,
     character: "Princess Aurora",
     director: "Robert Stromberg",
-    poster: "/images/films/maleficent.jpg",
+    poster: "/images/films/maleficent.webp",
     youtubeId: "c5_st7K2Mqk",
     summary:
       "Sleeping Beauty retold from the fairy's side, where the curse answers a betrayal.",
@@ -107,7 +107,7 @@ export const FILMS: readonly Film[] = [
     year: 2016,
     character: "Jesse",
     director: "Nicolas Winding Refn",
-    poster: "/images/films/the-neon-demon.jpg",
+    poster: "/images/films/the-neon-demon.webp",
     youtubeId: "fYH1dzQ07mQ",
     summary:
       "An aspiring model arrives in Los Angeles, where beauty is coveted to the point of consumption.",
@@ -118,7 +118,7 @@ export const FILMS: readonly Film[] = [
     year: 2016,
     character: "Julie",
     director: "Mike Mills",
-    poster: "/images/films/20th-century-women.jpg",
+    poster: "/images/films/20th-century-women.webp",
     youtubeId: "PRz0kAbtBmc",
     summary:
       "Santa Barbara, 1979: a mother enlists two younger women to help raise her teenage son.",
@@ -129,7 +129,7 @@ export const FILMS: readonly Film[] = [
     year: 2017,
     character: "Alicia",
     director: "Sofia Coppola",
-    poster: "/images/films/the-beguiled.jpg",
+    poster: "/images/films/the-beguiled.webp",
     youtubeId: "bGyziXoBIrQ",
     summary:
       "A wounded Union soldier shelters in a Southern girls' seminary, and the household turns on itself.",
@@ -140,7 +140,7 @@ export const FILMS: readonly Film[] = [
     year: 2017,
     character: "Mary Shelley",
     director: "Haifaa al-Mansour",
-    poster: "/images/films/mary-shelley.jpg",
+    poster: "/images/films/mary-shelley.webp",
     youtubeId: "T-WGaZaojFc",
     summary:
       "The teenage love affair with Percy Shelley that ended in the writing of Frankenstein.",
@@ -151,7 +151,7 @@ export const FILMS: readonly Film[] = [
     year: 2018,
     character: "Violet Valenski",
     director: "Max Minghella",
-    poster: "/images/films/teen-spirit.jpg",
+    poster: "/images/films/teen-spirit.webp",
     youtubeId: "HzHCYMu0q5A",
     summary:
       "A shy farm girl on the Isle of Wight chases a singing contest as her way out.",
@@ -162,7 +162,7 @@ export const FILMS: readonly Film[] = [
     year: 2020,
     character: "Catherine the Great",
     director: "Tony McNamara",
-    poster: "/images/films/the-great.jpg",
+    poster: "/images/films/the-great.webp",
     youtubeId: "d63QOayTyuQ",
     summary:
       "A young empress arrives in Russia to a brute of a husband and decides to take the throne herself.",
@@ -173,7 +173,7 @@ export const FILMS: readonly Film[] = [
     year: 2022,
     character: "Michelle Carter",
     director: "Lisa Cholodenko",
-    poster: "/images/films/the-girl-from-plainville.jpg",
+    poster: "/images/films/the-girl-from-plainville.webp",
     youtubeId: "B-RadqZ-A3o",
     summary:
       "The true case of a teenager charged over the texts that preceded her boyfriend's death.",
@@ -184,7 +184,7 @@ export const FILMS: readonly Film[] = [
     year: 2024,
     character: "Sylvie Russo",
     director: "James Mangold",
-    poster: "/images/films/a-complete-unknown.jpg",
+    poster: "/images/films/a-complete-unknown.webp",
     youtubeId: "kYjOrzd0rjs",
     summary:
       "Bob Dylan's arrival in New York and the folk scene he electrified on his way out of it.",

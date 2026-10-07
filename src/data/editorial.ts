@@ -25,7 +25,7 @@ export const EDITORIAL_SHOTS: readonly EditorialShot[] = [
     title: "Vogue",
     kicker: "Magazine",
     year: "2014",
-    src: "/images/editorial/vogue-2014.jpg",
+    src: "/images/editorial/vogue-2014.webp",
     width: 1159,
     height: 1542,
     gallery: [
@@ -66,7 +66,7 @@ export const EDITORIAL_SHOTS: readonly EditorialShot[] = [
     title: "Icon",
     kicker: "Magazine",
     year: "2020",
-    src: "/images/editorial/icon-magazine-2020.jpg",
+    src: "/images/editorial/icon-magazine-2020.webp",
     width: 1024,
     height: 1331,
     gallery: [
@@ -94,7 +94,7 @@ export const EDITORIAL_SHOTS: readonly EditorialShot[] = [
     title: "W",
     kicker: "Cannes",
     year: "2023",
-    src: "/images/editorial/w-magazine-cannes-2023.avif",
+    src: "/images/editorial/w-magazine-cannes-2023.webp",
     width: 1800,
     height: 2629,
     gallery: [
@@ -109,7 +109,7 @@ export const EDITORIAL_SHOTS: readonly EditorialShot[] = [
     title: "Harper's Bazaar",
     kicker: "Coach",
     year: "2025",
-    src: "/images/editorial/harpers-bazaar-coach-2025.avif",
+    src: "/images/editorial/harpers-bazaar-coach-2025.webp",
     width: 1080,
     height: 1080,
     gallery: [
@@ -134,7 +134,7 @@ export const EDITORIAL_SHOTS: readonly EditorialShot[] = [
     title: "Vogue",
     kicker: "Magazine",
     year: "2026",
-    src: "/images/editorial/vogue-2026.jpg",
+    src: "/images/editorial/vogue-2026.webp",
     width: 1080,
     height: 1350,
     gallery: [
@@ -150,7 +150,7 @@ export const EDITORIAL_SHOTS: readonly EditorialShot[] = [
     title: "Harper's Bazaar",
     kicker: "Magazine",
     year: "2023",
-    src: "/images/editorial/harpers-bazaar.avif",
+    src: "/images/editorial/harpers-bazaar.webp",
     width: 980,
     height: 1322,
     gallery: [

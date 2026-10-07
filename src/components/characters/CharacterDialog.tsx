@@ -149,7 +149,7 @@ export function CharacterDialog({
           data-cursor="IMDb"
         >
           <Image
-            src={asset("/images/imdb.png")}
+            src={asset("/images/imdb.webp")}
             alt={`${character.film} on IMDb`}
             width={138}
             height={70}
