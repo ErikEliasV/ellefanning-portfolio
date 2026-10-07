@@ -329,7 +329,7 @@
 }
 
 .ed-pin[data-swipe] {
-  touch-action: pan-y;
+  touch-action: pan-y pinch-zoom;
   -webkit-user-select: none;
   user-select: none;
 }

@@ -39,18 +39,6 @@ export function reelStops(
   return stops;
 }
 
-const RUBBER_GIVE = 0.55;
-
-export function reelRubber(raw: number, panMax: number, reach: number) {
-  const base = Math.min(Math.max(raw, 0), panMax);
-  const over = raw - base;
-  if (over === 0) return raw;
-  if (reach <= 0) return base;
-  const pull = Math.abs(over);
-  const give = reach * (1 - 1 / ((pull * RUBBER_GIVE) / reach + 1));
-  return base + Math.sign(over) * give;
-}
-
 const FLING = 0.12;
 const FLICK = 300;
 

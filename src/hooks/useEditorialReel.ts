@@ -5,12 +5,18 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   reelRelease,
-  reelRubber,
   reelStops,
   sense,
   type Motion,
 } from "@/lib/motion/editorialMotion";
-import { isReduced, lockScroll, onTick } from "@/lib/scroll";
+import {
+  glideTo,
+  isReduced,
+  lockScroll,
+  onTick,
+  scrollTo,
+  stopGlide,
+} from "@/lib/scroll";
 import { swipe as bindSwipe } from "@/lib/swipe";
 import { onViewport, smallViewportHeight } from "@/lib/viewport";
 
@@ -22,9 +28,8 @@ const PAN_FACTOR = 0.42;
 const PAN_MIN_VH = 1.2;
 const PAN_MAX_VH = 2;
 
-const RUBBER_VW = 0.15;
 const SNAP_S = 0.55;
-const SNAP_EASE = "power3.out";
+const EDGE_PX = 2;
 
 const STEP_VH = 0.28;
 const STEP_MIN = 200;
@@ -80,7 +85,6 @@ export function useEditorialReel(frames: readonly number[]) {
     stops: [0],
   });
   const exit = useRef(0);
-  const pan = useRef({ x: 0 });
 
   const aim = useRef(0);
   const read = useRef({ at: 0 });
@@ -186,7 +190,6 @@ export function useEditorialReel(frames: readonly number[]) {
     if (!trackNode) return;
 
     let motion: Motion | null = null;
-    const reel = pan.current;
 
     function progress() {
       const node = track.current;
@@ -208,14 +211,10 @@ export function useEditorialReel(frames: readonly number[]) {
         setArmed(true);
       }
 
-      const { panScroll, panMax, swipe } = geometry.current;
+      const { panScroll } = geometry.current;
       const style = node.style;
 
-      const q = swipe
-        ? panMax > 0
-          ? reel.x / panMax
-          : 0
-        : clamp01(-rect.top / panScroll);
+      const q = panScroll > 0 ? clamp01(-rect.top / panScroll) : 0;
       style.setProperty("--q", q.toFixed(4));
       style.setProperty("--c", read.current.at.toFixed(4));
     }
@@ -230,12 +229,10 @@ export function useEditorialReel(frames: readonly number[]) {
       const swipe = vw <= NARROW_MAX;
       const cell = (swipe ? CELL_VW_NARROW : CELL_VW) * vw;
       const panMax = Math.max(0, count * cell - vw);
-      const panScroll = swipe
-        ? 0
-        : Math.min(
-            Math.max(panMax * PAN_FACTOR, PAN_MIN_VH * vh),
-            PAN_MAX_VH * vh,
-          );
+      const panScroll = Math.min(
+        Math.max(panMax * PAN_FACTOR, PAN_MIN_VH * vh),
+        PAN_MAX_VH * vh,
+      );
       geometry.current = {
         cell,
         panMax,
@@ -246,7 +243,6 @@ export function useEditorialReel(frames: readonly number[]) {
         swipe,
         stops: reelStops(count, cell, vw, panMax),
       };
-      reel.x = Math.min(Math.max(reel.x, 0), panMax);
       pin.current?.toggleAttribute("data-swipe", swipe);
 
       const hover = Math.max(CELL_HOVER_VW * vw, cell);
@@ -291,13 +287,21 @@ export function useEditorialReel(frames: readonly number[]) {
     const untick = onTick(progress);
     window.addEventListener("keydown", onKey);
 
-    function settleOn(target: number) {
-      gsap.killTweensOf(reel);
-      if (isReduced()) {
-        reel.x = target;
-        return;
-      }
-      gsap.to(reel, { x: target, duration: SNAP_S, ease: SNAP_EASE });
+    function reelAt() {
+      const node = track.current;
+      const { panScroll, panMax } = geometry.current;
+      if (!node || panScroll <= 0) return 0;
+      return clamp01(-node.getBoundingClientRect().top / panScroll) * panMax;
+    }
+
+    function goTo(x: number, seconds: number) {
+      const node = track.current;
+      const { panScroll, panMax } = geometry.current;
+      if (!node || panMax <= 0) return;
+      const top = node.getBoundingClientRect().top + window.scrollY;
+      const y = top + clamp01(x / panMax) * panScroll;
+      if (seconds > 0) glideTo(y, seconds);
+      else scrollTo(y, { immediate: true });
     }
 
     let from = 0;
@@ -305,26 +309,34 @@ export function useEditorialReel(frames: readonly number[]) {
     const pinNode = pin.current;
     const unswipe = pinNode
       ? bindSwipe(pinNode, {
-          can: () => geometry.current.swipe && activeRef.current === null,
+          can: () => {
+            const node = track.current;
+            const { swipe, panScroll } = geometry.current;
+            if (!node || !swipe || activeRef.current !== null) return false;
+            const top = node.getBoundingClientRect().top;
+            return top <= EDGE_PX && -top <= panScroll + EDGE_PX;
+          },
           start: () => {
-            gsap.killTweensOf(reel);
-            from = reel.x;
+            stopGlide();
+            from = reelAt();
             raw = from;
           },
           move: (dx) => {
             raw = from - dx;
-            const { panMax, width } = geometry.current;
-            reel.x = reelRubber(raw, panMax, width * RUBBER_VW);
+            goTo(raw, 0);
           },
-          end: (velocity) =>
-            settleOn(reelRelease(raw, -velocity, geometry.current.stops)),
+          end: (velocity) => {
+            const { panMax, stops } = geometry.current;
+            const at = Math.min(Math.max(raw, 0), panMax);
+            goTo(reelRelease(at, -velocity, stops), SNAP_S);
+          },
         })
       : () => {};
 
     return () => {
       untick();
       unswipe();
-      gsap.killTweensOf(reel);
+      stopGlide();
       window.clearTimeout(exit.current);
       unwatch();
       observer.disconnect();
