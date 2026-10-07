@@ -254,19 +254,6 @@
   padding-inline: var(--gutter-page);
 }
 
-@utility bleed {
-  padding-inline: var(--gutter-page);
-}
-
-@utility spotlight-lens {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  clip-path: circle(0 at 50% 50%);
-  will-change: clip-path, opacity;
-  transition: opacity var(--duration-base) var(--ease-out);
-}
-
 @utility grain {
   position: relative;
 
@@ -281,20 +268,3 @@
   }
 }
 
-@utility img-brand {
-  filter: var(--filter-image);
-  transition: filter var(--duration-base) var(--ease-out);
-}
-
-@utility press {
-  transition:
-    background-color var(--duration-fast) var(--ease-out),
-    color var(--duration-fast) var(--ease-out),
-    border-color var(--duration-fast) var(--ease-out),
-    box-shadow var(--duration-fast) var(--ease-out),
-    transform var(--duration-fast) var(--ease-out);
-
-  &:active {
-    transform: translate(2px, 2px);
-  }
-}
