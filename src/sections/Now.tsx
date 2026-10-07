@@ -18,7 +18,7 @@ const CORNER = 220;
 const POSTER = "/images/ellefanning-now-poster.webp";
 
 export function Now() {
-  const { frame, stage, ready, playing, sound, toggleSound } = useNowTrailer();
+  const { frame, video, ready, playing, sound, toggleSound } = useNowTrailer();
 
   useEffect(() => {
     const node = frame.current;
@@ -74,7 +74,17 @@ export function Now() {
       >
         <div aria-hidden className="now-media">
           <div className="now-stage">
-            <div ref={stage} className="now-embed" />
+            <video
+              ref={video}
+              className="now-embed"
+              src={asset(CURRENT_WORK.trailer)}
+              muted
+              loop
+              playsInline
+              preload="none"
+              disablePictureInPicture
+              disableRemotePlayback
+            />
           </div>
 
           <div className="now-cover" data-playing={playing ? "" : undefined} />

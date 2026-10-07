@@ -201,5 +201,5 @@ export const CURRENT_WORK = {
   status: "Upcoming",
   premiere: "November 20, 2026",
   note: "Twenty-four years before the catchphrase, Effie Trinket is still learning to say the worst thing in the brightest voice.",
-  youtubeId: "makIBf-BW3k",
+  trailer: "/videos/now-trailer.mp4",
 } as const;
