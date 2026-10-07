@@ -476,8 +476,8 @@
     box-shadow: none;
   }
 
-  .character-deck {
-    touch-action: pan-y;
+  .character-stage {
+    touch-action: pan-y pinch-zoom;
     -webkit-user-select: none;
     user-select: none;
   }

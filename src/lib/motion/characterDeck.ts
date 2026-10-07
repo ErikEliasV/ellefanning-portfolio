@@ -20,6 +20,10 @@ const STAY = 1;
 
 const PILE = 3;
 
+const CYCLE = 0.4;
+const CYCLE_REDUCED = 0.35;
+const DWELL = 0.14;
+
 export type Span = { from: number; to: number };
 
 export type FramePhases = { wipe: Span; rise: Span; stay: Span; lift: Span };
@@ -32,11 +36,43 @@ export function framePhases(): FramePhases {
   return { wipe, rise, stay, lift };
 }
 
-export function trackVh() {
-  return 1 + framePhases().lift.to;
+export type ReelPhases = {
+  wipe: Span;
+  rise: Span;
+  walk: Span;
+  reel: Span;
+  hold: Span;
+  pile: Span;
+  lift: Span;
+  cycle: number;
+};
+
+export function reelPhases(reduced: boolean): ReelPhases {
+  const cycle = reduced ? CYCLE_REDUCED : CYCLE;
+  const ramped = PILE * cycle;
+
+  const wipe = { from: 0, to: WIPE };
+  const rise = { from: wipe.to, to: wipe.to + RISE };
+  const walk = { from: rise.to, to: rise.to + ramped };
+  const reel = { from: walk.to, to: walk.to + cycle * (COUNT - 1) };
+  const hold = { from: reel.to, to: reel.to + cycle * DWELL };
+  const pile = { from: hold.to, to: hold.to + ramped };
+  const lift = { from: pile.to, to: pile.to + LIFT };
+
+  return { wipe, rise, walk, reel, hold, pile, lift, cycle };
 }
 
-export function entryLockAt() {
+export function trackVh(narrow: boolean, reduced: boolean) {
+  return 1 + (narrow ? reelPhases(reduced).lift.to : framePhases().lift.to);
+}
+
+export function lockAt(index: number, reduced: boolean) {
+  const f = reelPhases(reduced);
+  return f.reel.from + f.cycle * (index + DWELL / 2);
+}
+
+export function entryLockAt(narrow: boolean, reduced: boolean) {
+  if (narrow) return lockAt(0, reduced);
   const { stay } = framePhases();
   return (stay.from + stay.to) / 2;
 }
@@ -96,6 +132,70 @@ export function stage(p: number, u: number): Cursor {
   };
 }
 
+export function reel(p: number, reduced: boolean): Cursor {
+  const f = reelPhases(reduced);
+
+  const sweep = span(p, f.wipe);
+  const away = span(p, f.lift);
+
+  let u: number;
+  let travel: number;
+
+  if (p < f.walk.from) {
+    u = -PILE;
+    travel = 0;
+  } else if (p < f.reel.from) {
+    u = -PILE * (1 - span(p, f.walk));
+    travel = 0;
+  } else if (p < f.reel.to) {
+    const raw = span(p, f.reel) * (COUNT - 1);
+    const i = Math.min(Math.floor(raw), COUNT - 2);
+    const frac = raw - i;
+    const t = clamp01((frac - DWELL) / (1 - DWELL));
+    u = i + smootherstep(t);
+    travel = frac < DWELL ? 0 : t;
+  } else {
+    u = COUNT - 1 + PILE * span(p, f.pile);
+    travel = 0;
+  }
+
+  const gate = clamp01(u + 1) * clamp01(COUNT - u);
+
+  return {
+    u,
+    active: Math.min(Math.max(Math.round(u), 0), COUNT - 1),
+    wipe: ease(sweep),
+    enter: ease(head(sweep, WORD_IN)),
+    rise: ease(span(p, f.rise)),
+    lift: ease(away),
+    leave: ease(tail(away, WORD_OUT)),
+    settle: gate * (1 - Math.sin(Math.PI * travel)),
+    drift: clamp01((p - f.wipe.from) / (f.lift.to - f.wipe.from)),
+  };
+}
+
+const FLING = 0.12;
+const FLICK = 1.5;
+
+export function reelTarget(p: number, velocity: number, reduced: boolean) {
+  const f = reelPhases(reduced);
+  const end = COUNT - 1;
+  const at = (p - f.reel.from) / f.cycle - DWELL / 2;
+  const ahead = at + velocity * FLING;
+
+  if (ahead < -0.5 || ahead > end + 0.5) {
+    const glide = p + velocity * FLING * f.cycle;
+    return Math.min(Math.max(glide, 0), f.lift.to);
+  }
+
+  const here = Math.min(Math.max(Math.round(at), 0), end);
+  let target = Math.min(Math.max(Math.round(ahead), 0), end);
+  if (target === here && Math.abs(velocity) > FLICK) {
+    target = Math.min(Math.max(here + Math.sign(velocity), 0), end);
+  }
+  return lockAt(target, reduced);
+}
+
 export const SPIN_DWELL = 100;
 export const SPIN_TRAVEL = 1100;
 
@@ -139,33 +239,6 @@ export function glide(t: number) {
 
 export function carousel(p: number, s: Spin): Cursor {
   return stage(p, s.step + glide(s.t));
-}
-
-const RUBBER_MAX = 0.35;
-const RUBBER_GIVE = 0.55;
-
-export function rubber(raw: number) {
-  const end = COUNT - 1;
-  const base = Math.min(Math.max(raw, 0), end);
-  const over = raw - base;
-  if (over === 0) return raw;
-  const pull = Math.abs(over);
-  const give = RUBBER_MAX * (1 - 1 / ((pull * RUBBER_GIVE) / RUBBER_MAX + 1));
-  return base + Math.sign(over) * give;
-}
-
-const FLING = 0.12;
-const FLICK = 1.5;
-
-export function release(raw: number, velocity: number) {
-  const end = COUNT - 1;
-  const base = Math.min(Math.max(raw, 0), end);
-  const near = Math.round(base);
-  let target = Math.round(base + velocity * FLING);
-  if (target === near && Math.abs(velocity) > FLICK) {
-    target = near + Math.sign(velocity);
-  }
-  return Math.min(Math.max(target, 0), end);
 }
 
 export type Deck = {
