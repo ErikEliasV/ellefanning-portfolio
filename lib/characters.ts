@@ -107,7 +107,7 @@ export const CHARACTERS: readonly Character[] = [
     note: "A voice used as an escape route.",
     story:
       "A Polish girl on the Isle of Wight singing her way off a farm and onto a talent show stage. Fanning sang it herself, which matters: the film's argument is that the voice is simultaneously the way out and the next cage, and you can hear her decide to take it anyway.",
-    still: "/images/characters/violet-valenski-teen-spirit.avif",
+    still: "/images/characters/violet-valenski-teen-spirit.jpg",
     genre: "Drama / Music",
     credit: "Directed by Max Minghella",
     imdb: "https://www.imdb.com/title/tt6483364/",
