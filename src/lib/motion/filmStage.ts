@@ -50,6 +50,7 @@ export const COUNT = 16;
 export const CURTAIN_OUT = 0.02;
 
 const DWELL = 0.2;
+const FALL_NARROW = 0.5;
 
 export function clamp01(x: number) {
   return x < 0 ? 0 : x > 1 ? 1 : x;
@@ -91,8 +92,11 @@ export function phases(reduced: boolean, narrow: boolean): Phases {
   const close = { from: exit.to, to: exit.to + 0.35 * k };
   const fall = { from: close.to, to: close.to + 0.35 * k };
   const reveal = { from: fall.to, to: fall.to + 0.3 * k };
+  const out = narrow
+    ? { from: reveal.to - 1, to: reveal.to - 1 + FALL_NARROW }
+    : fall;
 
-  return { curtain, rise, open, reel, hold, exit, close, fall, reveal, cycle };
+  return { curtain, rise, open, reel, hold, exit, close, fall: out, reveal, cycle };
 }
 
 export function trackVh(reduced: boolean, narrow: boolean) {

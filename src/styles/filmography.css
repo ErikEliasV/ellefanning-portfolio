@@ -8,6 +8,7 @@
   --curtain: 0;
   --rise: 1;
   --fall: 0;
+  --fall-travel: 80vh;
   --cut-l: 100%;
   --cut-r: 0px;
 
@@ -52,7 +53,7 @@
   transform:
     translate3d(
       var(--word-nudge, 0px),
-      calc((1 - var(--rise)) * 60vh - var(--fall) * 80vh),
+      calc((1 - var(--rise)) * 60vh - var(--fall) * var(--fall-travel)),
       0
     )
     scale(calc(2.2 - 1.2 * var(--rise) + 1.2 * var(--fall)));
@@ -365,6 +366,10 @@
 }
 
 @media (width < 64rem) {
+  .film-track {
+    --fall-travel: 105svh;
+  }
+
   .film-word-back,
   .film-word-front {
     top: calc(
