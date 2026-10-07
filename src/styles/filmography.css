@@ -1,0 +1,450 @@
+.film-track {
+  position: relative;
+
+  --card-w: 28.1vw;
+  --card-h: calc(var(--card-w) * (812 / 539));
+  --split: 17.3vw;
+
+  --curtain: 0;
+  --rise: 1;
+  --fall: 0;
+  --fall-travel: 80vh;
+  --lead: 0px;
+  --cut-l: 100%;
+  --cut-r: 0px;
+
+  --card-shift: 0px;
+  --word-nudge: 0px;
+}
+
+.film-stage {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.film-track[data-front] .film-stage {
+  z-index: 61;
+}
+
+.film-paper {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background-color: var(--color-paper-000);
+}
+
+.film-curtain {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background-color: var(--color-paper-000);
+  transform: translate3d(0, calc((1 - var(--curtain)) * 100%), 0);
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.film-curtain[data-on] { visibility: visible; }
+
+.film-word-back,
+.film-word-front,
+.film-word-cut {
+  position: absolute;
+  top: 40.8vh;
+  display: flex;
+  flex-direction: column;
+  transform:
+    translate3d(
+      var(--word-nudge, 0px),
+      calc(
+        (1 - var(--rise)) * 60vh - var(--fall) * var(--fall-travel) +
+          var(--lead)
+      ),
+      0
+    )
+    scale(calc(2.2 - 1.2 * var(--rise) + 1.2 * var(--fall)));
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.film-word-back,
+.film-word-cut {
+  right: calc(50% + var(--split));
+  align-items: flex-start;
+  transform-origin: right;
+}
+
+.film-word-front {
+  left: calc(50% + var(--split));
+  align-items: flex-end;
+  transform-origin: left;
+}
+
+.film-word-back { z-index: 2; }
+.film-word-front { z-index: 3; }
+.film-rail { z-index: 4; }
+.film-word-cut { z-index: 5; }
+
+.film-skip {
+  position: absolute;
+  right: clamp(16px, 2.0833vw, 40px);
+  bottom: clamp(16px, 1.6667vw, 28px);
+  z-index: 6;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--duration-base) var(--ease-out),
+    visibility var(--duration-base) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
+}
+
+.film-track[data-skip] .film-skip {
+  opacity: 1;
+  visibility: visible;
+}
+
+.film-word {
+  font-family: var(--font-editorial);
+  font-weight: 400;
+  font-size: 5.5vw;
+  line-height: 0.92;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  color: var(--color-ink-900);
+}
+
+.film-word-cut .film-word {
+  color: var(--color-paper-000);
+}
+
+.film-word-cut {
+  clip-path: inset(0 var(--cut-r) 0 var(--cut-l));
+}
+
+.film-count {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6ch;
+  margin-top: 0.1em;
+  font-family: var(--font-text);
+  color: var(--color-ink-900);
+}
+
+.film-count-now { font-size: 3.2vw; line-height: 1; }
+.film-count-all { font-size: 1vw; line-height: 1; }
+
+.film-year {
+  margin-top: 0.1em;
+  font-family: var(--font-text);
+  font-size: 3.9vw;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  color: var(--color-periwinkle-400);
+}
+
+.film-rail {
+  position: absolute;
+  inset: 0;
+}
+
+.film-card {
+  position: absolute;
+  top: calc(50% + var(--card-shift, 0px));
+  left: 50%;
+  width: var(--card-w);
+  height: var(--card-h);
+  margin: calc(var(--card-h) / -2) 0 0 calc(var(--card-w) / -2);
+  visibility: hidden;
+}
+
+.film-card-image {
+  object-fit: cover;
+  user-select: none;
+}
+
+.film-card-blank {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  padding: 1em;
+  background-color: var(--color-ink-900);
+  color: var(--color-paper-000);
+  font-family: var(--font-editorial);
+  font-size: 2vw;
+  text-align: center;
+}
+
+@keyframes film-kick-fwd {
+  from { translate: 6px 0; }
+  to { translate: 0 0; }
+}
+
+@keyframes film-kick-back {
+  from { translate: -6px 0; }
+  to { translate: 0 0; }
+}
+
+.film-card[data-kick="+"] { animation: film-kick-fwd 90ms var(--ease-out); }
+.film-card[data-kick="-"] { animation: film-kick-back 90ms var(--ease-out); }
+
+.film-card {
+  padding: 0;
+  border: 0;
+  background: none;
+  pointer-events: none;
+}
+
+.film-card[data-live] { pointer-events: auto; cursor: pointer; }
+
+@media (hover: hover) {
+  .film-card[data-live]:hover .film-card-image { filter: brightness(1.08); }
+}
+
+.film-card-cue {
+  position: absolute;
+  right: clamp(10px, 0.833vw, 16px);
+  bottom: clamp(10px, 0.833vw, 16px);
+  z-index: 2;
+  display: none;
+  align-items: center;
+  min-height: 32px;
+  border: 1px solid var(--color-rose-400);
+  padding-inline: 14px;
+  background-color: var(--scrim-plate);
+  font-family: var(--font-text);
+  font-weight: 700;
+  font-size: var(--text-micro);
+  line-height: 1;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--color-rose-400);
+  pointer-events: none;
+}
+
+@media (hover: hover) {
+  .film-card[data-live]:hover .film-card-cue { display: inline-flex; }
+}
+
+@media (hover: none) {
+  .film-card[data-live] .film-card-cue { display: inline-flex; }
+}
+
+.film-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  overflow: hidden;
+  background-color: rgb(19 19 19 / 0);
+  transition:
+    background-color calc(var(--duration-modal) * 0.7) var(--ease-out)
+      calc(var(--duration-modal) * 0.25);
+}
+
+.film-dialog[data-open] {
+  background-color: rgb(19 19 19 / 1);
+  transition: background-color calc(var(--duration-modal) * 0.7) var(--ease-out);
+}
+
+.film-dialog-grow {
+  position: fixed;
+  top: var(--grow-top, 0px);
+  left: var(--grow-left, 0px);
+  width: var(--grow-w, 100vw);
+  height: var(--grow-h, 100vh);
+  overflow: hidden;
+  filter: blur(0) brightness(1);
+  pointer-events: none;
+  transition:
+    top calc(var(--duration-modal) * 0.7) var(--ease-out) calc(var(--duration-modal) * 0.25),
+    left calc(var(--duration-modal) * 0.7) var(--ease-out) calc(var(--duration-modal) * 0.25),
+    width calc(var(--duration-modal) * 0.7) var(--ease-out) calc(var(--duration-modal) * 0.25),
+    height calc(var(--duration-modal) * 0.7) var(--ease-out) calc(var(--duration-modal) * 0.25),
+    filter calc(var(--duration-modal) * 0.7) var(--ease-out) calc(var(--duration-modal) * 0.25);
+}
+
+.film-dialog-grow[data-open] {
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  filter: blur(46px) brightness(0.42);
+  transition:
+    top calc(var(--duration-modal) * 0.7) var(--ease-out),
+    left calc(var(--duration-modal) * 0.7) var(--ease-out),
+    width calc(var(--duration-modal) * 0.7) var(--ease-out),
+    height calc(var(--duration-modal) * 0.7) var(--ease-out),
+    filter calc(var(--duration-modal) * 0.7) var(--ease-out);
+}
+
+.film-dialog-grow-img { object-fit: cover; }
+
+.film-dialog .close-pill {
+  top: 9.1vh;
+  left: 12.3vw;
+}
+
+.film-dialog-text {
+  position: absolute;
+  top: 41.2vh;
+  left: 12.3vw;
+  width: 34.8vw;
+  color: var(--color-paper-000);
+  opacity: 0;
+  transform: translateX(-2.4vw);
+  transition:
+    opacity calc(var(--duration-modal) * 0.6) var(--ease-out),
+    transform calc(var(--duration-modal) * 0.6) var(--ease-out);
+}
+
+.film-dialog-text[data-open] {
+  opacity: 1;
+  transform: translateX(0);
+  transition:
+    opacity calc(var(--duration-modal) * 0.6) var(--ease-out) calc(var(--duration-modal) * 0.35),
+    transform calc(var(--duration-modal) * 0.6) var(--ease-out) calc(var(--duration-modal) * 0.35);
+}
+
+.film-dialog-title {
+  margin: 0;
+  font-family: var(--font-editorial);
+  font-weight: 400;
+  font-size: 4.3vw;
+  line-height: 0.92;
+  text-transform: uppercase;
+}
+
+.film-dialog-label {
+  margin: 0.6em 0 0.3em;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: var(--text-label);
+  letter-spacing: var(--tracking-label-wide);
+  text-transform: uppercase;
+}
+
+.film-dialog-body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-weight: 300;
+  font-size: 0.94vw;
+  line-height: 1.5;
+  letter-spacing: 0.1em;
+}
+
+.film-dialog-role {
+  margin: 1.4em 0 0;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: var(--text-label);
+  letter-spacing: var(--tracking-label-wide);
+  text-transform: uppercase;
+}
+
+.film-dialog-role span { color: var(--color-rose-400); }
+.film-dialog-dir { opacity: 0.66; }
+
+.film-dialog-plate {
+  position: absolute;
+  top: 8.8vh;
+  left: 54.3vw;
+  width: 28.2vw;
+  height: 75.2vh;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity calc(var(--duration-modal) * 0.6) var(--ease-out);
+}
+
+.film-dialog-plate[data-open] {
+  opacity: 1;
+  transition: opacity calc(var(--duration-modal) * 0.6) var(--ease-out) calc(var(--duration-modal) * 0.35);
+}
+
+.film-dialog-still { object-fit: cover; }
+
+.film-dialog-still--face {
+  opacity: 0;
+  transition: opacity calc(var(--duration-modal) * 0.6) var(--ease-out);
+}
+
+.film-dialog-plate[data-open] .film-dialog-still--face {
+  opacity: 1;
+  transition: opacity calc(var(--duration-modal) * 0.6) var(--ease-out) calc(var(--duration-modal) * 0.35);
+}
+
+@media (width < 64rem) {
+  .film-track {
+    --fall-travel: 105svh;
+  }
+
+  .film-word-back,
+  .film-word-front {
+    top: calc(
+      50% + var(--card-shift, 0px) + var(--card-h) / 2 +
+        clamp(18px, 4.23svh, 44px)
+    );
+    bottom: auto;
+  }
+
+  .film-word-back { transform-origin: right top; }
+  .film-word-front { transform-origin: left top; }
+
+  .film-word-back { align-items: flex-end; }
+  .film-word-front { align-items: flex-start; }
+
+  .film-word-cut { display: none; }
+
+  .film-word { font-size: min(13.48vw, 12.8svh); }
+  .film-count-now { font-size: min(10.99vw, 10.43svh); }
+  .film-count-all { font-size: min(2.75vw, 2.61svh); }
+
+  .film-count {
+    align-items: flex-start;
+    margin-top: 1.99vw;
+    margin-right: 2.09vw;
+  }
+
+  .film-count-all {
+    padding-top: 0.545em;
+    font-weight: 700;
+    letter-spacing: var(--tracking-label-wide);
+    text-transform: uppercase;
+  }
+
+  .film-year {
+    margin-top: calc(1.99vw + 0.25em);
+    margin-left: 5.92vw;
+    font-size: min(6.28vw, 5.96svh);
+    font-weight: 500;
+    line-height: 1.25;
+    letter-spacing: var(--tracking-label);
+  }
+
+  .film-skip {
+    bottom: calc(clamp(16px, 1.6667vw, 28px) + var(--safe-bottom));
+    right: calc(clamp(16px, 2.0833vw, 40px) + var(--safe-right));
+  }
+
+  .film-dialog .close-pill {
+    --close-box: max(11vw, var(--tap));
+    top: 4vh;
+    left: 7vw;
+  }
+
+  .film-dialog-plate {
+    top: 16vh;
+    left: 50%;
+    width: 58vw;
+    height: 44vh;
+    translate: -50% 0;
+  }
+
+  .film-dialog-text { top: 63vh; left: 7vw; width: 86vw; }
+  .film-dialog-title { font-size: 9vw; }
+  .film-dialog-body { font-size: max(15px, 3.4vw); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .film-card { animation: none; }
+}

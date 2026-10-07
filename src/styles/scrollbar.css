@@ -1,0 +1,53 @@
+.bar {
+  --bar-w: 16px;
+  --bar-thumb: 8px;
+  --bar-thumb-hot: 10px;
+
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 85;
+  width: var(--bar-w);
+  background-color: rgb(246 243 233 / 0.3);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-base) var(--ease-out);
+}
+
+.bar[data-live] {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.bar-thumb {
+  position: absolute;
+  top: 0;
+  left: calc((var(--bar-w) - var(--bar-thumb)) / 2);
+  width: var(--bar-thumb);
+  border-radius: 999px;
+  background-color: var(--color-rose-400);
+  cursor: grab;
+  will-change: transform;
+  transition:
+    width var(--duration-fast) var(--ease-out),
+    left var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
+}
+
+.bar-thumb:hover,
+.bar[data-drag] .bar-thumb {
+  width: var(--bar-thumb-hot);
+  left: calc((var(--bar-w) - var(--bar-thumb-hot)) / 2);
+}
+
+.bar[data-drag] .bar-thumb {
+  background-color: var(--color-rose-500);
+  cursor: grabbing;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar-thumb {
+    transition: none;
+  }
+}

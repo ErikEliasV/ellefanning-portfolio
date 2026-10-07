@@ -1,0 +1,163 @@
+@media (pointer: fine) {
+  html[data-cursor-on],
+  html[data-cursor-on] * {
+    cursor: none;
+  }
+}
+
+@property --cur-blur {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 5px;
+}
+
+.cur {
+  --cur-mark: var(--color-ink-900);
+  --cur-rim: rgb(255 255 255 / 0.62);
+  --cur-light: rgb(255 255 255 / 0.85);
+  --cur-shade: rgb(19 19 19 / 0.2);
+  --cur-cast: rgb(19 19 19 / 0.26);
+  --cur-glint: rgb(255 255 255 / 0.9);
+
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 200;
+  contain: layout style;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.cur[data-skin="invert"] {
+  --cur-mark: var(--color-paper-100);
+  --cur-rim: rgb(255 255 255 / 0.34);
+  --cur-light: rgb(255 255 255 / 0.55);
+  --cur-shade: rgb(0 0 0 / 0.5);
+  --cur-cast: rgb(0 0 0 / 0.5);
+  --cur-glint: rgb(255 255 255 / 0.75);
+}
+
+.cur-lens {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: scale(0);
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+.cur-body,
+.cur-skin {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 512px;
+  height: 512px;
+  margin: -256px 0 0 -256px;
+}
+
+.cur-body {
+  --cur-blur: 5px;
+  --cur-glass: blur(var(--cur-blur)) saturate(1.45) brightness(1.05);
+
+  clip-path: circle(64px);
+  -webkit-backdrop-filter: var(--cur-glass);
+  backdrop-filter: var(--cur-glass);
+  transition: --cur-blur var(--duration-slow) var(--ease-out);
+}
+
+.cur[data-refract] .cur-body {
+  --cur-glass: url(#cur-lens) blur(var(--cur-blur)) saturate(1.45) brightness(1.05);
+}
+
+.cur[data-hot] .cur-body {
+  --cur-blur: 0.6px;
+}
+
+@supports not (
+  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
+  .cur-body {
+    background-color: rgb(255 255 255 / 0.24);
+  }
+}
+
+.cur-skin {
+  overflow: visible;
+}
+
+.cur-rim {
+  fill: none;
+  stroke: var(--cur-rim);
+  stroke-width: 3;
+}
+
+.cur-glint {
+  fill: url(#cur-glint);
+}
+
+.cur-glint-core {
+  stop-color: var(--cur-glint);
+}
+
+.cur-glint-fade {
+  stop-color: var(--cur-glint);
+  stop-opacity: 0;
+}
+
+.cur-flood-light {
+  flood-color: var(--cur-light);
+}
+
+.cur-flood-shade {
+  flood-color: var(--cur-shade);
+}
+
+.cur-flood-cast {
+  flood-color: var(--cur-cast);
+}
+
+.cur-dot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+  border-radius: 50%;
+  background-color: var(--cur-mark);
+  opacity: 0;
+  will-change: transform;
+  transition:
+    opacity var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
+}
+
+.cur[data-live] .cur-dot {
+  opacity: 1;
+}
+
+.cur-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 7px 10px 6px;
+  border-radius: 11px;
+  background-color: var(--color-rose-400);
+  font-family: var(--font-text);
+  font-size: var(--text-label-sm);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: var(--tracking-label-wide);
+  text-indent: var(--tracking-label-wide);
+  text-transform: uppercase;
+  color: var(--color-ink-900);
+  white-space: nowrap;
+  clip-path: inset(0 100% 0 0 round 11px);
+  will-change: transform, clip-path;
+  transition: clip-path var(--duration-base) var(--ease-out);
+}
+
+.cur[data-live][data-tag] .cur-label {
+  clip-path: inset(0 0 0 0 round 11px);
+}
