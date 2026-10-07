@@ -5,66 +5,149 @@
   }
 }
 
+/* Registrada para poder transicionar: sem @property o desfoque pularia de um
+   valor para o outro no hover em vez de a gota ir clareando. */
+@property --cur-blur {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 5px;
+}
+
 .cur {
-  --cur-line: 2px;
   --cur-mark: var(--color-ink-900);
+  --cur-rim: rgb(255 255 255 / 0.62);
+  --cur-light: rgb(255 255 255 / 0.85);
+  --cur-shade: rgb(19 19 19 / 0.2);
+  --cur-cast: rgb(19 19 19 / 0.26);
+  --cur-glint: rgb(255 255 255 / 0.9);
 
   position: fixed;
   top: 0;
   left: 0;
   z-index: 200;
+  /* Nada de opacity aqui, nem para o fade de entrada: opacity abaixo de 1 num
+     ancestral vira raiz de backdrop, e a gota passaria a desfocar o vazio. Quem
+     entra e sai e o tamanho da gota, pela mola do hook. */
   contain: layout style;
-  opacity: 0;
   pointer-events: none;
   will-change: transform;
-  transition: opacity var(--duration-fast) var(--ease-out);
-}
-
-.cur[data-live] {
-  opacity: 1;
-}
-
-.cur[data-hot] {
-  --cur-line: 3px;
 }
 
 .cur[data-skin="invert"] {
   --cur-mark: var(--color-paper-100);
+  --cur-rim: rgb(255 255 255 / 0.34);
+  --cur-light: rgb(255 255 255 / 0.55);
+  --cur-shade: rgb(0 0 0 / 0.5);
+  --cur-cast: rgb(0 0 0 / 0.5);
+  --cur-glint: rgb(255 255 255 / 0.75);
 }
 
-.cur-blob {
+/* Um ponto sem tamanho no centro da gota, que o hook escala. O vidro e a pele
+   ficam centrados nele, na mesma caixa de 512px (BOX em lib/cursorLens.ts),
+   com a cabeca de 128px no meio e o resto sobrando para a cauda. */
+.cur-lens {
   position: absolute;
   top: 0;
   left: 0;
-  box-sizing: border-box;
-  width: 80px;
-  height: 80px;
-  border: var(--cur-line) solid var(--cur-mark);
-  border-radius: 50%;
-  will-change: transform, width, height;
-  transition:
-    border-width var(--duration-fast) var(--ease-out),
-    border-color var(--duration-fast) var(--ease-out),
-    border-radius var(--duration-base) var(--ease-out);
+  transform: scale(0);
+  transform-origin: 0 0;
+  will-change: transform;
 }
 
-/* Wrapping an element the shape goes rectangular, but never sharp: the corners
-   stay soft so it still reads as the same blob that was chasing the pointer. */
-.cur[data-snap] .cur-blob {
-  border-radius: 14px;
+.cur-body,
+.cur-skin {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 512px;
+  height: 512px;
+  margin: -256px 0 0 -256px;
+}
+
+/* O vidro. O recorte e o contorno do hook; ate o primeiro quadro, a cabeca. */
+.cur-body {
+  --cur-blur: 5px;
+  --cur-glass: blur(var(--cur-blur)) saturate(1.45) brightness(1.05);
+
+  clip-path: circle(64px);
+  -webkit-backdrop-filter: var(--cur-glass);
+  backdrop-filter: var(--cur-glass);
+  transition: --cur-blur var(--duration-slow) var(--ease-out);
+}
+
+.cur[data-refract] .cur-body {
+  --cur-glass: url(#cur-lens) blur(var(--cur-blur)) saturate(1.45) brightness(1.05);
+}
+
+/* Sobre um link a gota clareia e vira lupa: desfocar o texto que se esta
+   prestes a clicar e esconder justamente o que importa. */
+.cur[data-hot] .cur-body {
+  --cur-blur: 0.6px;
+}
+
+@supports not (
+  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
+  .cur-body {
+    background-color: rgb(255 255 255 / 0.24);
+  }
+}
+
+/* A pele: borda, luz, sombra e brilhos, por cima do vidro e fora do backdrop
+   dele. O stroke e o dobro da borda porque metade cai fora e o clip corta. */
+.cur-skin {
+  overflow: visible;
+}
+
+.cur-rim {
+  fill: none;
+  stroke: var(--cur-rim);
+  stroke-width: 3;
+}
+
+.cur-glint {
+  fill: url(#cur-glint);
+}
+
+.cur-glint-core {
+  stop-color: var(--cur-glint);
+}
+
+.cur-glint-fade {
+  stop-color: var(--cur-glint);
+  stop-opacity: 0;
+}
+
+.cur-flood-light {
+  flood-color: var(--cur-light);
+}
+
+.cur-flood-shade {
+  flood-color: var(--cur-shade);
+}
+
+.cur-flood-cast {
+  flood-color: var(--cur-cast);
 }
 
 .cur-dot {
   position: absolute;
   top: 0;
   left: 0;
-  width: 7px;
-  height: 7px;
-  margin: -3.5px 0 0 -3.5px;
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
   border-radius: 50%;
   background-color: var(--cur-mark);
+  opacity: 0;
   will-change: transform;
-  transition: background-color var(--duration-fast) var(--ease-out);
+  transition:
+    opacity var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
+}
+
+.cur[data-live] .cur-dot {
+  opacity: 1;
 }
 
 .cur-label {
@@ -88,6 +171,6 @@
   transition: clip-path var(--duration-base) var(--ease-out);
 }
 
-.cur[data-tag] .cur-label {
+.cur[data-live][data-tag] .cur-label {
   clip-path: inset(0 0 0 0 round 11px);
 }

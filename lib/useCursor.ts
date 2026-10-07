@@ -3,33 +3,61 @@
 import gsap from "gsap";
 import { useEffect, useRef, useState } from "react";
 
-import { onTick } from "@/lib/scroll";
+import { dropPath, LENS, lensMap } from "@/lib/cursorLens";
+import { isReduced, onTick } from "@/lib/scroll";
 
 const CHASE = 0.42;
 const CHASE_EASE = "power3";
-const SQUASH = 0.34;
-const SQUASH_EASE = "power2";
 const SETTLED = 0.4;
-const IDLE = 80;
-const HOT = 148;
-const OUTSET = 10;
-const PRESS = 6;
+const IDLE = 84;
+const HOT = 116;
+const PRESS = 18;
 const AREA = 0.34;
 const TALL = 0.82;
-// Pixels of pointer travel per frame that already read as full stretch.
-const VELOCITY_FULL = 46;
-const VELOCITY_EASE = 0.2;
-const VELOCITY_DECAY = 0.86;
-const VELOCITY_REST = 0.4;
-const STRETCH_MAX = 0.55;
-const SQUEEZE_K = 0.64;
+// Fracao do caminho entre o ponteiro e o centro do elemento que a gota anda
+// sozinha: puxada, nao grudada, para o ponteiro continuar mandando.
+const MAGNET = 0.32;
+// Velocidade da gota, em px/s, que ja le como estiramento total. O desenho da
+// cauda para cada estiramento mora em dropPath(), em lib/cursorLens.ts.
+const SPEED_FULL = 2000;
+const SPEED_REST = 12;
+// Quanto a cauda demora a virar para a nova direcao, em 1/s.
+const TURN = 14;
+// Molas em unidades de segundo. Subamortecidas de proposito: o balanco depois
+// da parada e o que faz a gota ler como agua e nao como disco de vidro.
+const SHAPE_K = 240;
+const SHAPE_C = 11;
+const SIZE_K = 300;
+const SIZE_C = 17;
+// Um quadro longo (aba em segundo plano, engasgo) nao pode virar um passo de
+// mola gigante: ela explode em vez de balancar.
+const MAX_DT = 1 / 30;
 const PICK =
   'a[href], button, summary, label, [role="button"], [role="link"], [data-cursor]';
 
-type Box = { x: number; y: number; w: number; h: number };
+type Spring = { x: number; v: number };
+
+function spring(s: Spring, goal: number, k: number, c: number, dt: number) {
+  s.v += (k * (goal - s.x) - c * s.v) * dt;
+  s.x += s.v * dt;
+}
+
+// O filtro url() no backdrop-filter so existe no Chromium. No Firefox e no
+// Safari a declaracao inteira deixa de valer, entao a refracao entra por opt-in
+// e o desfoque puro continua sendo a base.
+function canRefract() {
+  const agent = (navigator as Navigator & {
+    userAgentData?: { brands: { brand: string }[] };
+  }).userAgentData;
+  return !!agent?.brands.some((entry) => entry.brand === "Chromium");
+}
 
 export function useCursor() {
   const shell = useRef<HTMLDivElement>(null);
+  const lens = useRef<HTMLSpanElement>(null);
+  const body = useRef<HTMLSpanElement>(null);
+  const outline = useRef<SVGPathElement>(null);
+  const map = useRef<SVGFEImageElement>(null);
   const dot = useRef<HTMLSpanElement>(null);
   const label = useRef<HTMLSpanElement>(null);
   const [fine, setFine] = useState(false);
@@ -46,23 +74,36 @@ export function useCursor() {
 
   useEffect(() => {
     const node = shell.current;
-    if (!fine || !node) return;
+    const drop = lens.current;
+    const skin = body.current;
+    const edge = outline.current;
+    if (!fine || !node || !drop || !skin || !edge) return;
+
+    if (canRefract()) {
+      map.current?.setAttribute("href", lensMap());
+      node.dataset.refract = "";
+    }
 
     const root = document.documentElement;
     const point = { x: 0, y: 0 };
-    const box: Box = { x: 0, y: 0, w: IDLE, h: IDLE };
-    const goal: Box = { x: 0, y: 0, w: IDLE, h: IDLE };
-    const vel = { x: 0, y: 0 };
-    const blob = node.querySelector<HTMLElement>(".cur-blob");
+    const box = { x: 0, y: 0 };
+    const goal = { x: 0, y: 0 };
+    const last = { x: 0, y: 0 };
+    const size: Spring = { x: 0, v: 0 };
+    const shape: Spring = { x: 0, v: 0 };
+    // Direcao do movimento, suavizada. A cauda aponta para o lado oposto.
+    const heading = { x: 1, y: 0 };
 
     let untick: (() => void) | null = null;
+    let then = 0;
+    let drawn = "";
     let pendingRetag = false;
     // O rótulo sai por cima em vez de por baixo. Opt-in por elemento
     // (data-cursor-at="top"), não automático perto da borda da tela: automático
     // faria o rótulo virar sozinho enquanto o ponteiro passeia pelo limiar.
     let above = false;
     let hot: HTMLElement | null = null;
-    let snap = false;
+    let pull = false;
     let down = false;
     let live = false;
 
@@ -71,47 +112,71 @@ export function useCursor() {
     const chase = { duration: CHASE, ease: CHASE_EASE };
     const toX = gsap.quickTo(box, "x", chase);
     const toY = gsap.quickTo(box, "y", chase);
-    const toW = gsap.quickTo(box, "w", chase);
-    const toH = gsap.quickTo(box, "h", chase);
-
-    const squash = { duration: SQUASH, ease: SQUASH_EASE };
-    const toStretch = blob ? gsap.quickTo(blob, "scaleX", squash) : null;
-    const toSqueeze = blob ? gsap.quickTo(blob, "scaleY", squash) : null;
-    const toTilt = blob ? gsap.quickTo(blob, "rotation", squash) : null;
-
-    if (blob) gsap.set(blob, { xPercent: -50, yPercent: -50 });
 
     function aim() {
-      const tight = down ? PRESS : 0;
-
-      if (snap && hot) {
+      if (pull && hot) {
         const rect = hot.getBoundingClientRect();
-        goal.x = rect.left + rect.width / 2;
-        goal.y = rect.top + rect.height / 2;
-        goal.w = rect.width + OUTSET * 2 - tight;
-        goal.h = rect.height + OUTSET * 2 - tight;
+        goal.x = point.x + (rect.left + rect.width / 2 - point.x) * MAGNET;
+        goal.y = point.y + (rect.top + rect.height / 2 - point.y) * MAGNET;
         return;
       }
 
       goal.x = point.x;
       goal.y = point.y;
-      goal.w = (hot ? HOT : IDLE) - tight;
-      goal.h = goal.w;
+    }
+
+    function girth() {
+      if (!live) return 0;
+      return (hot ? HOT : IDLE) - (down ? PRESS : 0);
+    }
+
+    function flow(dt: number) {
+      const vx = (box.x - last.x) / dt;
+      const vy = (box.y - last.y) / dt;
+      const speed = Math.hypot(vx, vy);
+      last.x = box.x;
+      last.y = box.y;
+
+      if (isReduced()) {
+        size.x = girth();
+        size.v = 0;
+        shape.x = 0;
+        shape.v = 0;
+        return speed;
+      }
+
+      if (speed > SPEED_REST) {
+        const turn = 1 - Math.exp(-dt * TURN);
+        heading.x += (vx / speed - heading.x) * turn;
+        heading.y += (vy / speed - heading.y) * turn;
+      }
+
+      spring(shape, Math.min(speed / SPEED_FULL, 1), SHAPE_K, SHAPE_C, dt);
+      spring(size, girth(), SIZE_K, SIZE_C, dt);
+      return speed;
     }
 
     function paint() {
-      if (!node) return;
+      if (!node || !drop || !skin || !edge) return;
 
       const x = Math.round(box.x);
       const y = Math.round(box.y);
-      const half = Math.round(box.w / 2);
-      const rise = Math.round(box.h / 2);
+      const span = Math.max(size.x, 0);
+      const half = Math.round(span / 2);
 
       node.style.transform = `translate3d(${x}px, ${y}px, 0)`;
 
-      if (blob) {
-        blob.style.width = `${Math.round(box.w)}px`;
-        blob.style.height = `${Math.round(box.h)}px`;
+      // O tamanho vai por escala uniforme e a forma pelo contorno, que nunca
+      // gira a caixa: a luz do SVG fica no alto a esquerda com a gota andando
+      // para qualquer lado. O mesmo contorno recorta o vidro e desenha a borda.
+      drop.style.transform = `scale(${span / LENS})`;
+
+      const stretch = Math.min(Math.max(shape.x, -0.3), 1);
+      const d = dropPath(Math.atan2(heading.y, heading.x), stretch);
+      if (d !== drawn) {
+        drawn = d;
+        skin.style.clipPath = `path("${d}")`;
+        edge.setAttribute("d", d);
       }
 
       const mark = dot.current;
@@ -122,43 +187,23 @@ export function useCursor() {
       const tag = label.current;
       if (tag) {
         // O -100% resolve contra a altura do próprio rótulo, então a folga de
-        // 8px fica igual dos dois lados sem precisar medi-lo. `rise` já é meia
-        // altura da caixa envolvida quando o blob abraça o elemento, então isto
-        // continua valendo com data-snap.
-        const off = rise + 8;
+        // 8px fica igual dos dois lados sem precisar medi-lo.
+        const off = half + 8;
         tag.style.transform = above
           ? `translate3d(${-half}px, calc(${-off}px - 100%), 0)`
           : `translate3d(${-half}px, ${off}px, 0)`;
       }
     }
 
-    function shape() {
-      if (!blob) return;
+    function tick(now: number) {
+      const dt = then ? Math.min((now - then) / 1000, MAX_DT) : 1 / 60;
+      then = now;
 
-      const speed = Math.hypot(vel.x, vel.y);
-      const stretch = snap
-        ? 0
-        : Math.min(speed / VELOCITY_FULL, 1) * STRETCH_MAX;
-
-      toStretch?.(1 + stretch);
-      toSqueeze?.(1 - stretch * SQUEEZE_K);
-      if (!snap && speed > VELOCITY_REST) {
-        toTilt?.((Math.atan2(vel.y, vel.x) * 180) / Math.PI);
-      }
-    }
-
-    function tick() {
       aim();
-
       toX(goal.x);
       toY(goal.y);
-      toW(goal.w);
-      toH(goal.h);
 
-      vel.x *= VELOCITY_DECAY;
-      vel.y *= VELOCITY_DECAY;
-
-      shape();
+      const speed = flow(dt);
       paint();
 
       if (pendingRetag) {
@@ -167,12 +212,14 @@ export function useCursor() {
       }
 
       const rest =
-        !snap &&
+        !pull &&
         Math.abs(goal.x - box.x) < SETTLED &&
         Math.abs(goal.y - box.y) < SETTLED &&
-        Math.abs(goal.w - box.w) < SETTLED &&
-        Math.abs(goal.h - box.h) < SETTLED &&
-        Math.hypot(vel.x, vel.y) < VELOCITY_REST;
+        speed < SPEED_REST &&
+        Math.abs(girth() - size.x) < SETTLED &&
+        Math.abs(size.v) < 1 &&
+        Math.abs(shape.x) < 0.002 &&
+        Math.abs(shape.v) < 0.02;
 
       if (rest) {
         untick?.();
@@ -181,7 +228,9 @@ export function useCursor() {
     }
 
     function wake() {
-      if (!untick) untick = onTick(tick);
+      if (untick) return;
+      then = 0;
+      untick = onTick(tick);
     }
 
     function fits(hit: HTMLElement) {
@@ -196,9 +245,6 @@ export function useCursor() {
     function move(event: PointerEvent) {
       if (!node) return;
 
-      const dx = event.clientX - point.x;
-      const dy = event.clientY - point.y;
-
       point.x = event.clientX;
       point.y = event.clientY;
 
@@ -206,13 +252,12 @@ export function useCursor() {
         live = true;
         box.x = point.x;
         box.y = point.y;
+        last.x = point.x;
+        last.y = point.y;
         toX(point.x, point.x);
         toY(point.y, point.y);
         node.dataset.live = "";
         root.dataset.cursorOn = "";
-      } else {
-        vel.x += (dx - vel.x) * VELOCITY_EASE;
-        vel.y += (dy - vel.y) * VELOCITY_EASE;
       }
 
       wake();
@@ -233,19 +278,10 @@ export function useCursor() {
       if (hit === hot) return;
 
       hot = hit;
-      snap = hit ? hit.dataset.cursorSnap !== "off" && fits(hit) : false;
+      pull = hit ? fits(hit) : false;
 
       if (hit) node.dataset.hot = "";
       else delete node.dataset.hot;
-
-      if (snap) {
-        node.dataset.snap = "";
-        toTilt?.(0);
-        toStretch?.(1);
-        toSqueeze?.(1);
-      } else {
-        delete node.dataset.snap;
-      }
 
       wake();
     }
@@ -279,7 +315,7 @@ export function useCursor() {
     }
 
     function drift() {
-      if (snap) wake();
+      if (pull) wake();
     }
 
     function hide() {
@@ -288,6 +324,7 @@ export function useCursor() {
       down = false;
       delete node.dataset.live;
       delete node.dataset.down;
+      wake();
     }
 
     window.addEventListener("pointermove", move, { passive: true });
@@ -311,5 +348,5 @@ export function useCursor() {
     };
   }, [fine]);
 
-  return { shell, dot, label, fine };
+  return { shell, lens, body, outline, map, dot, label, fine };
 }
