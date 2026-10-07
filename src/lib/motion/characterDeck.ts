@@ -18,6 +18,8 @@ const WORD_OUT = 0.25;
 
 const STAY = 1;
 
+const ENTRY_LEAD = 0.5;
+
 const PILE = 3;
 
 const CYCLE = 0.4;
@@ -29,7 +31,7 @@ export type Span = { from: number; to: number };
 export type FramePhases = { wipe: Span; rise: Span; stay: Span; lift: Span };
 
 export function framePhases(): FramePhases {
-  const wipe = { from: 0, to: WIPE };
+  const wipe = { from: -ENTRY_LEAD, to: WIPE - ENTRY_LEAD };
   const rise = { from: wipe.to, to: wipe.to + RISE };
   const stay = { from: rise.to, to: rise.to + STAY };
   const lift = { from: stay.to, to: stay.to + LIFT };

@@ -77,6 +77,7 @@ export function useCharacterDeck(count: number, paused: boolean) {
       const phone = narrow.matches;
       const p = -trackEl.getBoundingClientRect().top / vh;
       const c = phone ? reel(p, reduced) : carousel(p, clock.current);
+      trackEl.toggleAttribute("data-early", !phone && p < 0 && c.wipe > 0);
 
       const set = (name: string, value: string) =>
         trackEl.style.setProperty(name, value);

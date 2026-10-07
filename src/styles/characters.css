@@ -69,7 +69,20 @@
 
 .character-track {
   position: relative;
-  height: 345svh;
+  height: 295svh;
+}
+
+.character-section:has(> .character-track[data-early]) {
+  background-color: transparent;
+}
+
+.character-track[data-early] .character-stage {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background-color: transparent;
+  pointer-events: none;
 }
 
 .character-stage {
