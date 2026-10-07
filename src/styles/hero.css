@@ -10,9 +10,6 @@
   initial-value: 1;
 }
 
-/* A hero nao usa mais o --t: ele movia a costura entre a face grotesca e a
-   serifada do titulo de entrada, que saiu. O registro fica porque
-   styles/editorial.css calcula o --t dele proprio e conta com ele. */
 @property --t {
   syntax: "<number>";
   inherits: true;
@@ -71,9 +68,6 @@
   image-rendering: pixelated;
 }
 
-/* O caminho de reserva, sem WebGL. O tinte era um color-mix que andava com o
-   --p porque o mosaico lavava de papel para rosa; agora ele ja nasce rosa e o
-   que sobra e uma cor chapada -- ver lib/useHeroField.ts. */
 .hero-field:has(.hero-field-flat)::after {
   content: "";
   position: absolute;
@@ -82,11 +76,6 @@
   opacity: 0.82;
 }
 
-/* O titulo, um so do inicio ao fim. Ate aqui eram dois: um de entrada, em
-   grotesco que se trocava por serifado num wipe, e o lockup grande que
-   aparecia por cima na segunda metade da rolagem. Agora a palavra e a mesma
-   nos dois estados e a rolagem so faz ela crescer -- a geometria dos dois
-   extremos sai medida de lib/useHeroMorph.ts. */
 .hero-title {
   position: absolute;
   inset: 0;
@@ -120,9 +109,6 @@
   display: block;
 }
 
-/* Uma escala nao mexe em entrelinha, e o primeiro estado tem as duas linhas
-   quase coladas contra as soltas do segundo. A segunda linha sobe sozinha,
-   nas unidades de dentro da face, para o scale de cima carregar ela junto. */
 .hero-face > span + span {
   transform: translateY(calc(var(--inv) * var(--lock-close, 0px)));
 }
@@ -150,8 +136,6 @@
   max-width: none;
 }
 
-/* The mosaic used to run straight into the header. It now dissolves into the
-   frame colour at the top, which is the same rose as everything else. */
 .hero-veil {
   position: absolute;
   inset: 0;
@@ -182,14 +166,6 @@
   opacity: 0;
 }
 
-/* A entrada, em dois tempos que se sobrepõem: a cópia macia resolve para fora
-   do campo primeiro e a nítida assenta um tempo depois. Os dois correm no
-   elemento do título, e não na face, porque a face é de quem o morph escreve o
-   transform — um translate aqui em cima apagaria o translate+scale de lá. A
-   foto entrava num terceiro tempo, subindo de translateY(18%) no próprio
-   elemento da imagem; o dono do projeto pediu que ela ficasse parada, então ela
-   agora chega já no lugar. Nada fica pré-armado: sem sinal de entrada a hero
-   simplesmente está lá, vestida. */
 @keyframes hero-soft {
   from {
     opacity: 0;

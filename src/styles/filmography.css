@@ -1,29 +1,16 @@
 .film-track {
   position: relative;
 
-  /* Geometria em px, escrita por `geometry()` em lib/filmStage.ts. O CSS não
-     declara nenhuma destas medidas: o JS é a fonte única. Os valores abaixo
-     são só o fallback antes do primeiro paint do hook — ele os sobrescreve
-     inline assim que mede o viewport, mas isto dá ao palco algo para
-     desenhar antes disso (sem JS, ou no instante entre hidratação e a
-     primeira medição). */
   --card-w: 28.1vw;
   --card-h: calc(var(--card-w) * (812 / 539));
   --split: 17.3vw;
 
-  /* Estado do palco. O hook (`useFilmStage`) escreve estes valores a cada
-     frame, sobrescrevendo inline o que estiver aqui; os números abaixo são
-     só o fallback de repouso antes da primeira medição. */
   --curtain: 0;
   --rise: 1;
   --fall: 0;
   --cut-l: 100%;
   --cut-r: 0px;
 
-  /* Deslocamento vertical do pôster em relação ao centro do palco, e a
-     correção que recentra a palavra quando as duas metades se encostam. Os
-     dois são 0 no perfil largo e só o estreito os usa — ver `centerVh` em
-     lib/filmStage.ts e `wordNudge()` em lib/useFilmStage.ts. */
   --card-shift: 0px;
   --word-nudge: 0px;
 }
@@ -43,7 +30,6 @@
   background-color: var(--color-paper-000);
 }
 
-/* A cortina cobre a hero, que não passa de z-index 20; o header vive em 80. */
 .film-curtain {
   position: fixed;
   inset: 0;
@@ -56,8 +42,6 @@
 
 .film-curtain[data-on] { visibility: visible; }
 
-/* As duas metades se encostam no centro quando --split é 0, e a palavra lê como
-   FILMOGRAPHY. Abrir é uma variável só: nada de medir largura de glifo. */
 .film-word-back,
 .film-word-front,
 .film-word-cut {
@@ -65,16 +49,6 @@
   top: 40.8vh;
   display: flex;
   flex-direction: column;
-  /* A palavra entra grande (2.2×) e chega a 1× ao assentar — função de
-     --rise. A saída é o espelho: sai crescendo de 1× a 2.2× por --fall, para
-     cima em vez de para baixo (translateY negativo), então ela cresce e
-     desaparece por cima da tela em vez de encolhida saindo por baixo. Os dois
-     termos de escala não se sobrepõem no tempo (--rise satura em 1 antes de
-     --fall começar a mexer), então a soma abaixo nunca passa de 2.2. Sem
-     opacity ligada a --rise: a palavra sobe já opaca, visível desde o
-     primeiro instante — antes ela materializava a meio caminho, e ele pediu
-     para vê-la vindo desde o início. 60vh (era 40vh) começa fora do quadro —
-     pedido para vir de ainda mais embaixo. */
   transform:
     translate3d(
       var(--word-nudge, 0px),
@@ -90,18 +64,12 @@
 .film-word-cut {
   right: calc(50% + var(--split));
   align-items: flex-start;
-  /* Durante a subida --split é 0: as duas metades estão encostadas no
-     centro. Escalar em torno da borda DIREITA (a borda de junção) prende
-     esse ponto no lugar — as duas metades encolhem convergindo para o
-     centro, não escorregando para os lados. Origin no padrão (centro da
-     própria caixa) abriria a junção durante a subida. */
   transform-origin: right;
 }
 
 .film-word-front {
   left: calc(50% + var(--split));
   align-items: flex-end;
-  /* Espelho do comentário acima: a borda de junção de GRAPHY é a esquerda. */
   transform-origin: left;
 }
 
@@ -110,10 +78,6 @@
 .film-rail { z-index: 4; }
 .film-word-cut { z-index: 5; }
 
-/* Espelha o .score, o pill de música, que flutua no canto oposto: mesma linha
-   de base, um de cada lado do palco. Aparece e some por `data-skip`, que o
-   paint() da trilha liga enquanto há filme adiante -- ver canSkip() em
-   lib/filmStage.ts. */
 .film-skip {
   position: absolute;
   right: clamp(16px, 2.0833vw, 40px);
@@ -142,9 +106,6 @@
   color: var(--color-ink-900);
 }
 
-/* FILMO existe duas vezes. A preta fica sob os cards e some atrás deles; esta,
-   branca, fica acima e é recortada na caixa do card, então as letras só
-   aparecem onde há pôster. A fronteira é a borda do próprio card, exata. */
 .film-word-cut .film-word {
   color: var(--color-paper-000);
 }
@@ -206,7 +167,6 @@
   text-align: center;
 }
 
-/* 90ms, seco, sem volta elastica: um obturador engatando o quadro. */
 @keyframes film-kick-fwd {
   from { translate: 6px 0; }
   to { translate: 0 0; }
@@ -229,16 +189,10 @@
 
 .film-card[data-live] { pointer-events: auto; cursor: pointer; }
 
-/* O convite aparece no hover de ponteiro fino; no toque o tap já abre. */
 @media (hover: hover) {
   .film-card[data-live]:hover .film-card-image { filter: brightness(1.08); }
 }
 
-/* O rótulo explícito de que o card travado abre. Mesma lógica de
-   docs/responsividade-mobile.md para `.character-card-cue`: em ponteiro fino o
-   cursor customizado já rotula "Open" (data-cursor mais abaixo), então o chip
-   só reforça no hover; em ponteiro grosso não existe hover e, sem o chip
-   visível sem interação, o convite de abrir não existe para quem usa toque. */
 .film-card-cue {
   position: absolute;
   right: clamp(10px, 0.833vw, 16px);
@@ -271,25 +225,8 @@
 .film-dialog {
   position: fixed;
   inset: 0;
-  /* Mapa de camadas do site: header 80, botão de som 90, preloader 100,
-     cursor customizado 200. O modal prende foco e trava scroll, então tem
-     que ficar acima do chrome do site que ele deveria deixar inerte (header
-     e som) — senão o header cobre o botão de fechar e sobram elementos
-     focáveis fora da armadilha de foco. Mas tem que ficar abaixo do
-     preloader (que só existe no carregamento, quando não há modal aberto) e
-     do cursor (que precisa desenhar por cima de tudo, sempre). 95 é o único
-     valor que satisfaz as quatro condições — não mexer sem reconferir isso. */
   z-index: 95;
   overflow: hidden;
-  /* O fundo esmaece junto com o crescimento/encolhimento do pôster
-     (.film-dialog-grow abaixo), não some/aparece de um frame para o outro.
-     Sem isto, ao fechar o pôster encolhe de volta para a caixa do card mas o
-     resto da tela continua cobrindo tudo com esta cor sólida até o desmonte
-     — um quadro preto inteiro entre "pôster já pequeno" e "seção de volta".
-     rgb(19 19 19 / X) é --color-ink-900 (#131313) escrito com canal alfa: a
-     cor não muda, só a opacidade, então a transição interpola alfa em vez de
-     saltar. Mesma janela do crescimento (ver o comentário ali) para os dois
-     ficarem em lockstep. */
   background-color: rgb(19 19 19 / 0);
   transition:
     background-color calc(var(--duration-modal) * 0.7) var(--ease-out)
@@ -301,15 +238,6 @@
   transition: background-color calc(var(--duration-modal) * 0.7) var(--ease-out);
 }
 
-/* A entrada do modal: o pôster clicado cresce da própria caixa (as custom
-   properties abaixo, escritas pelo FilmDialog a partir do
-   getBoundingClientRect() do card no clique) até cobrir a tela e virar o
-   fundo — borrando e escurecendo no caminho. Fechar roda o mesmo movimento ao
-   contrário: o fundo encolhe de volta para a caixa do card.
-   Sem isto, ele é o alvo de qualquer clique no fundo — nunca o .film-dialog
-   que tem o handler de fechar — e o clique fora para de funcionar. Mesma
-   armadilha que já pegou o wash antigo (next/image com `fill` gera um <img>
-   absolutamente posicionado cobrindo o próprio elemento). */
 .film-dialog-grow {
   position: fixed;
   top: var(--grow-top, 0px);
@@ -319,12 +247,6 @@
   overflow: hidden;
   filter: blur(0) brightness(1);
   pointer-events: none;
-  /* O crescimento anima largura/altura de verdade, não `transform: scale`.
-     A caixa do card é proporção de pôster e a da tela não é — escalar
-     distorceria a imagem. Redimensionando a caixa em si e deixando o
-     `object-fit: cover` da imagem (abaixo) recalcular o recorte a cada
-     instante, o que muda é o que fica de fora do quadro, nunca a proporção
-     do que fica dentro. */
   transition:
     top calc(var(--duration-modal) * 0.7) var(--ease-out) calc(var(--duration-modal) * 0.25),
     left calc(var(--duration-modal) * 0.7) var(--ease-out) calc(var(--duration-modal) * 0.25),
@@ -333,17 +255,6 @@
     filter calc(var(--duration-modal) * 0.7) var(--ease-out) calc(var(--duration-modal) * 0.25);
 }
 
-/* 70% do orçamento (--duration-modal) é o crescimento. O texto e o still
-   (ver .film-dialog-text e .film-dialog-plate abaixo) NÃO esperam o
-   crescimento terminar: eles começam a 35% do orçamento, ainda dentro da
-   janela dos 70%, para o gesto ler como uma coisa só em vez de duas em fila
-   (crescer, ENTÃO aparecer). O mesmo vale fechando, ao contrário: texto e
-   still começam a sair no instante 0 e o encolhimento do pôster só começa em
-   25% — ele ainda está pegando o texto/still no meio do caminho quando eles
-   terminam de sair. A transição usada é sempre a da REGRA DE CHEGADA (é
-   assim que CSS Transitions resolve duration/delay quando o valor muda),
-   então a duração/atraso de "fechar" vêm da regra sem `[data-open]` acima, e
-   a de "abrir" vêm desta. */
 .film-dialog-grow[data-open] {
   top: 0;
   left: 0;
@@ -360,29 +271,6 @@
 
 .film-dialog-grow-img { object-fit: cover; }
 
-/* O botão do node 2345-122. Como o resto do modal, ele é medido em vw contra o
-   canvas de 1920 do Figma, então os números de lá dividem por 19,2: caixa 61 ->
-   3.177vw, ícone 36 -> 1.875vw, raio 11 -> 0.573vw, gap 10 -> 0.521vw, corpo
-   27,104 -> 1.4117vw, e o tracking de 7,0705px vira 0,26em para acompanhar o
-   corpo. (Os pills da página vestem o mesmo desenho numa escala fixa menor --
-   ver styles/pill.css.)
-
-   Tudo sai de --close-box, a caixa em repouso, nas razões que o Figma dá sobre
-   os 61px dela. Assim a media query de tela estreita troca um número só e nada
-   desalinha -- e a centragem do + em repouso é `(caixa - ícone) / 2` por
-   construção, não um valor calculado à mão que pode envelhecer.
-
-   O respiro é assimétrico de propósito. Em repouso são 12,5px à esquerda e
-   nenhum à direita: com box-sizing: border-box isso deixa 48,5px de caixa de
-   conteúdo para um ícone de 36px alinhado ao início, ou seja 12,5px sobrando de
-   cada lado -- o + fica no centro exato dos 61px. (Aqui morava `padding: 0 1vw`,
-   e eram esses 19,2px de respiro à esquerda que jogavam o centro do ícone para
-   27,4px numa caixa de 61,4px: o desalinhamento de 3,3px.) Ao abrir, só o
-   padding-left desce para os 9px do Figma, junto com a largura, então o ícone
-   desliza em vez de pular. Os 15px de respiro direito do Figma estão embutidos
-   na largura aberta, já que padding-right não teria o que fazer com a largura
-   fixa e o overflow recortando. */
-/* O botao vem de styles/close.css; daqui sai so onde ele fica. */
 .film-dialog .close-pill {
   top: 9.1vh;
   left: 12.3vw;
@@ -394,14 +282,6 @@
   left: 12.3vw;
   width: 34.8vw;
   color: var(--color-paper-000);
-  /* "a coluna de texto entra pela esquerda e assenta", sobrepondo o
-     crescimento do pôster em vez de esperar ele terminar (ver o comentário
-     de overlap em `.film-dialog-grow[data-open]`). O Figma não dá uma
-     distância para este deslocamento (só a caixa do still tem número
-     medido); 2.4vw é escolha de sensação, não medição. 60% do orçamento
-     (--duration-modal) são deste estágio; o atraso de 35% ao abrir fica na
-     regra `[data-open]` abaixo — ver o comentário sobre duration/delay
-     virem da regra de chegada, junto a `.film-dialog-grow`. */
   opacity: 0;
   transform: translateX(-2.4vw);
   transition:
@@ -456,12 +336,6 @@
 .film-dialog-role span { color: var(--color-rose-400); }
 .film-dialog-dir { opacity: 0.66; }
 
-/* A caixa do still fica parada — quem viaja agora é o pôster de fundo
-   (.film-dialog-grow acima), crescendo até virar a cena. A placa só
-   aparece, sem deslizar, no mesmo estágio do texto — mesma janela e mesmo
-   atraso de 35% ao abrir (overlapping o crescimento, ver o comentário em
-   .film-dialog-grow[data-open]). still 541×814 @ x=1042 sobre um canvas de
-   1920: 28.2vw de largura, 54.3vw do centro à esquerda. */
 .film-dialog-plate {
   position: absolute;
   top: 8.8vh;
@@ -480,11 +354,6 @@
 
 .film-dialog-still { object-fit: cover; }
 
-/* O still crossfade por cima do pôster, dentro da mesma caixa. Sem still
-   ainda, os dois lados usam o mesmo arquivo (`face` em FilmDialog.tsx) e o
-   crossfade fica visualmente invisível — mas a estrutura de duas camadas
-   já existe, pronta para quando os stills chegarem. Mesmo atraso da placa:
-   sem sentido crossfadear enquanto ainda está com opacidade 0. */
 .film-dialog-still--face {
   opacity: 0;
   transition: opacity calc(var(--duration-modal) * 0.6) var(--ease-out);
@@ -495,31 +364,7 @@
   transition: opacity calc(var(--duration-modal) * 0.6) var(--ease-out) calc(var(--duration-modal) * 0.35);
 }
 
-/* O breakpoint aqui tem que ser idêntico a `NARROW_QUERY` em `lib/filmStage.ts`.
-   Esta media query cuida só de tipografia e de onde as coisas sentam — a
-   inversão da composição (pôster quase da largura da tela, desfile vertical,
-   vizinho cinza e borrado em vez de pequeno) já vem de `geometry(true)`, lida
-   pelo hook via `matchMedia(NARROW_QUERY)`. Redeclarar `--card-w`, `--card-h`,
-   o passo ou `--card-shift` aqui faria o CSS e o JS discordarem sobre onde cada
-   card está: custom property não resolve unidade, então o JS não teria como ler
-   `48vw` de volta para reconciliar. */
 @media (width < 64rem) {
-  /* A palavra deixa de se partir em volta do pôster e vira um bloco ABAIXO
-     dele — node 2527:1748 do Figma.
-
-     O desfile agora sobe (ver NARROW em lib/filmStage.ts), e o pôster ocupa
-     quase a largura toda: 0.898vw contra 0.281 do perfil largo. Não sobra vão
-     lateral nenhum para a palavra se partir. O vão estreito antigo era 0.04vw
-     — 15px numa tela de 390 — e, medido em 390, 430 e 768, o pôster caía
-     exatamente sobre ele e apagava "graphy" e o ano: lia-se "FILMO … HY", ou
-     só "FILMO". Com `splitVw: 0` as duas metades encostam no centro e voltam a
-     ser uma palavra só, e aqui ela desce para a faixa livre debaixo do pôster,
-     onde nada a cobre.
-
-     Ancorada por `top` a partir da borda de baixo do card, e não por um vh
-     fixo: assim ela acompanha o pôster em qualquer altura de tela, inclusive
-     quando o teto de `heightVh` é quem dimensiona o card. A conta bate exata
-     no quadro do Figma — 437 − 90 + 272 + 37 = 656, que é o topo do bloco lá. */
   .film-word-back,
   .film-word-front {
     top: calc(
@@ -529,43 +374,18 @@
     bottom: auto;
   }
 
-  /* A palavra cresce para BAIXO ao assentar, para dentro da faixa livre, em vez
-     de subir contra o pôster. A junção das duas metades continua presa no
-     centro porque as origens seguem opostas no eixo x. */
   .film-word-back { transform-origin: right top; }
   .film-word-front { transform-origin: left top; }
 
-  /* O contador e o ano trocam de lado. No perfil largo eles moram nas pontas
-     de fora da palavra, um em cada metade; aqui têm que se encontrar no centro,
-     numa linha só: `01 /16` e depois `2001`. `.film-word-back` termina no
-     centro e `.film-word-front` começa nele, então basta alinhar cada um à sua
-     borda de junção. A palavra em si não se move — ela é o filho mais largo dos
-     dois containers, então ocupa a largura inteira de qualquer jeito.
-
-     As margens são o vão do Figma partido em torno do centro: 8,4px de um lado
-     e 23,8px do outro, sobre 402 de largura. */
   .film-word-back { align-items: flex-end; }
   .film-word-front { align-items: flex-start; }
 
-  /* A cópia branca recortada na caixa do card existia porque o pôster passava
-     POR CIMA da palavra. Com a palavra abaixo dele não há sobreposição nenhuma
-     para recortar. O paint() de lib/useFilmStage.ts também para de calcular o
-     recorte quando esta caixa não tem largura. */
   .film-word-cut { display: none; }
 
-  /* Os corpos saem do menor entre a largura e a altura. Só o vw deixava a
-     palavra alta demais num tablet em paisagem estreita (1023 × 768): 13,5vw
-     são 138px de corpo e o bloco inteiro não cabia abaixo do card.
-
-     As razões entre eles são as do Figma sobre o corpo da palavra (54,181px):
-     0,815 no contador, 0,204 na fração e 0,466 no ano. */
   .film-word { font-size: min(13.48vw, 12.8svh); }
   .film-count-now { font-size: min(10.99vw, 10.43svh); }
   .film-count-all { font-size: min(2.75vw, 2.61svh); }
 
-  /* "/ 16" é sobrescrito, não assentado na linha de base do "01": no Figma ele
-     encosta no topo da caixa do contador, a 6,024px de um corpo de 11,043 —
-     daí o 0,545em, medido no próprio tipo pequeno para escalar junto com ele. */
   .film-count {
     align-items: flex-start;
     margin-top: 1.99vw;
@@ -579,9 +399,6 @@
     text-transform: uppercase;
   }
 
-  /* O ano senta na mesma linha do contador. O 0,25em extra centra a caixa dele
-     (25,24 × 1,25) contra a do "01" (44,173 × 1), que é mais alta: os dois
-     partem do mesmo topo, então sem isso os centros ficariam 6,3px fora. */
   .film-year {
     margin-top: calc(1.99vw + 0.25em);
     margin-left: 5.92vw;
@@ -591,25 +408,17 @@
     letter-spacing: var(--tracking-label);
   }
 
-  /* O pé da tela é onde mora a faixa de gestos do aparelho. */
   .film-skip {
     bottom: calc(clamp(16px, 1.6667vw, 28px) + var(--safe-bottom));
     right: calc(clamp(16px, 2.0833vw, 40px) + var(--safe-right));
   }
 
-  /* O 11vw sozinho dá 41,25px a 375 de largura, abaixo dos 44px que o projeto
-     adota (docs/responsividade-mobile.md trata alvos de 24 e 29px como
-     defeito a corrigir). O piso garante o mínimo em qualquer largura e o vw
-     continua escalando em telas maiores (45,5px já a 414). */
-  /* Uma variavel so: o icone, o respiro que o centra, o gap, o raio, o corpo
-     do rotulo e a largura aberta saem todos dela nas razoes do Figma. */
   .film-dialog .close-pill {
     --close-box: max(11vw, var(--tap));
     top: 4vh;
     left: 7vw;
   }
 
-  /* No celular o modal empilha: still em cima, texto embaixo. */
   .film-dialog-plate {
     top: 16vh;
     left: 50%;
@@ -620,16 +429,9 @@
 
   .film-dialog-text { top: 63vh; left: 7vw; width: 86vw; }
   .film-dialog-title { font-size: 9vw; }
-  /* 3.4vw sozinhos davam 13,3px num 390 de largura, abaixo do piso de leitura
-     que o projeto adota para texto corrido. O vw continua mandando a partir de
-     ~470px. */
   .film-dialog-body { font-size: max(15px, 3.4vw); }
 }
 
-/* A trilha já encolhe em `phases(reduced)` e o blur de profundidade e o
-   tranco do estalo já são suprimidos pelo hook. Resta só garantir que o
-   tranco do card não anime — o resto das transições do módulo já encurta
-   sozinho pelo corte global de --duration-base em styles/globals.css. */
 @media (prefers-reduced-motion: reduce) {
   .film-card { animation: none; }
 }

@@ -89,8 +89,6 @@
   --grow: 1;
 }
 
-/* Touch browsers keep :hover stuck on the last tapped cell, so the reel would
-   stay lopsided after a tap. Only a real pointer gets to grow a frame. */
 @media (hover: hover) {
   .ed-pin:not([data-open]):not([data-scrolling])
     .ed-reel:has(.ed-cell:hover)
@@ -317,10 +315,6 @@
   }
 }
 
-/* O reel arrastado do telefone: `data-swipe` e escrito por
-   lib/useEditorialReel.ts no mesmo corte que poe as fotos em 80vw, entao o CSS
-   nao tem um limiar proprio para discordar dele. A dica troca porque ali a
-   rolagem ja nao passa as fotos, nem com mouse numa janela estreita. */
 .ed-hint-swipe {
   display: none;
 }
@@ -334,18 +328,12 @@
   display: inline;
 }
 
-/* `pan-y` entrega ao navegador so o gesto vertical, que continua rolando a
-   pagina, e deixa o horizontal para o arrasto -- sem ele o navegador disputaria
-   o gesto e cancelaria o arrasto no meio. Sem selecao de texto porque o mesmo
-   arrasto vale para o mouse. */
 .ed-pin[data-swipe] {
   touch-action: pan-y;
   -webkit-user-select: none;
   user-select: none;
 }
 
-/* Replaces the hint while a frame is open: an actual target beats a sentence
-   telling you to press Esc, which no phone has. */
 .ed-close {
   position: absolute;
   z-index: 25;
@@ -403,9 +391,6 @@
     width: min(58vw, calc(var(--band) * var(--ar)));
   }
 
-  /* O pin mede 100svh e, com viewport-fit: cover, isso inclui as faixas
-     seguras do aparelho -- o recorte da camera em cima e a barra de gestos
-     embaixo. Tudo que encosta nas bordas aqui desconta as duas. */
   .ed-caption-wrap {
     left: calc(22px + var(--safe-left));
     width: calc(100% - 44px - var(--safe-left) - var(--safe-right));

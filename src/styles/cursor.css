@@ -5,8 +5,6 @@
   }
 }
 
-/* Registrada para poder transicionar: sem @property o desfoque pularia de um
-   valor para o outro no hover em vez de a gota ir clareando. */
 @property --cur-blur {
   syntax: "<length>";
   inherits: true;
@@ -25,9 +23,6 @@
   top: 0;
   left: 0;
   z-index: 200;
-  /* Nada de opacity aqui, nem para o fade de entrada: opacity abaixo de 1 num
-     ancestral vira raiz de backdrop, e a gota passaria a desfocar o vazio. Quem
-     entra e sai e o tamanho da gota, pela mola do hook. */
   contain: layout style;
   pointer-events: none;
   will-change: transform;
@@ -42,9 +37,6 @@
   --cur-glint: rgb(255 255 255 / 0.75);
 }
 
-/* Um ponto sem tamanho no centro da gota, que o hook escala. O vidro e a pele
-   ficam centrados nele, na mesma caixa de 512px (BOX em lib/cursorLens.ts),
-   com a cabeca de 128px no meio e o resto sobrando para a cauda. */
 .cur-lens {
   position: absolute;
   top: 0;
@@ -64,7 +56,6 @@
   margin: -256px 0 0 -256px;
 }
 
-/* O vidro. O recorte e o contorno do hook; ate o primeiro quadro, a cabeca. */
 .cur-body {
   --cur-blur: 5px;
   --cur-glass: blur(var(--cur-blur)) saturate(1.45) brightness(1.05);
@@ -79,8 +70,6 @@
   --cur-glass: url(#cur-lens) blur(var(--cur-blur)) saturate(1.45) brightness(1.05);
 }
 
-/* Sobre um link a gota clareia e vira lupa: desfocar o texto que se esta
-   prestes a clicar e esconder justamente o que importa. */
 .cur[data-hot] .cur-body {
   --cur-blur: 0.6px;
 }
@@ -93,8 +82,6 @@
   }
 }
 
-/* A pele: borda, luz, sombra e brilhos, por cima do vidro e fora do backdrop
-   dele. O stroke e o dobro da borda porque metade cai fora e o clip corta. */
 .cur-skin {
   overflow: visible;
 }
