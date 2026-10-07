@@ -1,0 +1,105 @@
+:root {
+  --pill-h: 38px;
+}
+
+.pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--pill-h);
+  padding-right: 9px;
+  padding-left: 6px;
+  border-radius: 7px;
+  background-color: rgba(92, 92, 92, 0.55);
+  font-family: var(--font-text);
+  font-weight: 500;
+  font-size: 17px;
+  line-height: 1;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--color-paper-000);
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+
+.pill[aria-pressed="true"] {
+  background-color: rgba(224, 114, 149, 0.55);
+}
+
+@media (hover: hover) {
+  .pill:hover {
+    background-color: rgba(92, 92, 92, 0.8);
+  }
+
+  .pill[aria-pressed="true"]:hover {
+    background-color: rgba(224, 114, 149, 0.8);
+  }
+}
+
+.pill-note {
+  display: block;
+  flex-shrink: 0;
+  width: 17px;
+  height: 18px;
+}
+
+.pill-note img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.pill[data-live] .pill-note {
+  animation: note-breathe 900ms var(--ease-in-out) infinite alternate;
+}
+
+.pill-label {
+  display: block;
+}
+
+@media (hover: none) {
+  .pill::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    transform: translate(-50%, -50%);
+  }
+}
+
+@keyframes note-breathe {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.12);
+  }
+}
+
+.score {
+  position: fixed;
+  bottom: clamp(16px, 1.6667vw, 28px);
+  left: clamp(16px, 2.0833vw, 40px);
+  z-index: 90;
+}
+
+@media (width < 64rem) {
+  .pill {
+    font-size: clamp(14px, 3.9vw, 17px);
+  }
+
+  .score {
+    top: calc(var(--hdr-top) + (var(--hdr-h) - var(--pill-h)) / 2);
+    bottom: auto;
+    left: calc(var(--hdr-inset-x) + var(--hdr-pad-x) + var(--safe-left));
+    transition:
+      background-color var(--duration-fast) var(--ease-out),
+      transform var(--duration-base) var(--ease-out);
+  }
+
+  html[data-chrome-hidden] .score {
+    transform: translate3d(0, calc(-1 * (var(--hdr-top) + var(--hdr-h) + 24px)), 0);
+  }
+}

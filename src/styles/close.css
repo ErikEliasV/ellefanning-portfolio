@@ -1,0 +1,83 @@
+.close-pill {
+  --close-box: 3.177vw;
+  --close-icon: calc(var(--close-box) * 0.5902);
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--close-box) * 0.1639);
+  width: var(--close-box);
+  height: var(--close-box);
+  padding-right: 0;
+  padding-left: calc((var(--close-box) - var(--close-icon)) / 2);
+  border: 0;
+  border-radius: calc(var(--close-box) * 0.1803);
+  background-color: rgba(92, 92, 92, 0.55);
+  color: var(--color-paper-000);
+  overflow: hidden;
+  cursor: pointer;
+  transition:
+    width var(--duration-base) var(--ease-out),
+    padding-left var(--duration-base) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
+}
+
+.close-pill:hover,
+.close-pill:focus-visible {
+  width: calc(var(--close-box) * 2.8128);
+  padding-left: calc(var(--close-box) * 0.1475);
+}
+
+.close-pill:active {
+  background-color: rgba(224, 114, 149, 0.55);
+}
+
+[data-closing] > .close-pill {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.close-pill-x {
+  position: relative;
+  flex: none;
+  width: var(--close-icon);
+  height: var(--close-icon);
+  rotate: 45deg;
+  transition: rotate var(--duration-base) var(--ease-out);
+}
+
+.close-pill-x::before,
+.close-pill-x::after {
+  content: "";
+  position: absolute;
+  inset: 50% 0 auto;
+  height: 1px;
+  translate: 0 -50%;
+  background-color: currentColor;
+}
+
+.close-pill-x::after {
+  rotate: 90deg;
+}
+
+.close-pill:hover .close-pill-x,
+.close-pill:focus-visible .close-pill-x {
+  rotate: 0deg;
+}
+
+.close-pill-label {
+  font-family: var(--font-text);
+  font-weight: 500;
+  font-size: calc(var(--close-box) * 0.4443);
+  line-height: 1;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+.close-pill:hover .close-pill-label,
+.close-pill:focus-visible .close-pill-label {
+  opacity: 1;
+}
