@@ -12,12 +12,6 @@ export type NavSection = {
   focus: number;
 };
 
-// Os rotulos sao os do Figma (no 2338:61). CARACTERS estava escrito errado no
-// arquivo e entra corrigido; CASES e o nome que o desenho da a secao editorial.
-//
-// focus e onde o recorte do painel cai na vertical do clipe, 0 topo, 1 base.
-// O painel e mais largo que 16:9, entao o corte come altura: e isso que decide
-// qual faixa do quadro sobrevive.
 export const SECTIONS: readonly NavSection[] = [
   {
     id: "hero",

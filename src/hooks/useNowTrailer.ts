@@ -8,8 +8,6 @@ const API_SRC = "https://www.youtube.com/iframe_api";
 const ENDED = 0;
 const PLAYING = 1;
 const SYNC = 500;
-// YouTube flashes a control overlay of its own at the moment playback starts,
-// so the cover outstays it rather than lifting on the state change itself.
 const COVER_GRACE = 1400;
 const GESTURES = ["pointerdown", "keydown", "touchstart"] as const;
 
@@ -126,9 +124,6 @@ export function useNowTrailer() {
         return;
       }
 
-      // Handing the API a div and declaring the vars here, rather than letting
-      // it adopt an iframe and inherit whatever is on the src, is the path that
-      // actually honours controls: 0.
       built.current = new api.Player(node, {
         host: "https://www.youtube-nocookie.com",
         videoId: CURRENT_WORK.youtubeId,
@@ -150,8 +145,6 @@ export function useNowTrailer() {
             play();
           },
           onStateChange: (event) => {
-            // Anything but PLAYING means YouTube is free to paint its own big play
-            // button over the embed, so the cover has to be up for all of them.
             window.clearTimeout(grace.current);
             if (event.data === PLAYING) {
               grace.current = window.setTimeout(

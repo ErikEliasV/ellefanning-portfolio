@@ -1,36 +1,14 @@
-// O arrasto de lado dos palcos que trocaram o scroll pelo dedo no telefone: o
-// deck de Characters (lib/useCharacterDeck.ts) e o reel do editorial
-// (lib/useEditorialReel.ts). Era codigo do primeiro, e saiu dali quando o
-// segundo pediu o mesmo gesto -- duas copias seriam dois jeitos de decidir o
-// que e toque e o que e arrasto, para manter em fase.
-//
-// Este modulo so sabe do DEDO: quanto ele andou e com que velocidade saiu.
-// Quanto isso vale em fotos, onde assentar e o elastico das pontas sao de cada
-// palco. O dedo na vertical nao chega aqui: quem o entrega ao navegador, para
-// a pagina continuar rolando, e o `touch-action: pan-y` do CSS de cada palco.
-
-// Quantos px de dedo antes de um toque virar arrasto. Abaixo disso e um toque,
-// e o clique segue para o card; acima, e arrasto, e o clique que vier depois e
-// engolido -- senao soltar o dedo em cima de uma foto a abriria.
 const SLOP = 8;
-// A constante de tempo da media da velocidade, em ms, e quanto tempo parado
-// antes de soltar zera o impulso: o dedo que parou antes de sair nao tem
-// impulso nenhum, por mais rapido que tenha andado antes.
 const TAU = 50;
 const STALE = 80;
 
 export type SwipeHandlers = {
-  /** Se um gesto pode comecar agora (perfil estreito, nada aberto por cima). */
   can: () => boolean;
-  /** O toque virou arrasto. */
   start: () => void;
-  /** O dedo esta `dx` px a direita de onde o arrasto comecou. */
   move: (dx: number) => void;
-  /** O dedo saiu, a `velocity` px/s (positivo para a direita). */
   end: (velocity: number) => void;
 };
 
-// Liga o gesto em `el` e devolve a funcao que o desliga.
 export function swipe(el: HTMLElement, on: SwipeHandlers) {
   let gesture: {
     id: number;
@@ -62,8 +40,6 @@ export function swipe(el: HTMLElement, on: SwipeHandlers) {
 
     if (!g.live) {
       if (Math.abs(event.clientX - g.from) < SLOP) return;
-      // Vira arrasto a partir DAQUI, e nao do toque: medir do toque faria a
-      // foto pular os SLOP px de uma vez.
       g.live = true;
       g.from = event.clientX;
       g.x = event.clientX;
@@ -71,7 +47,6 @@ export function swipe(el: HTMLElement, on: SwipeHandlers) {
       try {
         el.setPointerCapture(event.pointerId);
       } catch {
-        // O ponteiro pode ja ter ido embora; o arrasto segue sem captura.
       }
       on.start();
       return;

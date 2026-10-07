@@ -22,26 +22,17 @@ const PAN_FACTOR = 0.42;
 const PAN_MIN_VH = 1.2;
 const PAN_MAX_VH = 2;
 
-// O reel arrastado do telefone (ate NARROW_MAX, o mesmo corte das fotos de
-// 80vw): ate onde o elastico deixa passar das pontas, em fracao da largura da
-// tela, e o assentamento depois da soltura -- o mesmo par do deck de
-// Characters, para os dois gestos lerem igual.
 const RUBBER_VW = 0.15;
 const SNAP_S = 0.55;
 const SNAP_EASE = "power3.out";
 
-// Quanto de gesto cada quadro da galeria pede. E distancia virtual, nao altura
-// de documento: a foto aberta trava a pagina e o gesto alimenta so a galeria.
-// Por isso pode ser bem mais curta do que quando era scroll de verdade.
 const STEP_VH = 0.28;
 const STEP_MIN = 200;
 
 const EXIT_MS = 780;
 const READ_S = 0.5;
 const READ_EASE = "power2";
-// Folga nas duas pontas, para um tranco de trackpad no fim nao fechar sozinho.
 const SHUT_SLACK = 0.08;
-// deltaMode 1 vem em linhas e 2 em paginas; so o 0 ja e pixel.
 const LINE_PX = 16;
 
 function clamp01(value: number) {
@@ -89,13 +80,8 @@ export function useEditorialReel(frames: readonly number[]) {
     stops: [0],
   });
   const exit = useRef(0);
-  // Quanto o reel do telefone andou, em px: o dedo arrasta, o gsap assenta, e
-  // `progress()` escreve como `--q`. Num ref fora do efeito para sobreviver a
-  // uma remontagem dele.
   const pan = useRef({ x: 0 });
 
-  // A leitura da galeria: alvo cru vindo do gesto, e o valor suavizado que vai
-  // para o CSS. Nada disso toca a altura do documento.
   const aim = useRef(0);
   const read = useRef({ at: 0 });
 
@@ -133,16 +119,11 @@ export function useEditorialReel(frames: readonly number[]) {
     [close],
   );
 
-  // Enquanto uma foto esta aberta a pagina fica travada de verdade e o gesto
-  // alimenta a galeria. Nenhum pixel de scroll e consumido, entao nao ha o que
-  // devolver no fechamento.
   useEffect(() => {
     if (active === null) return;
 
     lockScroll(true);
 
-    // Copiado para uma variavel local: o objeto do ref e sempre o mesmo, mas
-    // a limpeza nao deve reler o ref para saber o que matar.
     const dial = read.current;
     const toRead = gsap.quickTo(dial, "at", {
       duration: READ_S,
@@ -187,7 +168,6 @@ export function useEditorialReel(frames: readonly number[]) {
       touch = y;
     }
 
-    // Nao passivos de proposito: sao eles que impedem a pagina de andar.
     window.addEventListener("wheel", onWheel, { passive: false });
     window.addEventListener("touchstart", onTouchStart, { passive: true });
     window.addEventListener("touchmove", onTouchMove, { passive: false });
@@ -214,15 +194,6 @@ export function useEditorialReel(frames: readonly number[]) {
 
       const rect = node.getBoundingClientRect();
 
-      // The pin used to learn it was moving from the scroll event itself; on a
-      // shared tick it has to notice the movement on its own.
-      //
-      // `data-scrolling` bloqueia o crescimento no hover (ver
-      // styles/editorial.css), e o que decide se a pagina esta rolando e a
-      // velocidade com histerese de lib/editorialMotion.ts. As duas versoes que
-      // moravam aqui -- comparacao exata, depois meio pixel acumulado com timer
-      // -- erravam no rastro do Lenis, e a segunda fazia a foto sob o ponteiro
-      // expandir, encolher e expandir de novo; o porque esta la.
       const pinNode = pin.current;
       if (pinNode) {
         const was = motion?.moving ?? false;
@@ -240,9 +211,6 @@ export function useEditorialReel(frames: readonly number[]) {
       const { panScroll, panMax, swipe } = geometry.current;
       const style = node.style;
 
-      // `--q` e a fracao do percurso do reel. No PC vem da rolagem; no telefone
-      // vem do dedo, e pode passar um pouco de 0 e de 1 -- e o elastico das
-      // pontas, que o CSS desenha sem saber.
       const q = swipe
         ? panMax > 0
           ? reel.x / panMax
@@ -259,10 +227,6 @@ export function useEditorialReel(frames: readonly number[]) {
       const vh = smallViewportHeight();
       if (!vw || !vh) return;
 
-      // No telefone a rolagem nao passa mais as fotos, a pedido do dono do
-      // projeto: o reel anda com o dedo, e a secao vira uma tela so, que a
-      // pagina atravessa como qualquer outra. Sem percurso de scroll, nao ha o
-      // que prender.
       const swipe = vw <= NARROW_MAX;
       const cell = (swipe ? CELL_VW_NARROW : CELL_VW) * vw;
       const panMax = Math.max(0, count * cell - vw);
@@ -282,8 +246,6 @@ export function useEditorialReel(frames: readonly number[]) {
         swipe,
         stops: reelStops(count, cell, vw, panMax),
       };
-      // A tela girou ou encolheu: o reel nao pode ficar parado alem do fim
-      // novo.
       reel.x = Math.min(Math.max(reel.x, 0), panMax);
       pin.current?.toggleAttribute("data-swipe", swipe);
 
@@ -298,7 +260,6 @@ export function useEditorialReel(frames: readonly number[]) {
       style.setProperty("--cell-hover", `${hover.toFixed(2)}px`);
       style.setProperty("--cell-rest", `${rest.toFixed(2)}px`);
       style.setProperty("--pan-max", `${panMax.toFixed(2)}px`);
-      // Constante: a altura da secao nao depende mais do que o usuario abriu.
       style.setProperty("--track-h", `${(vh + panScroll).toFixed(2)}px`);
 
       fitTitle(capTitle.current, capYear.current);
@@ -324,22 +285,12 @@ export function useEditorialReel(frames: readonly number[]) {
     }
 
     measure();
-    // O observador do documentElement e o ouvinte de `resize` viraram uma
-    // inscricao so, com debounce e sem o ruido da barra de endereco (ver
-    // lib/viewport.ts). O do bloco da legenda fica: aquele reage ao CONTEUDO
-    // (o titulo troca de comprimento a cada foto) e nao a viewport.
     const unwatch = onViewport(measure);
     const observer = new ResizeObserver(measure);
     if (capBlock.current) observer.observe(capBlock.current);
     const untick = onTick(progress);
     window.addEventListener("keydown", onKey);
 
-    // O ARRASTO do telefone. O dedo em px vira `pan` em px, e para a frente e
-    // o dedo indo para a ESQUERDA, dai o sinal trocado. Enquanto arrasta, o
-    // reel segue o dedo com o elastico nas pontas; na soltura, `reelRelease`
-    // escolhe a foto que centraliza e o gsap assenta nela. Com uma foto aberta
-    // o gesto e da galeria, e o arrasto nao comeca. O que e toque e o que e
-    // arrasto quem decide e lib/swipe.ts.
     function settleOn(target: number) {
       gsap.killTweensOf(reel);
       if (isReduced()) {
@@ -381,8 +332,6 @@ export function useEditorialReel(frames: readonly number[]) {
     };
   }, [count, close]);
 
-  // Com movimento reduzido nao ha gesto que percorra a galeria, entao ela abre
-  // ja inteira em vez de ficar num estado que o usuario nao consegue avancar.
   useEffect(() => {
     if (active === null || !isReduced()) return;
     aim.current = 1;

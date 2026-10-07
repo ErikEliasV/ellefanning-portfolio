@@ -8,10 +8,6 @@ import { quietFade } from "@/lib/reveal";
 import { useFooterLantern } from "@/hooks/useFooterLantern";
 import "@/styles/footer.css";
 
-// A ZT Nature nao tem a seta para cima, entao um "↑" cairia numa fonte de
-// sistema e, no corpo desta fileira, a troca ficaria obvia ao lado das letras.
-// O desenho vem em currentColor e medido em em, entao acompanha o corpo do
-// link e vira rosa no hover junto com a palavra.
 function ArrowUp() {
   return (
     <svg
@@ -30,12 +26,8 @@ function ArrowUp() {
 }
 
 export function SiteFooter() {
-  // Um ref so para o <footer>: a lanterna manda nele e o quietFade tambem
-  // dispara a partir dele.
   const root = useFooterLantern();
 
-  // The counterpoint of silence after the Now panel: the links and the way
-  // back up just appear, with no stagger and no travel to notice.
   useEffect(() => {
     const node = root.current;
     if (!node) return;

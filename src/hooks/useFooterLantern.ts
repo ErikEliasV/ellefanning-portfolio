@@ -5,21 +5,10 @@ import { useEffect, useRef } from "react";
 
 import { onTick } from "@/lib/scroll";
 
-// The lantern used to need a cursor to exist. It now walks the footer on its
-// own whenever the footer is on screen, and steps aside the moment a real
-// pointer takes over.
-//
-// It also used to live inside the lockup, which is why the light died at the
-// edge of the name. The variables are written on the <footer> instead, and
-// since they all inherit, the whole panel is lit. Only the photo is still
-// clipped to the name: that is what background-clip: text can do.
 const OPEN_MIN = 140;
 const OPEN_VW = 0.16;
 const OPEN_MAX = 320;
 const LEAD_MS = 400;
-// Two legs at the speed one used to have, so the pass reads the same and just
-// goes further: out to the right across the name, back to the left across the
-// links.
 const SWEEP_MS = 5200;
 const REST_MS = 2200;
 const SPAN = LEAD_MS + SWEEP_MS + REST_MS;
@@ -41,8 +30,6 @@ export function useFooterLantern() {
     const point = { x: 0, y: 0 };
     const size = { w: node.offsetWidth, h: node.offsetHeight };
 
-    // Tweening a plain object and writing the variables here keeps this free of
-    // any guess about how GSAP infers the unit of a custom property.
     const at = { x: 0, y: 0 };
     const lens = { r: 0, glow: 0 };
 
@@ -57,12 +44,6 @@ export function useFooterLantern() {
     let auto = true;
     let opened = false;
 
-    // --mx/--my are measured from the top of the footer, but the layer that
-    // reveals the photo draws inside the lockup. This is the distance between
-    // the two origins, which the mask subtracts. The footer is already
-    // position: relative (the grain utility), so it is the offsetParent. There
-    // is no twin for x: the lockup is a flex-column child, so it starts at 0
-    // like the footer does.
     function measure() {
       if (!node) return;
       size.w = node.offsetWidth;
@@ -119,8 +100,6 @@ export function useFooterLantern() {
         const into = cycle - LEAD_MS;
 
         if (into < 0) {
-          // Park at the start of the run while it is still dark, so the sweep
-          // does not have to travel there with the lantern already lit.
           const x = -OVERSHOOT * size.w;
           const y = MY_FROM * size.h;
           toX(x, x);
@@ -129,9 +108,6 @@ export function useFooterLantern() {
         } else if (into > SWEEP_MS) {
           open(false);
         } else {
-          // x is a triangle — out past the right edge, then back past the left
-          // — while y only ever descends, so the return leg crosses the first
-          // one instead of retracing it.
           const k = into / SWEEP_MS;
           const leg = k < 0.5 ? k * 2 : (1 - k) * 2;
           toX((leg * (1 + OVERSHOOT * 2) - OVERSHOOT) * size.w);

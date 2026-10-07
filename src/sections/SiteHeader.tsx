@@ -39,11 +39,6 @@ export function SiteHeader() {
 
   const shown = SECTIONS.find((section) => section.id === hot) ?? null;
 
-  // O painel travou o scroll ao abrir, e quem destrava e a limpeza do efeito
-  // de useHeaderMenu -- que so roda depois deste commit. `ride` rola pelo
-  // Lenis, que continua parado ate la, entao o salto morreria no caminho. O
-  // destravamento vem para ca, antes do salto; chamar `lockScroll(false)`
-  // duas vezes (aqui e na limpeza) nao tem efeito colateral nenhum.
   function jump(event: MouseEvent<HTMLAnchorElement>, id: SectionId) {
     menuClose();
     lockScroll(false);
@@ -66,8 +61,6 @@ export function SiteHeader() {
           data-on={painted ? "" : undefined}
         />
 
-        {/* Caminho sem WebGL: as fitas aparecem no DOM quando o shader nao pode
-            desenha-las. Ate o clipe chegar, o painel e so vidro. */}
         <div
           aria-hidden
           className="hdr-plate"
@@ -102,8 +95,6 @@ export function SiteHeader() {
           ))}
         </nav>
 
-        {/* Semente fixa e baseFrequency parada: o ruido e calculado uma vez, e
-            quem se move por baixo do mapa e o gradiente. */}
         <svg aria-hidden className="hdr-defs" width="0" height="0">
           <filter id="hdr-liquid" x="-20%" y="-20%" width="140%" height="140%">
             <feTurbulence
@@ -124,14 +115,6 @@ export function SiteHeader() {
         </svg>
       </header>
 
-      {/* O botao e o painel sao irmaos de <header>, nao filhos: o .hdr tem
-          `transform`, e isso faz dele o bloco de contencao de qualquer `fixed`
-          que caia dentro -- os dois ficariam presos ao retangulo da barra. O
-          `clip-path` da casca tambem os recortaria na altura da barra. Eles
-          sao chrome proprio, com a mesma roupa dos outros pills flutuantes do
-          site (styles/pill.css), e ouvem o recolher da barra pelo
-          `data-chrome-hidden` que useHeaderGlass escreve no <html>: o menu
-          nao sai, encolhe para so o icone. */}
       <button
         ref={menuButton}
         type="button"
@@ -145,10 +128,6 @@ export function SiteHeader() {
         <span className="pill-label">{menuOpen ? "Close" : "Menu"}</span>
       </button>
 
-      {/* O involucro e de tela cheia e transparente: ele so existe para pegar o
-          toque fora do painel, que agora nao cobre mais a tela. Mesma tecnica
-          do modal da personagem -- comparar target com currentTarget acerta o
-          fundo sem apanhar nenhum clique de dentro. */}
       <div
         ref={menuSheet}
         id="site-menu"

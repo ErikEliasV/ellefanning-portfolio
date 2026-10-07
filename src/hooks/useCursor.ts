@@ -14,23 +14,14 @@ const HOT = 116;
 const PRESS = 18;
 const AREA = 0.34;
 const TALL = 0.82;
-// Fracao do caminho entre o ponteiro e o centro do elemento que a gota anda
-// sozinha: puxada, nao grudada, para o ponteiro continuar mandando.
 const MAGNET = 0.32;
-// Velocidade da gota, em px/s, que ja le como estiramento total. O desenho da
-// cauda para cada estiramento mora em dropPath(), em lib/cursorLens.ts.
 const SPEED_FULL = 2000;
 const SPEED_REST = 12;
-// Quanto a cauda demora a virar para a nova direcao, em 1/s.
 const TURN = 14;
-// Molas em unidades de segundo. Subamortecidas de proposito: o balanco depois
-// da parada e o que faz a gota ler como agua e nao como disco de vidro.
 const SHAPE_K = 240;
 const SHAPE_C = 11;
 const SIZE_K = 300;
 const SIZE_C = 17;
-// Um quadro longo (aba em segundo plano, engasgo) nao pode virar um passo de
-// mola gigante: ela explode em vez de balancar.
 const MAX_DT = 1 / 30;
 const PICK =
   'a[href], button, summary, label, [role="button"], [role="link"], [data-cursor]';
@@ -42,9 +33,6 @@ function spring(s: Spring, goal: number, k: number, c: number, dt: number) {
   s.x += s.v * dt;
 }
 
-// O filtro url() no backdrop-filter so existe no Chromium. No Firefox e no
-// Safari a declaracao inteira deixa de valer, entao a refracao entra por opt-in
-// e o desfoque puro continua sendo a base.
 function canRefract() {
   const agent = (navigator as Navigator & {
     userAgentData?: { brands: { brand: string }[] };
@@ -91,24 +79,18 @@ export function useCursor() {
     const last = { x: 0, y: 0 };
     const size: Spring = { x: 0, v: 0 };
     const shape: Spring = { x: 0, v: 0 };
-    // Direcao do movimento, suavizada. A cauda aponta para o lado oposto.
     const heading = { x: 1, y: 0 };
 
     let untick: (() => void) | null = null;
     let then = 0;
     let drawn = "";
     let pendingRetag = false;
-    // O rótulo sai por cima em vez de por baixo. Opt-in por elemento
-    // (data-cursor-at="top"), não automático perto da borda da tela: automático
-    // faria o rótulo virar sozinho enquanto o ponteiro passeia pelo limiar.
     let above = false;
     let hot: HTMLElement | null = null;
     let pull = false;
     let down = false;
     let live = false;
 
-    // The chase used to be a per-frame lerp, which ran twice as fast on a 120Hz
-    // screen as on a 60Hz one. A tween is measured in seconds, so it does not.
     const chase = { duration: CHASE, ease: CHASE_EASE };
     const toX = gsap.quickTo(box, "x", chase);
     const toY = gsap.quickTo(box, "y", chase);
@@ -166,9 +148,6 @@ export function useCursor() {
 
       node.style.transform = `translate3d(${x}px, ${y}px, 0)`;
 
-      // O tamanho vai por escala uniforme e a forma pelo contorno, que nunca
-      // gira a caixa: a luz do SVG fica no alto a esquerda com a gota andando
-      // para qualquer lado. O mesmo contorno recorta o vidro e desenha a borda.
       drop.style.transform = `scale(${span / LENS})`;
 
       const stretch = Math.min(Math.max(shape.x, -0.3), 1);
@@ -186,8 +165,6 @@ export function useCursor() {
 
       const tag = label.current;
       if (tag) {
-        // O -100% resolve contra a altura do próprio rótulo, então a folga de
-        // 8px fica igual dos dois lados sem precisar medi-lo.
         const off = half + 8;
         tag.style.transform = above
           ? `translate3d(${-half}px, calc(${-off}px - 100%), 0)`

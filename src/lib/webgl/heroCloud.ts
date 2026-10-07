@@ -2,10 +2,6 @@ import * as THREE from "three";
 
 import { BLOCKS_A, coarseCols, gridCols } from "@/lib/motion/heroGrid";
 
-// O mosaico ja nasce rosa. Ate aqui ele lavava de papel para rosa ao longo da
-// rolagem, e por isso havia um par de cores e uma rampa entre elas; o primeiro
-// estado agora e o rosa do segundo, entao sobrou uma cor so e ela nao se move.
-// O que continua andando com a rolagem e a grade engrossando.
 const WASH_ROSE = 0.82;
 const CONTRAST = 1.12;
 const LINE_PX = 2;
@@ -14,9 +10,6 @@ const LINE_ROSE = new THREE.Color(0.914, 0.627, 0.71);
 const MAX_DPR = 2;
 const MAX_ROWS = 220;
 
-// The camera dollies with scroll and sways with the pointer, and the moment it
-// moves it can see past the edge of the grid. The grid is built wider than the
-// frame so there is always another cube out there.
 const OVER = 1.2;
 const SIDE_DIM = 0.74;
 const KEY_FRONT = 0.904;
@@ -27,15 +20,11 @@ const DOLLY = 0.14;
 const SWAY_X = 0.05;
 const SWAY_Y = 0.035;
 
-// The idle grid is nearly flat on purpose: at rest this should read as the same
-// tidy mosaic it always was, and the depth should be something the pointer does.
 const IDLE_AMP = 0.012;
 const IDLE_FREQ = 6.4;
 const IDLE_SKEW = 3.1;
 const IDLE_SPEED = 0.5;
 
-// Rings spreading from the pointer and dying out with distance: struck water,
-// not a bulge that follows the cursor around.
 const RING_AMP = 0.1;
 const RING_FREQ = 8.5;
 const RING_SPEED = 4.6;
@@ -66,15 +55,10 @@ void main() {
   vec2 slot = floor(aCell * uGrid);
   vec2 center = (slot + 0.5) / uGrid;
 
-  // As the grid coarsens with scroll, several instances land on the same block.
-  // One of them owns it and the rest collapse, so no two cubes ever share a
-  // place and fight over the depth buffer.
   vec2 owner = floor(center * uBase);
   vec2 self = floor(aCell * uBase);
   float mine = all(equal(owner, self)) ? 1.0 : 0.0;
 
-  // The grid runs wider than the frame, so the visible coordinate is the cell
-  // pushed back out from the middle.
   vec2 vis = (center - 0.5) * uOver + 0.5;
 
   vec2 uv = vis;
@@ -104,8 +88,6 @@ void main() {
 
   vec3 place = vec3(here.x, here.y, lift) + body;
 
-  // The face turned toward the camera has to stay at full strength: dimming it
-  // darkened the whole field, and on a pale rose darker reads as more rose.
   vec3 face = normalize(normalMatrix * normal);
   float key = max(dot(face, normalize(vec3(0.25, 0.4, 1.0))), 0.0);
   vLight = mix(${glsl(SIDE_DIM)}, 1.0, min(key / ${glsl(KEY_FRONT)}, 1.0));
@@ -156,8 +138,6 @@ export function createCloud({
     powerPreference: "low-power",
   });
 
-  // Every cube reads its colour from the photo in the vertex shader, so a
-  // driver without vertex texture units has nothing to render.
   const gl = renderer.getContext();
   if (gl.getParameter(gl.MAX_VERTEX_TEXTURE_IMAGE_UNITS) < 1) {
     renderer.dispose();
@@ -204,7 +184,6 @@ export function createCloud({
   mesh.frustumCulled = false;
   scene.add(mesh);
 
-  // A calha entre os cubos nao e vazia: ela e a cor de linha, e agora e fixa.
   renderer.setClearColor(LINE_ROSE, 1);
 
   let progress = 0;
@@ -214,13 +193,8 @@ export function createCloud({
   let baseCols = BLOCKS_A;
   let rows = 0;
   let gridRows = BLOCKS_A;
-  // As duas pontas do mosaico nesta tela: em repouso e engrossado. Saem de
-  // lib/heroGrid.ts e sao remedidas no resize.
   let restCols = BLOCKS_A;
   let thickCols = coarseCols(BLOCKS_A);
-  // A ultima caixa desenhada. resize() e chamado por um ResizeObserver, e sem
-  // esta guarda ele refazia a malha inteira a cada tremor de layout -- no
-  // celular, a cada vez que a barra de endereco recolhe.
   let seen = { w: 0, h: 0, dpr: 0 };
   let atCol = -1;
   let atRow = -1;
@@ -232,9 +206,6 @@ export function createCloud({
   let atY = 0.5;
   let atA = 0;
 
-  // `span` e a largura da malha CONSTRUIDA (ja com o excedente do uOver), nao a
-  // contagem visivel de colunas -- o nome nao pode ser `gridCols`, que agora e
-  // a funcao importada que decide essa contagem.
   function build(span: number, count: number) {
     const cells = new Float32Array(span * count * 2);
     let at = 0;
@@ -246,8 +217,6 @@ export function createCloud({
       }
     }
 
-    // A fresh box each time: disposing the old geometry would take its buffers
-    // with it, and a shared one would be gone on the next resize.
     const box = new THREE.BoxGeometry(1, 1, 1);
 
     geometry.dispose();
@@ -329,9 +298,6 @@ export function createCloud({
 
     visCols = restCols + (thickCols - restCols) * progress;
     cols = visCols * OVER;
-    // Rows follow the grid that was actually built, not the aspect: when
-    // MAX_ROWS clamps the build, deriving them again from the aspect would ask
-    // for more blocks than there are cubes and punch holes in the mosaic.
     gridRows = Math.max((cols / baseCols) * rows, 1);
     uniforms.uGrid.value.set(cols, gridRows);
 

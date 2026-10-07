@@ -9,11 +9,6 @@ import { lockScroll } from "@/lib/scroll";
 import type { Character } from "@/data/characters";
 import "@/styles/close.css";
 
-// A caixa do card no instante do clique, em coordenadas de viewport
-// (`getBoundingClientRect()`), mais o raio que ele tinha ali. E dali que a foto
-// cresce ate virar o fundo da tela.
-// Quanto de roda para baixo, em px, fecha o modal; e quantos px vale uma linha
-// quando o navegador manda o delta em linhas (deltaMode 1).
 const WHEEL_EXIT = 40;
 const LINE_PX = 16;
 
@@ -38,8 +33,6 @@ export function CharacterDialog({
 }) {
   const close = useRef<HTMLButtonElement>(null);
   const shell = useRef<HTMLDivElement>(null);
-  // Monta escondido e liga no tick seguinte, para o CSS ver a mudanca de estado
-  // e animar a entrada em vez de nascer pronto.
   const [shown, setShown] = useState(false);
 
   useEffect(() => {
@@ -48,9 +41,6 @@ export function CharacterDialog({
     close.current?.focus();
     const inerted = node ? markOutsideInert(node) : [];
 
-    // setTimeout, nao requestAnimationFrame: so precisa de um tick fora do
-    // commit atual para o CSS ver a mudanca de estado, e um rAF ficaria a merce
-    // de o browser achar que a aba nao precisa desenhar.
     const kick = window.setTimeout(() => setShown(true), 0);
 
     function onKey(event: KeyboardEvent) {
@@ -75,12 +65,6 @@ export function CharacterDialog({
       }
     }
 
-    // Rolar para BAIXO tambem sai, a pedido do dono do projeto: e o gesto que
-    // a pessoa ja estava fazendo para descer a pagina quando abriu a foto. Pede
-    // WHEEL_EXIT px juntos para baixo -- um tique de roda passa de uma vez, um
-    // trackpad junta alguns eventos -- para um tremor do trackpad nao fechar
-    // sozinho. Rolar para cima zera a conta e nao faz nada. A pagina continua
-    // travada pelo lockScroll, entao a roda nao mexe em nada por baixo.
     let pull = 0;
 
     function onWheel(event: WheelEvent) {
@@ -109,9 +93,6 @@ export function CharacterDialog({
     };
   }, [onClose]);
 
-  // `open` so e verdadeiro quando ja assentou E nao esta saindo, entao a mesma
-  // classe que fez a entrada roda ao contrario no instante em que `closing`
-  // vira true -- sem efeito nenhum no meio.
   const open = shown && !closing;
 
   const growStyle = {
@@ -123,16 +104,6 @@ export function CharacterDialog({
     "--focus": character.focus ?? 0.5,
   } as CSSProperties;
 
-  // Portalado para <body>, ao contrario do modal da filmografia. Ver o
-  // comentario de `.character-dialog` em styles/characters.css: a secao de
-  // Characters e um contexto de empilhamento (z-index 1 mais o `position:
-  // relative` do utilitario `grain`), entao um dialogo nascido dentro dela nao
-  // consegue pintar acima do header nem do botao de som, que sao `fixed` no
-  // contexto raiz. `markOutsideInert` nao se importa: a partir de <body> ele so
-  // anda menos niveis para marcar os mesmos irmaos.
-  //
-  // Sem guarda de SSR: o componente so e montado depois de um clique, e o
-  // `output: export` deste projeto nunca o renderiza no servidor.
   return createPortal(
     <div
       ref={shell}
@@ -158,12 +129,6 @@ export function CharacterDialog({
         />
       </div>
 
-      {/* O desfoque da esquerda, em duas camadas, ANTES do veu -- e a ordem do
-          no, onde `Texto e desfoque` aplica o Background blur e so depois pinta
-          o proprio gradiente por cima. Invertido, o gradiente entraria no
-          backdrop e seria borrado junto. Ver o comentario de
-          `.character-dialog-haze` em styles/characters.css para por que sao
-          duas e nao uma. */}
       <span aria-hidden className="character-dialog-haze character-dialog-haze-1" data-open={open ? "" : undefined} />
       <span aria-hidden className="character-dialog-haze character-dialog-haze-2" data-open={open ? "" : undefined} />
 

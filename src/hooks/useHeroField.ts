@@ -8,9 +8,6 @@ import { isReduced, onTick } from "@/lib/scroll";
 
 export const HERO_FIELD = "/images/ellefanning-hero-field.webp";
 
-// O mosaico ja nasce rosa -- ver o mesmo par de constantes em lib/heroCloud.ts,
-// que tem de concordar com este. A lavagem de papel para rosa saiu junto com o
-// primeiro estado branco; o que continua andando com a rolagem e a grade.
 const WASH_ROSE = 0.82;
 const CONTRAST = 1.12;
 const LINE_PX = 2;
@@ -28,9 +25,6 @@ const POINTER_RIPPLE = 3.4;
 const POINTER_REVEAL = 0.62;
 const POINTER_EASE = 0.09;
 
-// Without a cursor the field would only breathe on its base wave, so a virtual
-// pointer walks the canvas on its own. Touch runs it as the resting state;
-// a mouse only hands it over after a long stillness, and takes it back on move.
 const DRIFT_WAIT_COARSE = 1200;
 const DRIFT_WAIT_FINE = 6000;
 const DRIFT_FADE = 1400;
@@ -112,8 +106,6 @@ function compile(gl: WebGLRenderingContext, type: number, source: string) {
   return shader;
 }
 
-// `off` is handed over once the point cloud has finished crossfading in, so
-// this renderer stops burning GPU and releases its WebGL context.
 export function useHeroField(off = false) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const [failed, setFailed] = useState(false);
@@ -227,10 +219,6 @@ export function useHeroField(off = false) {
       }
 
       const p = value.current;
-      // A contagem de colunas sai da tela, nao de uma constante: ver o porque
-      // em lib/heroGrid.ts. Medida em px de CSS (clientWidth), e nao nos px de
-      // dispositivo do canvas, senao o mesmo telefone teria mosaicos
-      // diferentes conforme o devicePixelRatio.
       const rest = gridCols(node.clientWidth, node.clientHeight);
       const cell = width / (rest + (coarseCols(rest) - rest) * p);
 
@@ -252,11 +240,6 @@ export function useHeroField(off = false) {
       const step = last ? Math.min((now - last) / 1000, 0.1) : 0;
       last = now;
 
-      // Com movimento reduzido o relogio nao anda: a onda de repouso e o
-      // ponteiro virtual que passeia sozinho param, e o que sobra e um mosaico
-      // parado que ainda responde a rolagem (o wash de papel para rosa) e ao
-      // dedo. Desligar o quadro inteiro tiraria a secao do ar; isto e a versao
-      // "muito reduzida" que o modo pede.
       if (isReduced()) {
         draw();
         return;

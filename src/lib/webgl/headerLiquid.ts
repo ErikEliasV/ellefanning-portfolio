@@ -54,22 +54,18 @@ void main() {
   float d = distance(p, q);
   vec2 dir = normalize(p - q + vec2(1e-5));
 
-  // Aneis nascendo do ponteiro e morrendo com a distancia: agua batida, nao
-  // uma bolha que segue o cursor.
   float ring = sin(d * ${glsl(RING_FREQ)} - uTime * ${glsl(RING_SPEED)})
              * exp(-d * ${glsl(RING_FALL)});
 
   float drift = sin(p.x * 3.1 + uTime * ${glsl(DRIFT_SPEED)})
               * cos(p.y * 2.7 - uTime * ${glsl(DRIFT_SPEED * 0.77)});
 
-  // A abertura empurra amplitude: o conteudo escorre para dentro e assenta.
   float entry = 1.0 + (1.0 - uOpen) * ${glsl(ENTRY_GAIN)};
 
   vec2 disp = dir * ring * ${glsl(RING_AMP)} * uPointerA * entry
             + vec2(drift) * ${glsl(DRIFT_AMP)} * entry
             + vec2(uPush, 0.0) * ${glsl(PUSH_AMP)};
 
-  // Franja cromatica na crista da onda: e isso que vende vidro.
   vec2 ca = dir * abs(ring) * uPointerA * ${glsl(CA_AMP)};
 
   vec2 uvA = place(vUv + disp, uCover, uFocus);
@@ -131,8 +127,6 @@ export function createLiquid({ canvas }: LiquidOptions): Liquid | null {
   }
 
   const scene = new THREE.Scene();
-  // O vertex shader escreve gl_Position em clip space direto, entao a camera
-  // existe so porque o render pede uma.
   const camera = new THREE.Camera();
 
   const blank = new THREE.DataTexture(new Uint8Array([0, 0, 0, 255]), 1, 1);
@@ -166,9 +160,6 @@ export function createLiquid({ canvas }: LiquidOptions): Liquid | null {
   const owned = new Set<THREE.Texture>();
   let push = 0;
 
-  // Sem colorSpace, como em lib/heroCloud.ts: o ShaderMaterial cru nao injeta
-  // conversao nenhuma, entao a imagem atravessa byte a byte. Marcar sRGB aqui
-  // lavaria todo preview.
   function adopt(media: Media) {
     const tex =
       media instanceof HTMLVideoElement
@@ -209,8 +200,6 @@ export function createLiquid({ canvas }: LiquidOptions): Liquid | null {
 
       uniforms.uTex.value = adopt(media);
       uniforms.uCover.value = cover(media);
-      // O three sobe a imagem com flipY, entao o v do shader corre do rodape
-      // para o topo: focus vem contado do topo e precisa inverter.
       uniforms.uFocus.value = new THREE.Vector2(0.5, 1 - focus);
       uniforms.uMix.value = 0;
 
@@ -230,8 +219,6 @@ export function createLiquid({ canvas }: LiquidOptions): Liquid | null {
     frame(step) {
       uniforms.uTime.value += step;
       uniforms.uMix.value = Math.min(uniforms.uMix.value + step * MIX_SPEED, 1);
-      // Decaimento por tempo, nao por frame: a 120Hz um fator por frame morreria
-      // duas vezes mais rapido que a 60Hz.
       push *= Math.exp(-step * PUSH_DECAY);
       uniforms.uPush.value = push;
       renderer.render(scene, camera);

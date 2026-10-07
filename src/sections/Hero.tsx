@@ -25,8 +25,6 @@ export function Hero() {
     failed,
   } = useHeroField(handoff);
 
-  // The flat renderer only steps aside once the crossfade is over, so the frame
-  // it leaves on its canvas is still there while the two overlap.
   useEffect(() => {
     if (!cloudReady) return;
     const id = window.setTimeout(() => setHandoff(true), HANDOFF_MS);
@@ -52,7 +50,6 @@ export function Hero() {
           data-cloud={cloudReady ? "" : undefined}
         >
           {failed ? (
-            // eslint-disable-next-line @next/next/no-img-element
             <img src={asset(HERO_FIELD)} alt="" className="hero-field-flat" />
           ) : (
             <canvas ref={flatCanvas} className="hero-field-gl" />

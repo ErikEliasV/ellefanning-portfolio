@@ -24,7 +24,6 @@ export function Preloader() {
         className="pre"
         data-exit={phase === "exit" ? "" : undefined}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           alt=""
           className="pre-plate"

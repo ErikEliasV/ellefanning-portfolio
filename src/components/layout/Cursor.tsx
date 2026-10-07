@@ -4,8 +4,6 @@ import { BEND, BOX } from "@/lib/motion/cursorLens";
 import { useCursor } from "@/hooks/useCursor";
 import "@/styles/cursor.css";
 
-// O centro da cabeca na caixa, e os dois brilhos medidos a partir dele: o
-// especular no alto a esquerda e a luz que atravessa a gota e junta embaixo.
 const MID = BOX / 2;
 
 export function Cursor() {
@@ -30,10 +28,6 @@ export function Cursor() {
               <stop offset="1" className="cur-glint-fade" />
             </radialGradient>
 
-            {/* Em sRGB e nao no linearRGB padrao: o mapa guarda o repouso em
-                128, e lido em espaco linear esse meio-termo vira um desvio que
-                nao existe. O href do feImage entra pelo hook, gerado uma vez em
-                lib/cursorLens.ts. */}
             <filter
               id="cur-lens"
               x="0"
@@ -61,9 +55,6 @@ export function Cursor() {
               />
             </filter>
 
-            {/* As duas sombras internas que o box-shadow fazia, agora seguindo a
-                cauda. O dilate faz o papel do spread negativo: encolhe o
-                buraco, e a luz entra so um fio pela borda. */}
             <filter id="cur-light" x="-20%" y="-20%" width="140%" height="140%">
               <feMorphology in="SourceAlpha" operator="dilate" radius="3" result="lit-grow" />
               <feComponentTransfer in="lit-grow" result="lit-hole">
@@ -90,8 +81,6 @@ export function Cursor() {
               <feComposite in="both" in2="SourceAlpha" operator="in" />
             </filter>
 
-            {/* A sombra na pagina, so por fora: o "out" final tira o pedaco que
-                cairia debaixo do vidro. */}
             <filter id="cur-cast" x="-40%" y="-40%" width="180%" height="200%">
               <feMorphology in="SourceAlpha" operator="erode" radius="14" result="core" />
               <feOffset in="core" dy="12" result="low" />

@@ -49,11 +49,6 @@ export function useHeroCloud() {
       const step = last ? Math.min((now - last) / 1000, 0.1) : 0;
       last = now;
 
-      // Par do mesmo corte em lib/useHeroField.ts: com movimento reduzido o
-      // passo de tempo vira zero, entao a onda de repouso, os aneis do
-      // ponteiro e a caminhada automatica param. O quadro continua sendo
-      // desenhado porque a rolagem ainda manda no wash e na grossura do
-      // mosaico -- o mosaico fica parado, nao ausente.
       if (isReduced()) {
         cloud.setProgress(value.current);
         cloud.frame(0);
@@ -82,8 +77,6 @@ export function useHeroCloud() {
       cloud.setProgress(value.current);
       cloud.frame(step);
 
-      // The crossfade only starts once there is a real frame underneath it, so
-      // the flat renderer is never traded for an empty canvas.
       if (!painted) {
         painted = true;
         setReady(true);

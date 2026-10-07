@@ -8,9 +8,6 @@ import { maskReveal } from "@/lib/reveal";
 const PHOTO = "/images/ellefanning-footer-mark.webp";
 
 export function FooterMark() {
-  // So o reveal de entrada mora aqui. A lanterna subiu para o <footer>
-  // (lib/useFooterLantern.ts) e chega nesta camada pelas variaveis herdadas,
-  // porque agora ela banha o rodape inteiro e nao so o nome.
   const mark = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {

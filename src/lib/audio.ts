@@ -171,8 +171,6 @@ function grind() {
     });
 }
 
-// A decaying burst of noise is a room. Generating it costs nothing to
-// download, which matters more here than the accuracy of a sampled hall.
 function impulse(live: AudioContext) {
   const length = Math.floor(live.sampleRate * IR_SECONDS);
   const buffer = live.createBuffer(2, length, live.sampleRate);
@@ -187,9 +185,6 @@ function impulse(live: AudioContext) {
   return buffer;
 }
 
-// Mid/side: the two mid gains rebuild the centre in both channels and the two
-// side gains add the difference with opposite signs, so L = M + wS and
-// R = M - wS without a separate inverter.
 function widen(live: AudioContext, width: number) {
   const input = live.createGain();
   const output = live.createGain();
@@ -260,8 +255,6 @@ function open() {
   return ctx;
 }
 
-// Routing is deferred until the context is actually running: connecting a media
-// element to a suspended context hands back silence.
 function route(el: HTMLAudioElement) {
   if (musicSource || !ctx || !master || !send || ctx.state !== "running") return;
 
@@ -277,7 +270,6 @@ function route(el: HTMLAudioElement) {
   wet.connect(send);
 }
 
-// O resume só vinga depois; quem chama é o arm() logo abaixo.
 function reroute() {
   if (!gated) arm();
 }
@@ -286,11 +278,6 @@ function arm() {
   restore();
 
   const live = open();
-  // Sem o botão Enter, o primeiro arm() acontece com o contexto ainda suspenso
-  // -- e route() desiste nesse estado, o que deixaria a trilha seca, fora da
-  // sala. Quando o resume vinga, por autoplay liberado ou pelo primeiro gesto,
-  // vale um segundo arm() só para fechar o roteamento. Não recursa: este ramo
-  // só existe enquanto o estado for "suspended".
   if (live.state === "suspended") void live.resume().then(reroute, () => {});
 
   if (!wanted || hushed) return;
@@ -306,13 +293,6 @@ function arm() {
     return;
   }
 
-  // A trilha passou a ser montada antes de qualquer gesto, e o Chrome adia o
-  // download de um <audio> que ainda não tem licença para tocar. O adiamento
-  // não se desfaz sozinho quando a licença chega: o elemento fica preso em
-  // readyState 0, a promessa do play() nunca resolve, `armed` nunca vira true e
-  // o pill nunca acende, mesmo com o arquivo já baixado. Pedir o load() de novo
-  // é o que destrava -- e só custa alguma coisa justamente quando não há dado
-  // nenhum a perder.
   if (el.readyState === 0) el.load();
 
   el
@@ -382,12 +362,6 @@ export function pixel(col: number, row: number, x: number) {
   source.start();
 }
 
-// `emphasis` escala o ganho desta voz sobre o barramento (TEC). Padrão 1
-// preserva o nível de hoje — o estalo de trava (FilmStage chamando sem o
-// terceiro argumento) não muda de volume. Quem quer um tique menor (o
-// chiado de percurso a cada 80px, ver useFilmStage.ts) passa um valor < 1;
-// é assim que "o TEK da trava soa maior" sem precisar tocar no volume da
-// trava — ele já é o 1.0 de referência.
 export function reelTick(notch: number, spread: number, emphasis = 1) {
   if (!wanted || gated || !ctx || !tecBus || ctx.state !== "running") return;
 

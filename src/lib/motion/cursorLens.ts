@@ -1,29 +1,14 @@
-// A cabeca da gota e desenhada com raio fixo (LENS / 2) no centro de uma caixa
-// fixa de BOX px, e so muda de tamanho por transform. Assim o mapa de refracao
-// e gerado uma vez e nunca precisa acompanhar a gota crescendo ou esticando. A
-// caixa e bem maior que a cabeca porque a cauda sai dela e precisa caber.
 export const LENS = 128;
 export const BOX = 512;
 
-// Deslocamento maximo, em px da caixa, na borda da gota. O feDisplacementMap
-// le cada canal como (C - 0.5) * scale, entao o scale do filtro e o dobro.
 export const BEND = 26;
 
-// Quanto do desvio vale por igual no disco inteiro (lupa suave no meio) e com
-// que dureza o resto se concentra na borda. Agua em gota nao entorta o centro,
-// entorta a beirada: a pagina ali aparece puxada para dentro e comprimida.
 const MAG = 0.22;
 const RIM = 4.2;
 
-// A cauda termina numa bolinha em vez de ponta. No estiramento total o centro
-// dela fica a TAIL raios da cabeca e o raio dela e TIP do da cabeca, entao a
-// ponta de tras chega a 2.8 raios do centro.
 const TAIL = 2.5;
 const TIP = 0.3;
-// Quanto os lados afundam entre a cabeca e a bolinha, em radianos de desvio da
-// tangente reta. Zero seria um cone de lados retos; com isto e um pescoco.
 const NECK = 0.35;
-// Quanto a cabeca alonga na direcao do movimento e afina no outro eixo.
 const HEAD = 0.16;
 
 const R = LENS / 2;
@@ -33,10 +18,6 @@ function bend(r: number) {
   return MAG * r + (1 - MAG) * r ** RIM;
 }
 
-// R e G carregam o desvio em x e y, com 128 como repouso. O desvio aponta para
-// o centro, que e o que faz a borda mostrar um pedaco da pagina que esta mais
-// para dentro. Fora da cabeca o valor para no da borda: a cauda inteira refrata
-// como a beirada, e o antialias do recorte nao pega um degrau.
 export function lensMap() {
   const canvas = document.createElement("canvas");
   canvas.width = BOX;
@@ -68,17 +49,6 @@ export function lensMap() {
 
 const fix = (n: number) => n.toFixed(2);
 
-// O contorno da gota em coordenadas da caixa, com o movimento apontando para
-// `turn` (radianos) e `stretch` indo de 0 (parada, um circulo) a 1 (a toda). A
-// mola deixa `stretch` passar de 0 para baixo na parada, e ai a cabeca achata
-// no eixo do movimento em vez de alongar: e o balanco.
-//
-// A bolinha da cauda nasce do tamanho da cabeca, em cima dela, e com o
-// estiramento encolhe e recua; por isso a gota sai do circulo sem degrau. Os
-// lados partem da tangente comum aos dois circulos e cada emenda desliza NECK
-// para um lado: na cabeca desce para tras, na bolinha sobe para frente. A
-// cubica entre elas, com os controles sobre a tangente de cada circulo, afunda
-// no meio sem quebrar em nenhuma das emendas.
 export function dropPath(turn: number, stretch: number) {
   const cos = Math.cos(turn);
   const sin = Math.sin(turn);
