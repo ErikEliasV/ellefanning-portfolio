@@ -9,6 +9,7 @@
   --rise: 1;
   --fall: 0;
   --fall-travel: 80vh;
+  --lead: 0px;
   --cut-l: 100%;
   --cut-r: 0px;
 
@@ -22,6 +23,10 @@
   height: 100svh;
   overflow: hidden;
   isolation: isolate;
+}
+
+.film-track[data-front] .film-stage {
+  z-index: 61;
 }
 
 .film-paper {
@@ -53,7 +58,10 @@
   transform:
     translate3d(
       var(--word-nudge, 0px),
-      calc((1 - var(--rise)) * 60vh - var(--fall) * var(--fall-travel)),
+      calc(
+        (1 - var(--rise)) * 60vh - var(--fall) * var(--fall-travel) +
+          var(--lead)
+      ),
       0
     )
     scale(calc(2.2 - 1.2 * var(--rise) + 1.2 * var(--fall)));

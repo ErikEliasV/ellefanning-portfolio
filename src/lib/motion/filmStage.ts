@@ -84,7 +84,8 @@ export function phases(reduced: boolean, narrow: boolean): Phases {
   const k = reduced ? 0.5 : narrow ? 0.7 : 1;
 
   const curtain = { from: -0.4 * k, to: -0.05 * k };
-  const rise = { from: CURTAIN_OUT, to: CURTAIN_OUT + 0.5 * k };
+  const start = narrow || reduced ? CURTAIN_OUT : curtain.from;
+  const rise = { from: start, to: start + 0.5 * k };
   const open = { from: rise.to, to: rise.to + 0.5 * k };
   const reel = { from: open.to, to: open.to + cycle * (COUNT - 1) };
   const hold = { from: reel.to, to: reel.to + cycle * DWELL };
