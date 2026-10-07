@@ -3,7 +3,15 @@
 import gsap from "gsap";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import {
+  reelRelease,
+  reelRubber,
+  reelStops,
+  sense,
+  type Motion,
+} from "@/lib/editorialMotion";
 import { isReduced, lockScroll, onTick } from "@/lib/scroll";
+import { swipe as bindSwipe } from "@/lib/swipe";
 import { onViewport, smallViewportHeight } from "@/lib/viewport";
 
 const CELL_VW = 0.3;
@@ -14,17 +22,20 @@ const PAN_FACTOR = 0.42;
 const PAN_MIN_VH = 1.2;
 const PAN_MAX_VH = 2;
 
+// O reel arrastado do telefone (ate NARROW_MAX, o mesmo corte das fotos de
+// 80vw): ate onde o elastico deixa passar das pontas, em fracao da largura da
+// tela, e o assentamento depois da soltura -- o mesmo par do deck de
+// Characters, para os dois gestos lerem igual.
+const RUBBER_VW = 0.15;
+const SNAP_S = 0.55;
+const SNAP_EASE = "power3.out";
+
 // Quanto de gesto cada quadro da galeria pede. E distancia virtual, nao altura
 // de documento: a foto aberta trava a pagina e o gesto alimenta so a galeria.
 // Por isso pode ser bem mais curta do que quando era scroll de verdade.
 const STEP_VH = 0.28;
 const STEP_MIN = 200;
 
-const IDLE_MS = 180;
-// Em pixels por quadro: abaixo disto a trilha e considerada parada. Ver o
-// comentario longo em `progress()` sobre por que a comparacao nao pode ser
-// exata.
-const MOVE_EPS = 0.5;
 const EXIT_MS = 780;
 const READ_S = 0.5;
 const READ_EASE = "power2";
@@ -67,9 +78,21 @@ export function useEditorialReel(frames: readonly number[]) {
 
   const activeRef = useRef<number | null>(null);
   const armedRef = useRef(false);
-  const geometry = useRef({ cell: 1, panMax: 0, panScroll: 1, step: 1, view: 0 });
-  const idle = useRef(0);
+  const geometry = useRef({
+    cell: 1,
+    panMax: 0,
+    panScroll: 1,
+    step: 1,
+    view: 0,
+    width: 0,
+    swipe: false,
+    stops: [0],
+  });
   const exit = useRef(0);
+  // Quanto o reel do telefone andou, em px: o dedo arrasta, o gsap assenta, e
+  // `progress()` escreve como `--q`. Num ref fora do efeito para sobreviver a
+  // uma remontagem dele.
+  const pan = useRef({ x: 0 });
 
   // A leitura da galeria: alvo cru vindo do gesto, e o valor suavizado que vai
   // para o CSS. Nada disso toca a altura do documento.
@@ -182,7 +205,8 @@ export function useEditorialReel(frames: readonly number[]) {
     const trackNode = track.current;
     if (!trackNode) return;
 
-    let lastTop = Number.NaN;
+    let motion: Motion | null = null;
+    const reel = pan.current;
 
     function progress() {
       const node = track.current;
@@ -193,33 +217,18 @@ export function useEditorialReel(frames: readonly number[]) {
       // The pin used to learn it was moving from the scroll event itself; on a
       // shared tick it has to notice the movement on its own.
       //
-      // A comparacao era `rect.top !== lastTop`, exata, e era a origem de um
-      // defeito bem visivel: `data-scrolling` bloqueia o crescimento no hover
-      // (ver styles/editorial.css), e o Lenis amortece de forma exponencial,
-      // entao `rect.top` segue mudando em fracoes de pixel muito depois de a
-      // roda parar. Passar o mouse numa foto nesse rastro deixava o quadro
-      // preso encolhido por IDLE_MS e so entao ele crescia -- medido: `--grow`
-      // travado em 0 com a celula em 535px ate a flag cair, e ai saltando para
-      // 1341px de uma vez. Lido na tela, isso e a foto expandir, encolher e
-      // expandir de novo.
-      //
-      // Com a tolerancia, "estar rolando" passa a significar movimento que se
-      // ve, e nao ruido de sub-pixel. MOVE_EPS e por quadro, entao meio pixel
-      // equivale a ~30px/s: abaixo disso ninguem le como rolagem. `lastTop` so
-      // e atualizado quando o limiar e cruzado, entao uma deriva lenta ainda
-      // acumula ate disparar em vez de passar despercebida para sempre.
+      // `data-scrolling` bloqueia o crescimento no hover (ver
+      // styles/editorial.css), e o que decide se a pagina esta rolando e a
+      // velocidade com histerese de lib/editorialMotion.ts. As duas versoes que
+      // moravam aqui -- comparacao exata, depois meio pixel acumulado com timer
+      // -- erravam no rastro do Lenis, e a segunda fazia a foto sob o ponteiro
+      // expandir, encolher e expandir de novo; o porque esta la.
       const pinNode = pin.current;
       if (pinNode) {
-        if (Number.isNaN(lastTop)) {
-          lastTop = rect.top;
-        } else if (Math.abs(rect.top - lastTop) > MOVE_EPS) {
-          lastTop = rect.top;
-          pinNode.setAttribute("data-scrolling", "");
-          window.clearTimeout(idle.current);
-          idle.current = window.setTimeout(
-            () => pinNode.removeAttribute("data-scrolling"),
-            IDLE_MS,
-          );
+        const was = motion?.moving ?? false;
+        motion = sense(motion, rect.top, performance.now());
+        if (motion.moving !== was) {
+          pinNode.toggleAttribute("data-scrolling", motion.moving);
         }
       }
 
@@ -228,10 +237,18 @@ export function useEditorialReel(frames: readonly number[]) {
         setArmed(true);
       }
 
-      const { panScroll } = geometry.current;
+      const { panScroll, panMax, swipe } = geometry.current;
       const style = node.style;
 
-      style.setProperty("--q", clamp01(-rect.top / panScroll).toFixed(4));
+      // `--q` e a fracao do percurso do reel. No PC vem da rolagem; no telefone
+      // vem do dedo, e pode passar um pouco de 0 e de 1 -- e o elastico das
+      // pontas, que o CSS desenha sem saber.
+      const q = swipe
+        ? panMax > 0
+          ? reel.x / panMax
+          : 0
+        : clamp01(-rect.top / panScroll);
+      style.setProperty("--q", q.toFixed(4));
       style.setProperty("--c", read.current.at.toFixed(4));
     }
 
@@ -242,19 +259,33 @@ export function useEditorialReel(frames: readonly number[]) {
       const vh = smallViewportHeight();
       if (!vw || !vh) return;
 
-      const cell = (vw <= NARROW_MAX ? CELL_VW_NARROW : CELL_VW) * vw;
+      // No telefone a rolagem nao passa mais as fotos, a pedido do dono do
+      // projeto: o reel anda com o dedo, e a secao vira uma tela so, que a
+      // pagina atravessa como qualquer outra. Sem percurso de scroll, nao ha o
+      // que prender.
+      const swipe = vw <= NARROW_MAX;
+      const cell = (swipe ? CELL_VW_NARROW : CELL_VW) * vw;
       const panMax = Math.max(0, count * cell - vw);
-      const panScroll = Math.min(
-        Math.max(panMax * PAN_FACTOR, PAN_MIN_VH * vh),
-        PAN_MAX_VH * vh,
-      );
+      const panScroll = swipe
+        ? 0
+        : Math.min(
+            Math.max(panMax * PAN_FACTOR, PAN_MIN_VH * vh),
+            PAN_MAX_VH * vh,
+          );
       geometry.current = {
         cell,
         panMax,
         panScroll,
         step: Math.max(STEP_VH * vh, STEP_MIN),
         view: vh,
+        width: vw,
+        swipe,
+        stops: reelStops(count, cell, vw, panMax),
       };
+      // A tela girou ou encolheu: o reel nao pode ficar parado alem do fim
+      // novo.
+      reel.x = Math.min(Math.max(reel.x, 0), panMax);
+      pin.current?.toggleAttribute("data-swipe", swipe);
 
       const hover = Math.max(CELL_HOVER_VW * vw, cell);
       const rest =
@@ -303,9 +334,46 @@ export function useEditorialReel(frames: readonly number[]) {
     const untick = onTick(progress);
     window.addEventListener("keydown", onKey);
 
+    // O ARRASTO do telefone. O dedo em px vira `pan` em px, e para a frente e
+    // o dedo indo para a ESQUERDA, dai o sinal trocado. Enquanto arrasta, o
+    // reel segue o dedo com o elastico nas pontas; na soltura, `reelRelease`
+    // escolhe a foto que centraliza e o gsap assenta nela. Com uma foto aberta
+    // o gesto e da galeria, e o arrasto nao comeca. O que e toque e o que e
+    // arrasto quem decide e lib/swipe.ts.
+    function settleOn(target: number) {
+      gsap.killTweensOf(reel);
+      if (isReduced()) {
+        reel.x = target;
+        return;
+      }
+      gsap.to(reel, { x: target, duration: SNAP_S, ease: SNAP_EASE });
+    }
+
+    let from = 0;
+    let raw = 0;
+    const pinNode = pin.current;
+    const unswipe = pinNode
+      ? bindSwipe(pinNode, {
+          can: () => geometry.current.swipe && activeRef.current === null,
+          start: () => {
+            gsap.killTweensOf(reel);
+            from = reel.x;
+            raw = from;
+          },
+          move: (dx) => {
+            raw = from - dx;
+            const { panMax, width } = geometry.current;
+            reel.x = reelRubber(raw, panMax, width * RUBBER_VW);
+          },
+          end: (velocity) =>
+            settleOn(reelRelease(raw, -velocity, geometry.current.stops)),
+        })
+      : () => {};
+
     return () => {
       untick();
-      window.clearTimeout(idle.current);
+      unswipe();
+      gsap.killTweensOf(reel);
       window.clearTimeout(exit.current);
       unwatch();
       observer.disconnect();

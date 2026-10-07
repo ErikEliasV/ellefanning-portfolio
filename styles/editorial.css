@@ -317,6 +317,33 @@
   }
 }
 
+/* O reel arrastado do telefone: `data-swipe` e escrito por
+   lib/useEditorialReel.ts no mesmo corte que poe as fotos em 80vw, entao o CSS
+   nao tem um limiar proprio para discordar dele. A dica troca porque ali a
+   rolagem ja nao passa as fotos, nem com mouse numa janela estreita. */
+.ed-hint-swipe {
+  display: none;
+}
+
+.ed-pin[data-swipe] .ed-hint-fine,
+.ed-pin[data-swipe] .ed-hint-touch {
+  display: none;
+}
+
+.ed-pin[data-swipe] .ed-hint-swipe {
+  display: inline;
+}
+
+/* `pan-y` entrega ao navegador so o gesto vertical, que continua rolando a
+   pagina, e deixa o horizontal para o arrasto -- sem ele o navegador disputaria
+   o gesto e cancelaria o arrasto no meio. Sem selecao de texto porque o mesmo
+   arrasto vale para o mouse. */
+.ed-pin[data-swipe] {
+  touch-action: pan-y;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 /* Replaces the hint while a frame is open: an actual target beats a sentence
    telling you to press Esc, which no phone has. */
 .ed-close {

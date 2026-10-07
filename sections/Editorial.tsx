@@ -167,6 +167,9 @@ export function Editorial() {
               Scroll to run the reel · Click a frame to open it
             </span>
             <span className="ed-hint-touch">Tap a frame to open it</span>
+            <span className="ed-hint-swipe">
+              Swipe the reel · Tap a frame to open it
+            </span>
           </span>
         )}
       </section>
