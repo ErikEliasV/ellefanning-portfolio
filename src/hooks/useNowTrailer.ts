@@ -2,90 +2,17 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { hush } from "@/lib/audio";
-import { CURRENT_WORK } from "@/data/films";
 
-const API_SRC = "https://www.youtube.com/iframe_api";
-const ENDED = 0;
-const PLAYING = 1;
-const SYNC = 500;
-const COVER_GRACE = 1400;
 const GESTURES = ["pointerdown", "keydown", "touchstart"] as const;
 
-type Player = {
-  playVideo: () => void;
-  pauseVideo: () => void;
-  mute: () => void;
-  unMute: () => void;
-  isMuted: () => boolean;
-  setVolume: (level: number) => void;
-  seekTo: (seconds: number, allowSeekAhead: boolean) => void;
-};
-
-type PlayerEvent = { target: Player; data: number };
-
-type PlayerOptions = {
-  host?: string;
-  videoId: string;
-  playerVars: Record<string, string | number>;
-  events: {
-    onReady: (event: PlayerEvent) => void;
-    onStateChange: (event: PlayerEvent) => void;
-  };
-};
-
-type YouTubeApi = {
-  Player: new (host: HTMLElement, options: PlayerOptions) => Player;
-};
-
-declare global {
-  interface Window {
-    YT?: YouTubeApi;
-    onYouTubeIframeAPIReady?: () => void;
-  }
-}
-
-let bridge: Promise<YouTubeApi> | null = null;
-
-function loadApi() {
-  if (bridge) return bridge;
-
-  bridge = new Promise<YouTubeApi>((resolve, reject) => {
-    if (window.YT?.Player) {
-      resolve(window.YT);
-      return;
-    }
-
-    const earlier = window.onYouTubeIframeAPIReady;
-    window.onYouTubeIframeAPIReady = () => {
-      earlier?.();
-      if (window.YT?.Player) resolve(window.YT);
-      else reject(new Error("YouTube API arrived without a player"));
-    };
-
-    const found = document.querySelector<HTMLScriptElement>(
-      `script[src="${API_SRC}"]`,
-    );
-    const tag = found ?? document.createElement("script");
-
-    tag.addEventListener("error", () => reject(new Error("YouTube API blocked")));
-
-    if (!found) {
-      tag.src = API_SRC;
-      tag.async = true;
-      document.head.append(tag);
-    }
-  });
-
-  return bridge;
+function mayPlaySound() {
+  return navigator.userActivation?.hasBeenActive ?? false;
 }
 
 export function useNowTrailer() {
   const frame = useRef<HTMLDivElement>(null);
-  const stage = useRef<HTMLDivElement>(null);
-  const built = useRef<Player | null>(null);
-  const player = useRef<Player | null>(null);
+  const video = useRef<HTMLVideoElement>(null);
   const onScreen = useRef(false);
-  const grace = useRef(0);
   const wanted = useRef(true);
   const [ready, setReady] = useState(false);
   const [playing, setPlaying] = useState(false);
@@ -93,78 +20,39 @@ export function useNowTrailer() {
   const [near, setNear] = useState(false);
 
   const raise = useCallback(() => {
-    const node = player.current;
+    const node = video.current;
     if (!node) return;
-    node.unMute();
-    node.setVolume(100);
+    node.muted = false;
+    node.volume = 1;
   }, []);
 
   useEffect(() => {
     const host = frame.current;
-    const node = stage.current;
+    const node = video.current;
     if (!host || !node) return;
 
-    let alive = true;
+    node.muted = true;
 
     const play = () => {
-      const live = player.current;
-      if (!live || !onScreen.current || document.hidden) return;
-      if (wanted.current) raise();
-      live.playVideo();
-    };
-    const halt = () => player.current?.pauseVideo();
-
-    const wake = (api: YouTubeApi) => {
-      if (!alive) return;
-
-      if (built.current) {
-        if (!player.current) return;
-        setReady(true);
-        play();
-        return;
-      }
-
-      built.current = new api.Player(node, {
-        host: "https://www.youtube-nocookie.com",
-        videoId: CURRENT_WORK.youtubeId,
-        playerVars: {
-          mute: 1,
-          controls: 0,
-          disablekb: 1,
-          modestbranding: 1,
-          rel: 0,
-          fs: 0,
-          iv_load_policy: 3,
-          playsinline: 1,
-          origin: window.location.origin,
-        },
-        events: {
-          onReady: (event) => {
-            player.current = event.target;
-            setReady(true);
-            play();
-          },
-          onStateChange: (event) => {
-            window.clearTimeout(grace.current);
-            if (event.data === PLAYING) {
-              grace.current = window.setTimeout(
-                () => setPlaying(true),
-                COVER_GRACE,
-              );
-            } else {
-              setPlaying(false);
-            }
-            if (event.data !== ENDED) return;
-            event.target.seekTo(0, true);
-            event.target.playVideo();
-          },
-        },
+      if (!onScreen.current || document.hidden) return;
+      node.muted = !(wanted.current && mayPlaySound());
+      node.play().catch(() => {
+        if (node.muted) return;
+        node.muted = true;
+        node.play().catch(() => {});
       });
     };
+    const halt = () => node.pause();
 
-    loadApi()
-      .then(wake)
-      .catch(() => {});
+    const onReady = () => setReady(true);
+    const onPlaying = () => setPlaying(true);
+    const onPause = () => setPlaying(false);
+    const onVolume = () => setSound(!node.muted);
+
+    node.addEventListener("canplay", onReady);
+    node.addEventListener("playing", onPlaying);
+    node.addEventListener("pause", onPause);
+    node.addEventListener("volumechange", onVolume);
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -193,18 +81,14 @@ export function useNowTrailer() {
       window.addEventListener(name, onGesture, { passive: true }),
     );
 
-    const mirror = window.setInterval(() => {
-      const live = player.current;
-      if (live) setSound(!live.isMuted());
-    }, SYNC);
-
     return () => {
-      alive = false;
       observer.disconnect();
       document.removeEventListener("visibilitychange", onVisibility);
       GESTURES.forEach((name) => window.removeEventListener(name, onGesture));
-      window.clearInterval(mirror);
-      window.clearTimeout(grace.current);
+      node.removeEventListener("canplay", onReady);
+      node.removeEventListener("playing", onPlaying);
+      node.removeEventListener("pause", onPause);
+      node.removeEventListener("volumechange", onVolume);
       halt();
     };
   }, [raise]);
@@ -215,17 +99,15 @@ export function useNowTrailer() {
   }, [near]);
 
   const toggleSound = useCallback(() => {
-    const node = player.current;
+    const node = video.current;
     if (!node) return;
 
-    const next = !sound;
+    const next = node.muted;
     wanted.current = next;
 
     if (next) raise();
-    else node.mute();
+    else node.muted = true;
+  }, [raise]);
 
-    setSound(next);
-  }, [raise, sound]);
-
-  return { frame, stage, ready, playing, sound, toggleSound };
+  return { frame, video, ready, playing, sound, toggleSound };
 }

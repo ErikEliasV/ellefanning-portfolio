@@ -8,11 +8,14 @@ type Tick = (now: number) => void;
 
 const REDUCED = "(prefers-reduced-motion: reduce)";
 const LERP = 0.06;
+const GLIDE_EASE = "power3.out";
+const GLIDE_STOP = ["touchstart", "pointerdown", "wheel", "keydown"] as const;
 
 let lenis: Lenis | null = null;
 let booted = false;
 let reduced = false;
 let locked = false;
+let gliding: gsap.core.Tween | null = null;
 
 const ticks = new Set<Tick>();
 
@@ -50,6 +53,29 @@ export function scrollTo(
     return;
   }
   document.querySelector(target)?.scrollIntoView();
+}
+
+export function stopGlide() {
+  gliding?.kill();
+  gliding = null;
+}
+
+export function glideTo(y: number, seconds: number) {
+  stopGlide();
+  if (reduced || seconds <= 0) {
+    scrollTo(y, { immediate: true });
+    return;
+  }
+  const at = { y: window.scrollY };
+  gliding = gsap.to(at, {
+    y,
+    duration: seconds,
+    ease: GLIDE_EASE,
+    onUpdate: () => scrollTo(at.y, { immediate: true }),
+    onComplete: () => {
+      gliding = null;
+    },
+  });
 }
 
 export function lockScroll(on: boolean) {
@@ -91,9 +117,14 @@ export function bootScroll() {
   build();
   gsap.ticker.add(drive);
   query.addEventListener("change", onChange);
+  GLIDE_STOP.forEach((name) =>
+    window.addEventListener(name, stopGlide, { passive: true }),
+  );
 
   return () => {
     query.removeEventListener("change", onChange);
+    GLIDE_STOP.forEach((name) => window.removeEventListener(name, stopGlide));
+    stopGlide();
     gsap.ticker.remove(drive);
     tear();
     booted = false;

@@ -64,6 +64,7 @@ export function useFilmStage(count: number) {
       set("--rise", c.rise.toFixed(4));
       set("--split", `${splitPx.toFixed(2)}px`);
       set("--fall", c.fall.toFixed(4));
+      set("--lead", `${(p < 0 && c.rise > 0 ? p * vh : 0).toFixed(2)}px`);
       set("--reveal", c.reveal.toFixed(4));
 
       const curtainEl = curtain.current;
@@ -71,6 +72,7 @@ export function useFilmStage(count: number) {
         if (p < CURTAIN_OUT) curtainEl.dataset.on = "";
         else delete curtainEl.dataset.on;
       }
+      trackEl.toggleAttribute("data-front", p < CURTAIN_OUT && c.rise > 0);
 
       if (canSkip(p, reduced, narrow.matches)) trackEl.dataset.skip = "";
       else delete trackEl.dataset.skip;

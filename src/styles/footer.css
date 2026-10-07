@@ -48,8 +48,8 @@
     transparent 100%
   );
   background-image: var(--mark-photo);
-  background-position: center 58%;
-  background-size: cover;
+  background-position: 52% 33%;
+  background-size: 172% auto;
   background-repeat: no-repeat;
   background-clip: text;
   -webkit-background-clip: text;

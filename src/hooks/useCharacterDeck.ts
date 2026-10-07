@@ -1,6 +1,5 @@
 "use client";
 
-import gsap from "gsap";
 import { useEffect, useRef, useState } from "react";
 import {
   NARROW_QUERY,
@@ -8,16 +7,17 @@ import {
   carousel,
   deckGeometry,
   entryLockAt,
+  lockAt,
   pose,
-  release,
-  rubber,
+  reel,
+  reelPhases,
+  reelTarget,
   spin,
-  stage,
   trackVh,
   wrap,
   type Spin,
 } from "@/lib/motion/characterDeck";
-import { isReduced, onTick } from "@/lib/scroll";
+import { glideTo, isReduced, onTick, scrollTo, stopGlide } from "@/lib/scroll";
 import { swipe as bindSwipe } from "@/lib/swipe";
 import { onViewport, smallViewportHeight } from "@/lib/viewport";
 
@@ -26,7 +26,7 @@ const HAZE_STEP = 0.5;
 const SPIN_STEP_MAX = 100;
 
 const SNAP_S = 0.55;
-const SNAP_EASE = "power3.out";
+const EDGE_PX = 2;
 
 export function useCharacterDeck(count: number, paused: boolean) {
   const track = useRef<HTMLDivElement>(null);
@@ -38,7 +38,6 @@ export function useCharacterDeck(count: number, paused: boolean) {
 
   const clock = useRef<Spin>(SPIN_REST);
   const hold = useRef({ hover: false, focus: false, paused: false });
-  const swipe = useRef({ u: 0 });
 
   useEffect(() => {
     hold.current.paused = paused;
@@ -46,7 +45,6 @@ export function useCharacterDeck(count: number, paused: boolean) {
 
   useEffect(() => {
     const narrow = window.matchMedia(NARROW_QUERY);
-    const deckPos = swipe.current;
 
     let vh = 0;
     let cardH = 0;
@@ -62,8 +60,10 @@ export function useCharacterDeck(count: number, paused: boolean) {
 
       slotPx = deckGeometry(true).reach * cardH || 1;
 
-      trackEl.style.height = `${vh * trackVh()}px`;
-      trackEl.dataset.entry = String(vh * entryLockAt());
+      const phone = narrow.matches;
+      const reduced = isReduced();
+      trackEl.style.height = `${vh * trackVh(phone, reduced)}px`;
+      trackEl.dataset.entry = String(vh * entryLockAt(phone, reduced));
     }
 
     let last = 0;
@@ -76,7 +76,8 @@ export function useCharacterDeck(count: number, paused: boolean) {
       const reduced = isReduced();
       const phone = narrow.matches;
       const p = -trackEl.getBoundingClientRect().top / vh;
-      const c = phone ? stage(p, deckPos.u) : carousel(p, clock.current);
+      const c = phone ? reel(p, reduced) : carousel(p, clock.current);
+      trackEl.toggleAttribute("data-early", !phone && p < 0 && c.wipe > 0);
 
       const set = (name: string, value: string) =>
         trackEl.style.setProperty(name, value);
@@ -166,37 +167,53 @@ export function useCharacterDeck(count: number, paused: boolean) {
       hold.current.focus = visible;
       if (!visible || !narrow.matches || !railEl) return;
       const index = Array.prototype.indexOf.call(railEl.children, target);
-      if (index >= 0) settleOn(index);
+      if (index >= 0) goTo(lockAt(index, isReduced()), SNAP_S);
     };
 
     const focusOut = () => {
       hold.current.focus = false;
     };
 
-    function settleOn(target: number) {
-      gsap.killTweensOf(deckPos);
-      if (isReduced()) {
-        deckPos.u = target;
-        return;
-      }
-      gsap.to(deckPos, { u: target, duration: SNAP_S, ease: SNAP_EASE });
+    function progressAt() {
+      const trackEl = track.current;
+      return trackEl && vh ? -trackEl.getBoundingClientRect().top / vh : 0;
     }
 
+    function goTo(p: number, seconds: number) {
+      const trackEl = track.current;
+      if (!trackEl || !vh) return;
+      const end = reelPhases(isReduced()).lift.to;
+      const top = trackEl.getBoundingClientRect().top + window.scrollY;
+      const y = top + Math.min(Math.max(p, 0), end) * vh;
+      if (seconds > 0) glideTo(y, seconds);
+      else scrollTo(y, { immediate: true });
+    }
+
+    const trackNode = track.current;
     let from = 0;
     let raw = 0;
-    const unswipe = deckEl
-      ? bindSwipe(deckEl, {
-          can: () => narrow.matches && !hold.current.paused,
+    const unswipe = trackNode
+      ? bindSwipe(trackNode, {
+          can: () => {
+            if (!narrow.matches || hold.current.paused) return false;
+            const p = progressAt();
+            const slack = EDGE_PX / vh;
+            return p >= -slack && p <= reelPhases(isReduced()).lift.to + slack;
+          },
           start: () => {
-            gsap.killTweensOf(deckPos);
-            from = deckPos.u;
+            stopGlide();
+            from = progressAt();
             raw = from;
           },
           move: (dx) => {
-            raw = from - dx / slotPx;
-            deckPos.u = rubber(raw);
+            raw = from - (dx / slotPx) * reelPhases(isReduced()).cycle;
+            goTo(raw, 0);
           },
-          end: (velocity) => settleOn(release(raw, -velocity / slotPx)),
+          end: (velocity) => {
+            const reduced = isReduced();
+            const at = Math.min(Math.max(raw, 0), reelPhases(reduced).lift.to);
+            goTo(reelTarget(at, -velocity / slotPx, reduced), SNAP_S);
+          },
         })
       : () => {};
 
@@ -209,7 +226,7 @@ export function useCharacterDeck(count: number, paused: boolean) {
       untick();
       unwatch();
       watchDeck.disconnect();
-      gsap.killTweensOf(deckPos);
+      stopGlide();
       deckEl?.removeEventListener("pointermove", aim);
       deckEl?.removeEventListener("pointerleave", away);
       unswipe();
