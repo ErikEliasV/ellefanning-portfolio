@@ -23,7 +23,7 @@ export function SiteHeader() {
     active,
     awake,
     open,
-    hidden,
+    tucked,
     painted,
     ride,
     bind,
@@ -57,7 +57,7 @@ export function SiteHeader() {
         className="hdr"
         data-open={open ? "" : undefined}
         data-awake={awake ? "" : undefined}
-        data-hidden={hidden ? "" : undefined}
+        data-tucked={tucked ? "" : undefined}
       >
         <canvas
           ref={view}
@@ -129,8 +129,9 @@ export function SiteHeader() {
           que caia dentro -- os dois ficariam presos ao retangulo da barra. O
           `clip-path` da casca tambem os recortaria na altura da barra. Eles
           sao chrome proprio, com a mesma roupa dos outros pills flutuantes do
-          site (styles/pill.css), e acompanham o recolher da barra pelo
-          `data-chrome-hidden` que useHeaderGlass escreve no <html>. */}
+          site (styles/pill.css), e ouvem o recolher da barra pelo
+          `data-chrome-hidden` que useHeaderGlass escreve no <html>: o menu
+          nao sai, encolhe para so o icone. */}
       <button
         ref={menuButton}
         type="button"

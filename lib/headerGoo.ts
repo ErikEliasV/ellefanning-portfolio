@@ -9,6 +9,16 @@ const BLEND = 0.12;
 // A bolha respira. So a bolha: o resto do contorno fica parado.
 const BREATH = 0.1;
 const BREATH_SPEED = 0.75;
+// A gota da barra recolhida: exp(-k^2) amostrada em k = 0, 0.3, ... 2.4, com
+// os MESMOS numeros e os mesmos passos do polygon de repouso em
+// styles/header.css, e ligada em reta entre as amostras como la. Quando a
+// bolha do ponteiro chega a zero e o recorte volta ao CSS, os dois desenhos
+// sao o mesmo poligono -- a passagem nao tem salto.
+const DROP = [1, 0.914, 0.698, 0.445, 0.237, 0.105, 0.039, 0.012, 0];
+const DROP_STEP = 0.3;
+// Meia largura da gota em multiplos de --hdr-bump-w (o 2.4 do polygon): quem
+// a move precisa disso para ela nao passar da quina da barra.
+export const DROP_SPAN = (DROP.length - 1) * DROP_STEP;
 
 export type Goo = {
   width: number;
@@ -27,12 +37,27 @@ export type Goo = {
   roof: number;
   floor: number;
   side: number;
+  // Altura da gota da borda de baixo (o --hdr-bump ja em transicao), o passo
+  // da gaussiana que a desenha (--hdr-bump-w) e onde ela pende, em x da caixa
+  // (o mesmo --hdr-drop-x do CSS).
+  drop: number;
+  dropW: number;
+  dropX: number;
 };
 
 // Satura no limite em vez de bater nele: um Math.min acharia a crista num
 // plato reto, que e exatamente o que nao pode parecer liquido.
 function soft(v: number, cap: number) {
   return cap > 0 ? cap * Math.tanh(v / cap) : 0;
+}
+
+// Quanto a gota desce a `dx` pixels do ponto de onde ela pende.
+function dropAt(dx: number, drop: number, dropW: number) {
+  if (drop <= 0 || dropW <= 0) return 0;
+  const k = Math.abs(dx) / dropW / DROP_STEP;
+  const i = Math.floor(k);
+  if (i >= DROP.length - 1) return 0;
+  return drop * (DROP[i] + (DROP[i + 1] - DROP[i]) * (k - i));
 }
 
 // -1 na ponta inicial da aresta, +1 na final, 0 no miolo.
@@ -55,6 +80,9 @@ export function gooPath({
   roof,
   floor,
   side,
+  drop,
+  dropW,
+  dropX,
 }: Goo) {
   const left = wing;
   const right = width - wing;
@@ -84,9 +112,20 @@ export function gooPath({
     lift(right, top + reveal * t, 1, bend(t), side);
   }
 
-  for (let i = SPAN_STEPS; i >= 0; i--) {
-    const t = i / SPAN_STEPS;
-    lift(left + span * t, bottom, bend(t), 1, floor);
+  // A borda de baixo e amostrada no passo de sempre e, com gota, tambem nas
+  // amostras dela: sao os vertices do polygon do CSS, e sem eles a gota sairia
+  // com a resolucao grossa do resto da aresta.
+  const floorXs: number[] = [];
+  for (let i = 0; i <= SPAN_STEPS; i++) floorXs.push(left + span * (i / SPAN_STEPS));
+  if (drop > 0) {
+    const last = DROP.length - 1;
+    for (let i = -last; i <= last; i++) floorXs.push(dropX + i * DROP_STEP * dropW);
+  }
+  floorXs.sort((a, b) => b - a);
+
+  for (const px of floorXs) {
+    const t = (px - left) / span;
+    lift(px, bottom + dropAt(px - dropX, drop, dropW), bend(t), 1, floor);
   }
 
   for (let i = SIDE_STEPS - 1; i >= 1; i--) {

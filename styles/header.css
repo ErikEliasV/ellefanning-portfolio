@@ -43,6 +43,20 @@
   initial-value: 0px;
 }
 
+/* Registrada para transicionar: a gota da barra recolhida cresce e volta. E
+   lida em pixel por lib/useHeaderGlass.ts a cada quadro, como a de baixo. */
+@property --hdr-bump {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+@property --hdr-bump-w {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
 /* A geometria da barra sobe para a raiz porque dois elementos que NAO sao
    filhos de <header> precisam dela para sentar na mesma linha: o botao do menu
    e o pill de musica (ver o bloco de tela estreita no fim deste arquivo e
@@ -76,6 +90,17 @@
   --hdr-lead: 1.592;
   --hdr-grow: 1.18;
   --hdr-reveal: var(--hdr-h);
+  --hdr-edge: calc(var(--hdr-lip) + var(--hdr-reveal));
+  /* A barra recolhida: quanto dela fica a mostra no alto da viewport, a altura
+     da gota que pende da borda de baixo, o passo da gaussiana que a desenha (a
+     gota inteira ocupa perto de 4x isso) e onde ela pende. Aberta, a gota vale
+     0. O meio e so o ponto de partida: com o mouse, lib/useHeaderGlass.ts
+     reescreve --hdr-drop-x em pixels e a gota anda com ele na horizontal. */
+  --hdr-hint: 6px;
+  --hdr-drop: 10px;
+  --hdr-bump-w: clamp(34px, 3vw, 58px);
+  --hdr-bump: 0px;
+  --hdr-drop-x: 50%;
 
   position: fixed;
   /* A caixa sobe uma folga inteira, e a barra volta ao lugar pelo recorte: e
@@ -90,12 +115,51 @@
   /* A casca tem sempre a altura aberta e revela por recorte, porque animar
      height refaria layout a cada frame. O preco e que ela cobriria a caixa
      inteira de area de clique mesmo fechada, entao o ponteiro so volta na
-     barra. O inset aqui e o caminho de repouso e o de movimento reduzido: com
-     script, quem escreve o clip-path e lib/headerGoo.ts, por frame. */
+     barra. O poligono aqui e o caminho de repouso e o de movimento reduzido:
+     com o ponteiro na barra, quem escreve o clip-path e lib/headerGoo.ts, por
+     frame.
+
+     E o retangulo da barra, com uma gaussiana amostrada na borda de baixo,
+     centrada em --hdr-drop-x: os coeficientes sao exp(-k^2) para k = 0, 0.3, ... 2.4, e o 2.4
+     ja vale zero para a gota encostar na borda sem degrau. Com --hdr-bump em
+     0 os pontos caem todos na mesma reta, e o recorte e o inset de antes. */
   pointer-events: none;
-  clip-path: inset(
-    var(--hdr-lip) var(--hdr-wing)
-      calc(100% - var(--hdr-lip) - var(--hdr-reveal)) var(--hdr-wing)
+  clip-path: polygon(
+    var(--hdr-wing) var(--hdr-lip),
+    calc(100% - var(--hdr-wing)) var(--hdr-lip),
+    calc(100% - var(--hdr-wing)) var(--hdr-edge),
+    calc(var(--hdr-drop-x) + 2.4 * var(--hdr-bump-w)) var(--hdr-edge),
+    calc(var(--hdr-drop-x) + 2.1 * var(--hdr-bump-w))
+      calc(var(--hdr-edge) + 0.012 * var(--hdr-bump)),
+    calc(var(--hdr-drop-x) + 1.8 * var(--hdr-bump-w))
+      calc(var(--hdr-edge) + 0.039 * var(--hdr-bump)),
+    calc(var(--hdr-drop-x) + 1.5 * var(--hdr-bump-w))
+      calc(var(--hdr-edge) + 0.105 * var(--hdr-bump)),
+    calc(var(--hdr-drop-x) + 1.2 * var(--hdr-bump-w))
+      calc(var(--hdr-edge) + 0.237 * var(--hdr-bump)),
+    calc(var(--hdr-drop-x) + 0.9 * var(--hdr-bump-w))
+      calc(var(--hdr-edge) + 0.445 * var(--hdr-bump)),
+    calc(var(--hdr-drop-x) + 0.6 * var(--hdr-bump-w))
+      calc(var(--hdr-edge) + 0.698 * var(--hdr-bump)),
+    calc(var(--hdr-drop-x) + 0.3 * var(--hdr-bump-w))
+      calc(var(--hdr-edge) + 0.914 * var(--hdr-bump)),
+    var(--hdr-drop-x) calc(var(--hdr-edge) + var(--hdr-bump)),
+    calc(var(--hdr-drop-x) - 0.3 * var(--hdr-bump-w))
+      calc(var(--hdr-edge) + 0.914 * var(--hdr-bump)),
+    calc(var(--hdr-drop-x) - 0.6 * var(--hdr-bump-w))
+      calc(var(--hdr-edge) + 0.698 * var(--hdr-bump)),
+    calc(var(--hdr-drop-x) - 0.9 * var(--hdr-bump-w))
+      calc(var(--hdr-edge) + 0.445 * var(--hdr-bump)),
+    calc(var(--hdr-drop-x) - 1.2 * var(--hdr-bump-w))
+      calc(var(--hdr-edge) + 0.237 * var(--hdr-bump)),
+    calc(var(--hdr-drop-x) - 1.5 * var(--hdr-bump-w))
+      calc(var(--hdr-edge) + 0.105 * var(--hdr-bump)),
+    calc(var(--hdr-drop-x) - 1.8 * var(--hdr-bump-w))
+      calc(var(--hdr-edge) + 0.039 * var(--hdr-bump)),
+    calc(var(--hdr-drop-x) - 2.1 * var(--hdr-bump-w))
+      calc(var(--hdr-edge) + 0.012 * var(--hdr-bump)),
+    calc(var(--hdr-drop-x) - 2.4 * var(--hdr-bump-w)) var(--hdr-edge),
+    var(--hdr-wing) var(--hdr-edge)
   );
   /* A hero e animada e passa perto do branco, e o tipo do Figma e branco: a
      51% o tinte sozinho deixava a barra ilegivel. Escurecer o backdrop mantem
@@ -106,20 +170,32 @@
   transform: translate3d(0, 0, 0);
   transition:
     --hdr-reveal var(--duration-micro) var(--ease-out),
+    --hdr-bump var(--duration-slow) var(--ease-out),
     transform var(--duration-base) var(--ease-out);
 }
 
-.hdr[data-hidden] {
+/* Descendo, em qualquer secao: a barra sobe ate sobrar --hdr-hint dela no alto
+   da viewport, e a gota desce acima do ponteiro, seguindo-o de lado a lado --
+   e isso que avisa que ha um header ali. Os rotulos somem para nenhum pe de letra aparecer na faixa; o ponteiro
+   na faixa do topo, subir a pagina ou o Tab num link trazem a barra inteira
+   (lib/useHeaderGlass.ts). */
+.hdr[data-tucked] {
+  --hdr-bump: var(--hdr-drop);
   transform: translate3d(
     0,
-    calc(-1 * (var(--hdr-top) + var(--hdr-h) + 24px)),
+    calc(var(--hdr-hint) - var(--hdr-top) - var(--hdr-h)),
     0
   );
 }
 
+.hdr[data-tucked] .hdr-nav {
+  opacity: 0;
+}
+
 .hdr[data-open] {
   --hdr-reveal: var(--hdr-open-h);
-  transition-duration: var(--duration-slow), var(--duration-base);
+  transition-duration:
+    var(--duration-slow), var(--duration-slow), var(--duration-base);
 }
 
 .hdr[data-open] .hdr-plate {
@@ -230,6 +306,7 @@
   margin: var(--hdr-lip) var(--hdr-wing) 0;
   padding: var(--hdr-pad-y) var(--hdr-pad-x);
   pointer-events: auto;
+  transition: opacity var(--duration-base) var(--ease-out);
 }
 
 .hdr-link {
@@ -329,7 +406,7 @@
      vao junto, e no telefone esse filtro e a parte mais cara da barra. Os dois
      pills nunca moraram dentro de <header> -- sao irmaos dele, fixos por conta
      propria -- entao nao sentem nada: continuam na linha que --hdr-top e
-     --hdr-h desenham, e continuam recolhendo juntos pelo data-chrome-hidden. */
+     --hdr-h desenham, e continuam ouvindo o data-chrome-hidden. */
   .hdr {
     display: none;
   }
@@ -342,17 +419,42 @@
     right: calc(var(--hdr-inset-x) + var(--hdr-pad-x) + var(--safe-right));
     z-index: 98;
     display: inline-flex;
+    justify-content: center;
+    min-width: var(--pill-h);
     transition:
       background-color var(--duration-fast) var(--ease-out),
-      transform var(--duration-base) var(--ease-out);
+      padding var(--duration-slow) var(--ease-out),
+      gap var(--duration-slow) var(--ease-out);
   }
 
-  /* Acompanha o recolher da barra. O atributo vem de lib/useHeaderGlass.ts,
-     que espelha o proprio `hidden` do header no <html> justamente porque
-     este elemento mora fora de <header>. O par do pill de musica esta em
-     styles/pill.css, junto da regra que o posiciona. */
+  /* O rotulo recolhe pela largura, e nao some por display, para o botao
+     encolher de verdade na transicao. O teto cabe o "CLOSE", o maior dos
+     dois (medido: 4.6em); e em em para acompanhar o clamp do corpo do .pill,
+     e justo para a varredura nao gastar tempo numa largura que nao existe. */
+  .hdr-menu .pill-label {
+    max-width: 5em;
+    overflow: hidden;
+    white-space: nowrap;
+    transition:
+      max-width var(--duration-slow) var(--ease-out),
+      opacity var(--duration-fast) var(--ease-out);
+  }
+
+  /* O menu nao acompanha mais o recolher: fica sempre ao alcance, e so perde o
+     rotulo. O que sobra e um quadrado de --pill-h com as duas reguas no
+     centro -- o padding sai da largura do icone (17px, .pill-note). Com o
+     painel aberto a rolagem esta travada, entao o botao nao muda de forma
+     debaixo do dedo: se abriu compacto, as reguas viram o X e pronto. O
+     atributo vem de lib/useHeaderGlass.ts; o par do pill de musica, que
+     continua saindo de cena, esta em styles/pill.css. */
   html[data-chrome-hidden] .hdr-menu {
-    transform: translate3d(0, calc(-1 * (var(--hdr-top) + var(--hdr-h) + 24px)), 0);
+    gap: 0;
+    padding-inline: calc((var(--pill-h) - 17px) / 2);
+  }
+
+  html[data-chrome-hidden] .hdr-menu .pill-label {
+    max-width: 0;
+    opacity: 0;
   }
 
   /* Duas reguas que viram X. Nao ha icone: o traco e o material do site. */

@@ -142,7 +142,7 @@
   }
 
   /* O par da regra de .hdr-menu em styles/header.css: rolar para baixo leva a
-     barra, o menu e a musica juntos. */
+     musica embora e deixa o menu so com o icone; subir traz os dois. */
   html[data-chrome-hidden] .score {
     transform: translate3d(0, calc(-1 * (var(--hdr-top) + var(--hdr-h) + 24px)), 0);
   }

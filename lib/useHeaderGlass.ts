@@ -6,7 +6,7 @@ import type { MouseEvent } from "react";
 
 import { asset } from "@/lib/asset";
 import { isNarrow, phases, trackVh } from "@/lib/filmStage";
-import { gooPath } from "@/lib/headerGoo";
+import { DROP_SPAN, gooPath } from "@/lib/headerGoo";
 import { isLocked, isReduced, onTick, scrollTo } from "@/lib/scroll";
 import { SECTIONS } from "@/lib/sections";
 import type { Liquid, Media } from "@/lib/headerLiquid";
@@ -23,6 +23,10 @@ const GRACE = 180;
 // perseguicao.
 const FOLLOW = 0.34;
 const FOLLOW_EASE = "power2";
+// A gota da barra recolhida corre atras do mouse de longe -- ele esta la no
+// meio da pagina, nao em cima dela --, entao arrasta um pouco mais que a
+// bolha: le como liquido escorrendo pela borda, nao como um cursor.
+const DROP_FOLLOW = 0.55;
 
 // Uma faixa fina no meio da tela: a secao que a cobre e a secao que se esta
 // lendo. Com as secoes sendo todas mais altas que a viewport, isso deixa
@@ -140,22 +144,23 @@ export function useHeaderGlass() {
   // Onde o ponteiro entrou. Sem isso o especular comeca em 0,0 e a primeira
   // coisa que se ve ao entrar no header e um facho vindo do canto.
   const spot = useRef({ x: 0, y: 0 });
+  // Ultimo x do mouse na viewport, para a gota nascer ja acima dele quando a
+  // barra recolhe, e onde a gota pende, em x da caixa. `null` e o meio: e o
+  // --hdr-drop-x de partida do CSS, e o loop da gosma le o mesmo ref.
+  const hand = useRef<number | null>(null);
+  const hang = useRef<number | null>(null);
 
   const open = hot !== null;
 
-  // A hero e dona da tela: nos dois estados dela nao ha barra. O sinal e o
-  // proprio espiao de secao la embaixo -- `active` so deixa de ser "hero"
-  // quando a filmografia cobre a faixa do meio da tela, que e onde o header
-  // volta. O `null` entra junto porque `active` nasce assim e so recebe valor
-  // quando o observador dispara: sem ele a barra piscaria no primeiro quadro.
-  //
-  // Por cima do `hidden` da rolagem, e nao no lugar dele: dentro da hero,
-  // subir de volta ou passar o ponteiro pela faixa do topo nao traz a barra;
-  // fora dela tudo se comporta como antes.
-  const furled = hidden || active === null || active === "hero";
+  // Descer nao leva mais a barra embora, em nenhuma secao -- a hero inclusive:
+  // ela sobe ate sobrar so a borda de baixo e uma gota no meio
+  // (styles/header.css), para o header continuar dizendo que esta ali e pode
+  // ser usado. No celular o mesmo estado tira a musica e deixa o menu so com o
+  // icone.
+  const tucked = hidden;
 
   // Espelhos, para o loop da gosma ler o estado sem remontar a cada mudanca.
-  const live = useRef({ open: false, awake: false });
+  const live = useRef({ open: false, awake: false, tucked: false });
   const jolt = useRef(0);
   const box = useRef({
     bar: 0,
@@ -166,6 +171,7 @@ export function useHeaderGlass() {
     floor: 0,
     side: 0,
     width: 0,
+    dropW: 0,
   });
 
   // O estado espelhado num ref porque aim() precisa saber se ja esta aberto
@@ -216,6 +222,9 @@ export function useHeaderGlass() {
       onFocus: () => {
         window.clearTimeout(shutAt.current);
         window.clearTimeout(openAt.current);
+        // Recolhida, a barra so mostra a borda: o Tab que chega num link
+        // precisa traze-la inteira, senao o foco cai num texto fora da tela.
+        setHidden(false);
         settle(id);
       },
     }),
@@ -227,24 +236,89 @@ export function useHeaderGlass() {
   useEffect(() => {
     live.current.open = open;
     live.current.awake = awake;
-  }, [open, awake]);
+    live.current.tucked = tucked;
+  }, [open, awake, tucked]);
 
-  // O mesmo `hidden` que recolhe a barra precisa alcancar dois elementos que
-  // NAO moram dentro de <header>: o botao do menu e o pill de musica, que no
-  // celular sentam sobre a barra mas sao fixos por conta propria (o .hdr tem
-  // `transform`, e isso o torna bloco de contencao de qualquer `fixed` que
-  // caia dentro dele -- por isso eles ficam de fora). Sem este espelho, rolar
-  // para baixo levava a nav embora e deixava os dois pendurados sozinhos no
-  // alto da tela.
+  // O mesmo recolher precisa alcancar dois elementos que NAO moram dentro de
+  // <header>: o botao do menu e o pill de musica, que no celular sentam no
+  // alto da tela mas sao fixos por conta propria (o .hdr tem `transform`, e
+  // isso o torna bloco de contencao de qualquer `fixed` que caia dentro dele
+  // -- por isso eles ficam de fora). Com o atributo, a musica sai e o menu
+  // encolhe para so o icone.
   useEffect(() => {
     const root = document.documentElement;
-    if (furled) root.dataset.chromeHidden = "";
+    if (tucked) root.dataset.chromeHidden = "";
     else delete root.dataset.chromeHidden;
 
     return () => {
       delete root.dataset.chromeHidden;
     };
-  }, [furled]);
+  }, [tucked]);
+
+  useEffect(() => {
+    const track = (event: PointerEvent) => {
+      if (event.pointerType === "mouse") hand.current = event.clientX;
+    };
+
+    window.addEventListener("pointermove", track, { passive: true });
+    return () => window.removeEventListener("pointermove", track);
+  }, []);
+
+  // A gota segue o mouse de lado a lado, so enquanto a barra esta recolhida:
+  // aberta, ela vale 0 e mexer no --hdr-drop-x so repintaria o vidro a toa.
+  // Ao soltar, ela fica onde estava e encolhe ali mesmo. No toque nao ha
+  // ponteiro para seguir, e com movimento reduzido ela fica no meio.
+  useEffect(() => {
+    const node = shell.current;
+    if (!node || !tucked || isReduced()) return;
+
+    const styles = getComputedStyle(node);
+
+    // Presa entre as quinas: com meia gota para cada lado, a cauda dela acaba
+    // exatamente na ponta da barra e nunca passa dela.
+    const place = (clientX: number | null) => {
+      const rect = node.getBoundingClientRect();
+      if (clientX === null) return rect.width / 2;
+      const edge =
+        metric(styles, "--hdr-wing") +
+        DROP_SPAN * metric(styles, "--hdr-bump-w");
+      return Math.min(
+        Math.max(clientX - rect.left, edge),
+        rect.width - edge,
+      );
+    };
+
+    const glide = { x: hang.current ?? place(null) };
+    const write = () => {
+      hang.current = glide.x;
+      node.style.setProperty("--hdr-drop-x", `${glide.x.toFixed(1)}px`);
+    };
+
+    // A gota que ainda nao apareceu nasce acima do mouse; uma que ainda
+    // encolhia de um recolher anterior sai de onde esta, sem salto.
+    if (metric(styles, "--hdr-bump") < 1) {
+      glide.x = place(hand.current);
+      write();
+    }
+
+    const toX = gsap.quickTo(glide, "x", {
+      duration: DROP_FOLLOW,
+      ease: FOLLOW_EASE,
+      onUpdate: write,
+    });
+    toX(place(hand.current));
+
+    const follow = (event: PointerEvent) => {
+      if (event.pointerType === "mouse") toX(place(event.clientX));
+    };
+
+    window.addEventListener("pointermove", follow, { passive: true });
+
+    return () => {
+      window.removeEventListener("pointermove", follow);
+      gsap.killTweensOf(glide);
+    };
+  }, [tucked]);
 
   useEffect(() => {
     const query = window.matchMedia("(pointer: fine)");
@@ -294,8 +368,16 @@ export function useHeaderGlass() {
     };
 
     let mark = window.scrollY;
+    // A barra que o ponteiro chamou pela faixa do topo fica, e a rolagem nao a
+    // leva enquanto ninguem pedir outra coisa. O Lenis (LERP 0.06,
+    // lib/scroll.ts) continua descendo a pagina por quase dois segundos depois
+    // da ultima roda, e cada quadro desse rastro chegava aqui como "desceu":
+    // recolhia o que o ponteiro acabara de trazer, o proximo pointermove
+    // trazia de novo, e a barra entrava e saia ate o Lenis parar.
+    let held = false;
+    let pointerY = Number.POSITIVE_INFINITY;
 
-    // Desce, some; sobe ou volta ao topo, reaparece. E com o painel aberto e a
+    // Desce, recolhe; sobe ou volta ao topo, reaparece. E com o painel aberto e a
     // pagina correndo por baixo, o preview e o conteudo contam duas historias
     // ao mesmo tempo, entao rolar tambem fecha.
     const drift = () => {
@@ -304,7 +386,16 @@ export function useHeaderGlass() {
       mark = y;
 
       if (at.current) shut();
+      if (held) return;
       setHidden(down && y > HIDE_AFTER);
+    };
+
+    // So um gesto novo fora da faixa solta a barra: a roda, o clique ou a
+    // tecla que vem depois e intencao nova de rolar, o rastro nao. A roda e o
+    // clique trazem a posicao do ponteiro; a tecla usa a ultima conhecida.
+    const release = (event: Event) => {
+      if (event instanceof MouseEvent) pointerY = event.clientY;
+      if (pointerY > PEEK) held = false;
     };
 
     // A faixa do topo devolve o header sem precisar rolar para tras. Mas com a
@@ -315,8 +406,11 @@ export function useHeaderGlass() {
     // barra escondida e fechar pelo botao deixava o header plantado no topo,
     // porque o gesto de fechar tinha desligado o hidden por baixo do modal.
     const peek = (event: PointerEvent) => {
+      pointerY = event.clientY;
       if (isLocked()) return;
-      if (event.clientY <= PEEK) setHidden(false);
+      if (event.clientY > PEEK) return;
+      held = true;
+      setHidden(false);
     };
 
     node.addEventListener("pointerenter", arrive, { passive: true });
@@ -325,6 +419,9 @@ export function useHeaderGlass() {
     window.addEventListener("keydown", escape);
     window.addEventListener("scroll", drift, { passive: true });
     window.addEventListener("pointermove", peek, { passive: true });
+    window.addEventListener("wheel", release, { passive: true });
+    window.addEventListener("pointerdown", release, { passive: true });
+    window.addEventListener("keydown", release);
 
     return () => {
       window.clearTimeout(openAt.current);
@@ -335,6 +432,9 @@ export function useHeaderGlass() {
       window.removeEventListener("keydown", escape);
       window.removeEventListener("scroll", drift);
       window.removeEventListener("pointermove", peek);
+      window.removeEventListener("wheel", release);
+      window.removeEventListener("pointerdown", release);
+      window.removeEventListener("keydown", release);
     };
   }, [settle, shut]);
 
@@ -365,7 +465,19 @@ export function useHeaderGlass() {
     if (!node || !busy || isReduced()) return;
 
     const lens = { ...spot.current };
-    const shape = { reveal: 0, amp: IDLE_AMP };
+    // A bolha nasce em zero e cresce ate a amplitude do estado: comecar ja na
+    // altura cheia fazia ela estalar na borda no primeiro quadro, porque o
+    // recorte do CSS que o loop substitui e reto. `presence` e o mesmo
+    // cuidado para a barra que recolhe ou sai: a bolha (e o solavanco junto)
+    // derrete ate zero em vez de ficar pendurada na faixa que sobra no topo.
+    const shape = {
+      reveal: 0,
+      amp: 0,
+      presence: live.current.tucked ? 0 : 1,
+    };
+    // Vivo: le o --hdr-bump da transicao do CSS a cada quadro sem pedir um
+    // objeto novo.
+    const styles = getComputedStyle(node);
     let clock = 0;
     let last = 0;
 
@@ -380,9 +492,12 @@ export function useHeaderGlass() {
       duration: AMP_S,
       ease: SHAPE_EASE,
     });
+    const toPresence = gsap.quickTo(shape, "presence", {
+      duration: AMP_S,
+      ease: SHAPE_EASE,
+    });
 
     const gauge = () => {
-      const styles = getComputedStyle(node);
       const nav = node.querySelector<HTMLElement>(".hdr-nav");
       box.current = {
         // A nav tem exatamente --hdr-h de altura, entao ela e a medida de
@@ -399,6 +514,7 @@ export function useHeaderGlass() {
         wing: metric(styles, "--hdr-wing"),
         side: metric(styles, "--hdr-wing") * SIDE_SHARE,
         width: node.getBoundingClientRect().width,
+        dropW: metric(styles, "--hdr-bump-w"),
       };
     };
 
@@ -422,25 +538,33 @@ export function useHeaderGlass() {
       node.style.setProperty("--mx", `${Math.round(lens.x)}px`);
       node.style.setProperty("--my", `${Math.round(lens.y)}px`);
 
-      const { bar, tall, lip, wing, roof, floor, side, width } = box.current;
+      const { bar, tall, lip, wing, roof, floor, side, width, dropW } =
+        box.current;
 
       // Sem medida confiavel o recorte fica com o CSS: escrever um polygon com
       // altura zero apagaria o header inteiro.
       if (!bar || !tall || !width) return;
 
-      toReveal(live.current.open ? tall : bar);
-      toAmp(live.current.open ? OPEN_AMP : IDLE_AMP);
+      const { open, awake, tucked } = live.current;
+      toReveal(open ? tall : bar);
+      // Sem o ponteiro a bolha volta a zero, que e o desenho do CSS em
+      // repouso: antes ela ficava parada na altura cheia ate o loop acabar e
+      // sumia de uma vez no quadro em que o recorte voltava ao CSS.
+      toAmp(open ? OPEN_AMP : awake ? IDLE_AMP : 0);
+      toPresence(tucked ? 0 : 1);
 
       // Decaimento por tempo, nao por frame: a 120Hz um fator por frame
       // morreria duas vezes mais rapido que a 60Hz.
       jolt.current *= Math.exp(-step * JOLT_DECAY);
+
+      const bubble = (shape.amp + jolt.current * JOLT_AMP) * shape.presence;
 
       node.style.clipPath = gooPath({
         width,
         wing,
         lip,
         reveal: shape.reveal,
-        amp: shape.amp + jolt.current * JOLT_AMP,
+        amp: bubble,
         reach: REACH,
         time: clock,
         x: lens.x,
@@ -448,6 +572,12 @@ export function useHeaderGlass() {
         roof,
         floor,
         side,
+        // A gota e do CSS (--hdr-bump, com a transicao dele): o loop so a
+        // copia, no valor deste quadro. Com um dono so para a altura, o
+        // contorno do JS e o do CSS nao tem como discordar na passagem.
+        drop: metric(styles, "--hdr-bump"),
+        dropW,
+        dropX: hang.current ?? width / 2,
       });
 
       const scene = liquid.current;
@@ -460,11 +590,11 @@ export function useHeaderGlass() {
         );
       }
 
+      // So devolve o recorte ao CSS quando o desenho do JS ja e o dele: barra
+      // assentada e bolha abaixo de um pixel. A gota nao entra na conta
+      // porque os dois lados a leem do mesmo lugar.
       const done =
-        !live.current.awake &&
-        !live.current.open &&
-        Math.abs(shape.reveal - bar) < REST &&
-        jolt.current < 0.02;
+        !awake && !open && Math.abs(shape.reveal - bar) < REST && bubble < REST;
 
       if (done) setBusy(false);
     };
@@ -634,7 +764,7 @@ export function useHeaderGlass() {
     active,
     awake,
     open,
-    hidden: furled,
+    tucked,
     painted,
     ride,
     bind,
