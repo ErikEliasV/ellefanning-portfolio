@@ -3,11 +3,11 @@
 // custom properties e medidas de card. Ter isto separado e o que deixa a
 // coreografia conferivel sem abrir o hook.
 //
-// E UMA COMPOSICAO SO, em dois tamanhos. As oito fotos comecam empilhadas na
-// ponta direita, viradas de lado; o scroll tira uma de cada vez, gira ela de
-// frente ao passar pelo centro e a deposita no monte da esquerda, virada de
-// novo. `cursor()` devolve um `u` que anda 1 por personagem e cada foto se
-// posiciona pelo deslocamento `o = i - u`; `pose()` faz o resto.
+// E UMA COMPOSICAO SO, em dois tamanhos. Uma foto de frente no centro, as
+// outras viradas de lado, encostando nos montes das duas pontas. Um `u` anda 1
+// por personagem e cada foto se posiciona pelo deslocamento `o = i - u`;
+// `pose()` faz o resto. Quem move o `u` e o relogio no PC e o dedo no telefone;
+// o scroll so faz a moldura em volta (ver "O tempo", abaixo).
 //
 // Ate 2026-09-24 eram DUAS: o monte no desktop e um ARCO em 3d no telefone,
 // com `arc()` e `depth()` proprios. O arco saiu quando o no 2527:1761 foi
@@ -39,41 +39,18 @@ export { NARROW_QUERY, isNarrow } from "@/lib/filmStage";
 export const COUNT = CHARACTERS.length;
 
 // ---------------------------------------------------------------------------
-// O tempo. Vale para as duas composicoes.
-// ---------------------------------------------------------------------------
-
-// Quanto de scroll cada personagem pede. Sao os numeros de lib/filmStage.ts, de
-// proposito: vindo de dezesseis filmes a 0,6167 de tela cada, um passo
-// diferente aqui nao leria como secao nova, leria como o site trocando de ritmo
-// no meio da pagina.
-const CYCLE_WIDE = 0.6167;
-// Subiu de 0,34 a pedido do dono do projeto, que queria a animacao do telefone
-// "bem lisa". Quem manda na suavidade aqui e este numero: quanto mais tela cada
-// personagem pede, menos o deck anda por pixel de rolagem, e mais fino e o
-// incremento de cada quadro. O preco e a secao ficar mais alta no telefone --
-// com a rampa unificada ela passou de 4,1 para 6,3 telas.
-const CYCLE_NARROW = 0.4;
-const CYCLE_REDUCED = 0.35;
-
-// Dentro de cada ciclo, os primeiros 20% nao movem nada: e a trava.
+// O tempo.
 //
-// Ela sobrevive a reescrita do trilho de proposito, e e a unica coisa que
-// impede a esteira de ser perfeitamente lisa. Sem ela `settle` so tocaria 1 num
-// instante e a legenda piscaria em vez de assentar: a trava e o tempo de ler o
-// nome. Esteira que pousa, e nao esteira que passa.
-const DWELL = 0.2;
-
-// E quanto ela pede NO TELEFONE. Menor pela mesma razao que o ciclo e maior: a
-// trava e a unica coisa que nao e lisa no percurso, e no telefone ela aparecia
-// a cada 0,34 de tela. Menor que isto a legenda deixaria de ter tempo de
-// assentar -- `settle` so chega a 1 dentro da trava, e e ela que da o tempo de
-// ler o nome.
-const DWELL_NARROW = 0.14;
-
-// O escurecimento por profundidade do arco (`DIM`) e a quantizacao do desfoque
-// dele (`BLUR_STEP`) moravam aqui e sairam junto com o arco. Nenhum dos dois
-// tem equivalente no monte: nos dois nos as fotos estao a 100 por cento, e o
-// degrau do desfoque agora vive no hook, que e quem converte `haze` em px.
+// Desde 2026-10-07 o scroll nao passa mais as fotos em tamanho nenhum. No PC
+// elas giram sozinhas, em loop, pelo relogio (`spin`); no telefone andam com o
+// dedo, arrastadas de lado (o hook arrasta, `rubber` e `release` dao a fisica).
+// O que sobrou para o scroll e a MOLDURA, igual nos dois -- a tinta e a
+// palavra entrando (a emenda com a filmografia), o monte subindo, uma janela
+// parada em que o palco fica preso, e na saida o monte indo embora com a
+// palavra. Ate la o scroll movia o `u` por um reel com rampas e travas
+// (`phases()`/`cursor()`), primeiro nos dois tamanhos e depois so no telefone;
+// ele saiu quando o ultimo dos dois parou de usa-lo.
+// ---------------------------------------------------------------------------
 
 const DEG = Math.PI / 180;
 
@@ -96,10 +73,8 @@ const WIPE = 0.65;
 // preto a branco a vista.
 const WORD_IN = 0.6;
 
-// Quanto o monte leva para subir de baixo, e quanto leva para sair por cima.
-//
-// Sao translacoes da CAIXA do deck, e acontecem com o `u` parado nas duas
-// pontas: nao entram na conta da taxa unica que `walk` e `pile` protegem.
+// Quanto o monte leva para subir de baixo, e quanto leva para sair. Sao
+// translacoes da CAIXA do deck, com as fotos paradas na pose que tiverem.
 const RISE = 0.4;
 const LIFT = 0.4;
 
@@ -108,87 +83,55 @@ const LIFT = 0.4;
 // e a secao se desmontando em dois tempos.
 const WORD_OUT = 0.25;
 
-// Em quantos slots a fileira encosta no monte e para -- e, pela mesma conta, o
-// tamanho da rampa de entrada e o da de saida.
+// Quanto de rolagem o palco fica preso no meio, em TELAS. Uma tela: o bastante
+// para quem chega pelo scroll ver o deck antes de a saida comecar, curto o
+// bastante para a secao nao ler como travada. No telefone e tambem onde se
+// arrasta: o dedo de lado nao rola a pagina, entao o palco fica preso pelo
+// tempo que a pessoa quiser.
+const STAY = 1;
+
+// Em quantos slots a fileira encosta no monte e para.
 //
-// Deixou de ser MEDIDO, e essa e a maior simplificacao desta reescrita. O
-// trilho antigo precisava saber quantas fotos cabiam por lado ate a borda
-// visivel, e isso dependia da largura da janela e da caixa do <h2>: o hook
-// media, escrevia a altura da secao, e ela mudava de uma janela para outra. O
+// Deixou de ser MEDIDO, e essa foi a maior simplificacao da reescrita do
+// trilho. O trilho antigo precisava saber quantas fotos cabiam por lado ate a
+// borda visivel, e isso dependia da largura da janela e da caixa do <h2>. O
 // monte nao tem borda -- a fileira para sozinha no terceiro slot, que e onde o
-// no poe a foto mais externa -- entao o numero vale em qualquer tela e mora
-// aqui, ao lado do tempo que ele governa.
+// no poe a foto mais externa -- entao o numero vale em qualquer tela.
 const PILE = 3;
 
 export type Span = { from: number; to: number };
 
-export type Phases = {
-  wipe: Span;
-  rise: Span;
-  walk: Span;
-  reel: Span;
-  hold: Span;
-  pile: Span;
-  lift: Span;
-  cycle: number;
-};
+export type FramePhases = { wipe: Span; rise: Span; stay: Span; lift: Span };
 
-// SETE tempos, e a ordem e o assunto:
-//
-//   wipe   a tinta entra pela esquerda, a palavra pela direita
-//   rise   o monte da direita sobe de baixo, INTEIRO, com as oito empilhadas
-//   walk   a primeira caminha do monte ate o centro
-//   reel   as oito atravessam
-//   hold   a ultima trava no centro
-//   pile   a ultima mergulha no monte da esquerda
-//   lift   o monte da esquerda sobe e sai; a palavra sai pela esquerda
-//
-// `walk` e `pile` sao as rampas de sempre, intactas: PILE slots ao MESMO ritmo
-// do reel, e e isso que faz o deck andar a uma taxa so do primeiro ao ultimo
-// quadro em que ele anda. `rise` e `lift` nao competem com aquela taxa porque
-// nao movem o `u` -- movem a CAIXA, com a fileira parada dentro dela. Foi essa
-// separacao que deixou "as fotos vem de baixo" conviver com o monte: o monte
-// sobe ja formado, e so entao a primeira sai de dentro dele.
-export function phases(reduced: boolean, narrow: boolean): Phases {
-  const cycle = reduced ? CYCLE_REDUCED : narrow ? CYCLE_NARROW : CYCLE_WIDE;
-  // A entrada e a saida sao os `PILE` slots do monte, andando no MESMO ritmo do
-  // reel: a primeira foto sai do monte da direita e leva tres slots de rolagem
-  // ate o centro, exatamente o que levaria se ja estivesse no reel.
-  const ramped = PILE * cycle;
-
+// QUATRO tempos, nos dois tamanhos: a emenda com a filmografia e a saida para
+// o editorial leem igual no PC e no telefone. Sem variante de movimento
+// reduzido: a moldura ja troca deslize por opacidade no CSS, e quem atende o
+// pedido nas fotos e `spin()` (corte seco) e o hook (sem tween na soltura).
+export function framePhases(): FramePhases {
   const wipe = { from: 0, to: WIPE };
   const rise = { from: wipe.to, to: wipe.to + RISE };
-  const walk = { from: rise.to, to: rise.to + ramped };
-  const reel = { from: walk.to, to: walk.to + cycle * (COUNT - 1) };
-  // A ultima chega no instante final do reel e nao teria trava nenhuma. Esta
-  // fase avulsa existe so para dar a ela o mesmo dwell das outras sete.
-  const hold = { from: reel.to, to: reel.to + cycle * (narrow ? DWELL_NARROW : DWELL) };
-  const pile = { from: hold.to, to: hold.to + ramped };
-  const lift = { from: pile.to, to: pile.to + LIFT };
-
-  return { wipe, rise, walk, reel, hold, pile, lift, cycle };
+  const stay = { from: rise.to, to: rise.to + STAY };
+  const lift = { from: stay.to, to: stay.to + LIFT };
+  return { wipe, rise, stay, lift };
 }
 
 // Altura da trilha em multiplos de vh: o palco sticky (1) mais o percurso.
-export function trackVh(reduced: boolean, narrow: boolean) {
-  return 1 + phases(reduced, narrow).lift.to;
+export function trackVh() {
+  return 1 + framePhases().lift.to;
 }
 
-// O `p` em que o PRIMEIRO personagem esta travado, com a legenda ja assentada.
-// E onde o link CHARACTERS do header pousa: o topo da secao e a tela ainda
-// clara da emenda com a filmografia, e cair ali seria pousar no meio de uma
-// transicao. O ponto e o MEIO do dwell, e nao a borda -- mesma razao do
-// `lastLockAt` de lib/filmStage.ts: pousar na borda deixaria o destravamento a
-// um pixel de scroll de distancia.
+// O `p` em que o deck esta montado e parado. E onde o link CHARACTERS do header
+// pousa: o topo da secao e a tela ainda clara da emenda com a filmografia, e
+// cair ali seria pousar no meio de uma transicao. O alvo e o MEIO da janela
+// parada, e nao a borda -- mesma razao do `lastLockAt` de lib/filmStage.ts:
+// meia tela de folga para cada lado antes de a moldura voltar a se mexer.
 //
-// A FORMA nao mudou com os tempos novos, e e de proposito que ela saia de
-// `reel.from` em vez de uma soma escrita aqui: `reel.from` agora e o fim de
-// `walk`, que por sua vez ja conta a varredura e a subida do monte. Quem chama
-// isto e o proprio hook, na medicao, e o resultado em px vai escrito na trilha
-// para o header ler -- ver `characterEntryTarget` em lib/useHeaderGlass.ts.
-export function entryLockAt(reduced: boolean, narrow: boolean) {
-  const f = phases(reduced, narrow);
-  return f.reel.from + (f.cycle * (narrow ? DWELL_NARROW : DWELL)) / 2;
+// Quem chama isto e o proprio hook, na medicao, e o resultado em px vai
+// escrito na trilha para o header ler -- ver `characterEntryTarget` em
+// lib/useHeaderGlass.ts.
+export function entryLockAt() {
+  const { stay } = framePhases();
+  return (stay.from + stay.to) / 2;
 }
 
 // O guarda de `to === from` existe para o caso de uma fase de duracao zero: a
@@ -224,17 +167,21 @@ function ease(t: number) {
 }
 
 export type Cursor = {
-  /** Posicao continua do reel. Vai de -PILE a COUNT-1+PILE. */
+  /**
+   * Posicao continua do deck: a foto `i` esta a `i - u` slots do centro. No PC
+   * cresce sem limite e o deslocamento passa por `wrap()`; no telefone fica
+   * entre 0 e COUNT-1, com a folga do elastico nas pontas.
+   */
   u: number;
-  /** O indice vivo. Troca no meio da travessia, onde `settle` vale 0. */
+  /** O indice vivo. Troca no meio do caminho, onde `settle` vale 0. */
   active: number;
   /** A varredura da tinta, 0 a 1. Entra pela esquerda. */
   wipe: number;
   /** A entrada da palavra pela direita, 0 a 1. Termina dentro da varredura. */
   enter: number;
-  /** A subida do monte da direita, 0 a 1. */
+  /** A subida do monte, 0 a 1. */
   rise: number;
-  /** A saida do monte da esquerda por cima, 0 a 1. */
+  /** A saida do monte, 0 a 1. */
   lift: number;
   /** A saida da palavra pela esquerda, 0 a 1. Comeca dentro da subida. */
   leave: number;
@@ -244,104 +191,194 @@ export type Cursor = {
   drift: number;
 };
 
-export function cursor(
-  p: number,
-  reduced: boolean,
-  narrow: boolean,
-): Cursor {
-  const f = phases(reduced, narrow);
+// Quao estreito e o vale da legenda. Com 1 era o seno puro: a legenda passava
+// quase todo o caminho entre duas fotos acendendo ou apagando, e num carrossel
+// que troca a cada 1,2s isso e um pisca-pisca. Com a quarta potencia ela fica
+// inteira ate um quarto de slot de cada lado da foto e some numa janela curta
+// em volta da troca.
+const CAPTION_DIP = 4;
+
+// O cursor dos dois tamanhos: a moldura pelo scroll, o `u` de quem manda nas
+// fotos -- o relogio no PC, o dedo no telefone.
+export function stage(p: number, u: number): Cursor {
+  const f = framePhases();
 
   // Um `span` bruto por ponta, e dele saem DOIS escalares: a tinta e a palavra
   // na entrada, o monte e a palavra na saida. Ler o mesmo progresso duas vezes
   // e o que garante que os dois pares nao possam sair de fase -- a palavra
   // cruza a tinta num ponto que e sempre o mesmo, em qualquer tamanho de tela.
   const sweep = span(p, f.wipe);
-  const wipe = ease(sweep);
-  const enter = ease(head(sweep, WORD_IN));
-
-  const rise = ease(span(p, f.rise));
-
   const away = span(p, f.lift);
+  const rise = ease(span(p, f.rise));
   const lift = ease(away);
-  const leave = ease(tail(away, WORD_OUT));
 
-  // Quantos slots o `u` percorre antes da primeira e depois da ultima: os PILE
-  // slots ate o monte, nos dois tamanhos.
-  const wing = PILE;
+  // 1 com uma foto de frente, 0 no meio do caminho entre duas. O seno de
+  // `PI * u` com potencia par so depende da fracao de `u`, de qualquer lado do
+  // zero. O portao e a propria caixa do deck: a legenda sobe com o monte e vai
+  // embora com ele, porque sempre ha uma foto no centro.
+  const settle = rise * (1 - lift) * (1 - Math.sin(Math.PI * u) ** CAPTION_DIP);
 
-  let u: number;
-  // Fracao da travessia atual: 0 enquanto travado, 1 ao chegar na trava
-  // seguinte. E dela que sai `settle`.
-  let travel: number;
+  // Troca em u = n + 0,5, onde `settle` vale 0: o texto da legenda muda
+  // enquanto ela esta invisivel, nunca a vista. O modulo cobre o loop do PC; no
+  // telefone `u` nunca passa de meio slot alem das pontas (ver `rubber`).
+  const active = ((Math.round(u) % COUNT) + COUNT) % COUNT;
 
-  if (p < f.walk.from) {
-    // Varredura e subida: o monte da direita INTEIRO, parado. O `u` so comeca a
-    // andar quando a caixa ja pousou -- e por isso que as oito sobem empilhadas
-    // em vez de uma delas ja estar a caminho do centro.
-    u = -wing;
-    travel = 0;
-  } else if (p < f.reel.from) {
-    // A rampa de entrada, LINEAR: o monte anda 1:1 com a rolagem.
-    u = -wing * (1 - span(p, f.walk));
-    travel = 0;
-  } else if (p < f.reel.to) {
-    const raw = span(p, f.reel) * (COUNT - 1);
-    const i = Math.min(Math.floor(raw), COUNT - 2);
-    const frac = raw - i;
-    const dwell = narrow ? DWELL_NARROW : DWELL;
-    const t = clamp01((frac - dwell) / (1 - dwell));
-    u = i + smootherstep(t);
-    travel = frac < dwell ? 0 : t;
-  } else {
-    // `hold` cai aqui com `span(p, pile)` valendo 0, entao a ultima fica travada
-    // no centro ate a rampa de saida comecar de fato; e `lift` cai com ela ja
-    // valendo 1, entao o monte da esquerda esta FORMADO quando a caixa comeca a
-    // subir. E o espelho da entrada: monte inteiro, uma peca so.
-    u = COUNT - 1 + wing * span(p, f.pile);
-    travel = 0;
+  return {
+    u,
+    active,
+    wipe: ease(sweep),
+    enter: ease(head(sweep, WORD_IN)),
+    rise,
+    lift,
+    leave: ease(tail(away, WORD_OUT)),
+    settle,
+    // A deriva das palavras de fundo: 0 no primeiro quadro da secao, 1 no
+    // ultimo, LINEAR na rolagem. Devolve PROGRESSO, e quem sabe quanto andar e
+    // o CSS, que mede a palavra com `100% - 100vw` e a varre inteira -- o pedido
+    // era ver o nome todo passar. E vem de `p`, nao de `u`: o fundo anda liso
+    // enquanto o deck faz o ritmo dele na frente.
+    drift: clamp01((p - f.wipe.from) / (f.lift.to - f.wipe.from)),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// O PC: o carrossel pelo relogio.
+// ---------------------------------------------------------------------------
+
+// Quanto cada personagem fica parada de frente, e quanto a travessia ate a
+// seguinte leva, em ms. A trava foi 3s, 1,5 e 0,5, saiu de vez (esteira
+// constante) e voltou em 0,1 a pedido do dono do projeto: so um respiro de
+// frente, sem o carrossel parecer parado. Quem quer clicar tem a pausa do mouse
+// na foto.
+export const SPIN_DWELL = 100;
+export const SPIN_TRAVEL = 1100;
+
+// Com movimento reduzido nao ha deslize nenhum: a foto fica de frente este
+// tempo e a seguinte entra num corte seco. Com a trava curta do PC, o corte
+// viraria um pisca a cada fracao de segundo.
+export const SPIN_DWELL_REDUCED = 2500;
+
+// O deslocamento de um card no carrossel, embrulhado em [-COUNT/2, COUNT/2).
+//
+// E isto que faz o loop: com oito fotos, cada uma vive entre -4 e +4 slots do
+// centro, e a que passa de -4 reaparece em +4. O salto acontece sempre no
+// fundo de um monte -- `pose()` trava a posicao no slot PILE, entao em -4 ela
+// esta exatamente sob a foto de -3, na mesma pose e com z menor, e em +4 sob a
+// de +3. Some coberta de um lado e nasce coberta do outro.
+export function wrap(offset: number) {
+  const half = COUNT / 2;
+  return ((((offset + half) % COUNT) + COUNT) % COUNT) - half;
+}
+
+/** O relogio do carrossel. */
+export type Spin = {
+  /** Quantas travessias ja terminaram. Cresce sem limite; o loop e de `wrap`. */
+  step: number;
+  /** Progresso da travessia em curso, 0 a 1. 0 na trava. */
+  t: number;
+  /** Quanto da trava ja passou, em ms. */
+  wait: number;
+  moving: boolean;
+};
+
+export const SPIN_REST: Spin = { step: 0, t: 0, wait: 0, moving: false };
+
+// Avanca o relogio `ms` milissegundos.
+//
+// `hold` e a pausa (mouse na foto do centro, foco de teclado num card, modal
+// aberto), e ela so vale na TRAVA: a travessia que ja comecou termina, e o
+// carrossel para na foto seguinte. Parar no meio deixaria duas fotos de lado,
+// nenhuma de frente, e a legenda apagada. E a pausa zera a espera em vez de
+// congela-la: quem tira o mouse ganha a trava inteira de novo.
+//
+// Com movimento reduzido nao ha travessia: vencida SPIN_DWELL_REDUCED, o passo
+// vira de uma vez e a foto seguinte ja aparece de frente.
+export function spin(s: Spin, ms: number, hold: boolean, reduced: boolean): Spin {
+  if (s.moving) {
+    const t = s.t + ms / SPIN_TRAVEL;
+    return t >= 1
+      ? { step: s.step + 1, t: 0, wait: 0, moving: false }
+      : { ...s, t };
   }
 
-  // O portao da legenda: ela so pode existir quando ha uma foto no centro.
-  //
-  // Lido do proprio `u`, o portao abre exatamente no slot em que a primeira
-  // chega ao centro e fecha no slot em que a ultima sai dele. Os escalares das
-  // pontas nao servem: `walk` dura PILE slots, e um deles valeria meio caminho
-  // la pelo meio dela -- a legenda apareceria a 50%, com o nome da primeira
-  // personagem, sobre um centro que so vai ser ocupado telas depois.
-  const gate = clamp01(u + 1) * clamp01(COUNT - u);
+  if (hold) return s.wait === 0 ? s : { ...s, wait: 0 };
 
-  // 1 na trava, 0 no meio da travessia, 1 de novo na trava seguinte. O seno da
-  // um vale simetrico com derivada nula nas duas pontas: a legenda some junto
-  // com a foto que sai e volta com a que chega, sem as duas se cruzarem no
-  // caminho.
-  const settle = gate * (1 - Math.sin(Math.PI * travel));
+  const wait = s.wait + ms;
+  if (wait < (reduced ? SPIN_DWELL_REDUCED : SPIN_DWELL)) return { ...s, wait };
 
-  // O arredondamento troca exatamente em u = i + 0,5, e smootherstep(0,5) vale
-  // 0,5, entao a troca cai no mesmo instante em que `settle` vale 0: o texto da
-  // legenda muda enquanto ela esta invisivel, nunca a vista.
-  const active = Math.min(Math.max(Math.round(u), 0), COUNT - 1);
+  return reduced
+    ? { step: s.step + 1, t: 0, wait: 0, moving: false }
+    : { step: s.step, t: 0, wait: 0, moving: true };
+}
 
-  // A deriva das palavras de fundo: 0 no primeiro quadro da secao, 1 no ultimo,
-  // LINEAR na rolagem.
-  //
-  // Duas coisas mudaram aqui em 2026-09-24, e as duas vieram do dono do projeto
-  // dizendo que a deriva "nao ta funcionando".
-  //
-  // A primeira e a UNIDADE. Isto devolvia vw -- 6 por personagem, 42 no
-  // percurso inteiro -- e 42vw e 10% do corpo da palavra, que mede uns 430vw
-  // naquele tamanho. A palavra andava, so que dez por cento de si mesma: lido
-  // na tela, um bloco enorme de letras tremendo no lugar. Agora devolve
-  // PROGRESSO, e quem sabe quanto andar e o CSS, que mede a palavra com
-  // `100% - 100vw` e a varre inteira. O pedido era ver o nome todo passar.
-  //
-  // A segunda e a FONTE. Saia de `u`, para a deriva parar junto com o deck; mas
-  // `u` tem as travas do dwell, e o fundo herdava as pausas do primeiro plano.
-  // Vindo de `p`, ele anda liso do primeiro ao ultimo quadro da secao enquanto
-  // o deck faz o ritmo dele na frente -- que e o que se quer de uma textura de
-  // fundo, e tambem o que faz a secao do telefone ler como lisa.
-  const drift = clamp01((p - f.wipe.from) / (f.lift.to - f.wipe.from));
+// A curva da travessia do carrossel: EMPURRA E PLANA. E a integral de
+// v = 12t(1-t)^2 -- a velocidade sobe ate o pico em um terco do tempo e passa
+// os outros dois tercos freando, e chega a zero sem aceleracao, entao a foto
+// POUSA no centro em vez de frear nele.
+//
+// Era a smootherstep, e ela e simetrica: acelera metade do tempo e freia a
+// outra metade, com pico de 1,875 vezes a media. Com a trava de 0,1s o
+// carrossel quase nunca para, e aquele pico lia como as fotos chicoteando pelo
+// meio. Esta tem pico menor (1,78) e poe a maior parte do tempo no pouso, que e
+// o trecho que o olho acompanha e que da a sensacao de peso.
+export function glide(t: number) {
+  return t * t * (6 - 8 * t + 3 * t * t);
+}
 
-  return { u, active, wipe, enter, rise, lift, leave, settle, drift };
+// O cursor do PC. Devolve o mesmo `Cursor` do telefone para o hook escrever as
+// mesmas custom properties sem saber de onde elas vieram; so o `u` muda de
+// natureza -- aqui ele cresce sem limite, e quem le precisa passar o
+// deslocamento por `wrap()`.
+export function carousel(p: number, s: Spin): Cursor {
+  return stage(p, s.step + glide(s.t));
+}
+
+// ---------------------------------------------------------------------------
+// O telefone: o deck arrastado.
+//
+// O hook converte o arrasto em `u` cru (um slot por `reach` alturas de card de
+// dedo, que e o quanto a foto do centro anda ate o primeiro slot) e passa por
+// `rubber` para desenhar; na soltura, `release` diz em que foto assentar. O
+// deck tem pontas, a pedido: na primeira e na ultima ele resiste e volta.
+// ---------------------------------------------------------------------------
+
+// Ate onde o elastico deixa passar da ponta, em slots, e quanto ele cede no
+// comeco do puxao. Abaixo de meio slot, de proposito: alem disso o indice vivo
+// viraria para uma personagem que nao existe.
+const RUBBER_MAX = 0.35;
+const RUBBER_GIVE = 0.55;
+
+// A posicao desenhada para um `u` cru. Dentro das pontas e a identidade; fora,
+// a curva do elastico do iOS -- cede RUBBER_GIVE no comeco e nunca passa de
+// RUBBER_MAX, por mais que o dedo va.
+export function rubber(raw: number) {
+  const end = COUNT - 1;
+  const base = Math.min(Math.max(raw, 0), end);
+  const over = raw - base;
+  if (over === 0) return raw;
+  const pull = Math.abs(over);
+  const give = RUBBER_MAX * (1 - 1 / ((pull * RUBBER_GIVE) / RUBBER_MAX + 1));
+  return base + Math.sign(over) * give;
+}
+
+// Quanto de impulso a soltura projeta, em segundos de velocidade, e a partir de
+// que velocidade (slots/s) o gesto conta como um peteleco que tem de andar ao
+// menos uma foto mesmo sem ter passado da metade do caminho.
+const FLING = 0.12;
+const FLICK = 1.5;
+
+// Em que foto o deck assenta quando o dedo solta em `raw` com `velocity`
+// slots/s (positivo e para a frente). A velocidade projeta o gesto um pouco
+// adiante; um peteleco rapido anda pelo menos uma; e nada passa das pontas.
+export function release(raw: number, velocity: number) {
+  const end = COUNT - 1;
+  const base = Math.min(Math.max(raw, 0), end);
+  const near = Math.round(base);
+  let target = Math.round(base + velocity * FLING);
+  if (target === near && Math.abs(velocity) > FLICK) {
+    target = near + Math.sign(velocity);
+  }
+  return Math.min(Math.max(target, 0), end);
 }
 
 // ---------------------------------------------------------------------------
@@ -435,8 +472,8 @@ const PHONE: Deck = {
 // Sem variante de movimento reduzido, e a ausencia e deliberada. O giro aqui
 // nao e animacao, e a COMPOSICAO parada: e ele que faz o card lateral medir 299
 // em vez de 651. Zera-lo poria sete heros de largura inteira uns sobre os
-// outros. Quem atende `prefers-reduced-motion` nesta secao e `phases()`, que
-// encurta o percurso, como sempre fez.
+// outros. Quem atende `prefers-reduced-motion` nesta secao e o tempo: `spin()`
+// corta seco no PC, e no telefone a soltura assenta sem tween.
 export function deckGeometry(narrow: boolean): Deck {
   return narrow ? PHONE : WIDE;
 }

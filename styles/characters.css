@@ -123,10 +123,11 @@
   position: relative;
   /* A altura real e escrita pelo hook, em px, a partir de trackVh(). Este
      fallback e o que o palco tem antes da primeira medicao, e acompanha o
-     perfil largo: 1 de palco + 9,59 de percurso (0,65 de varredura + 0,4 de
-     subida + 1,85 de rampa + 4,32 de reel + 0,12 de trava + 1,85 de rampa +
-     0,4 de saida). */
-  height: 1059svh;
+     perfil largo, que desde o carrossel so tem a moldura no scroll: 1 de palco
+     + 2,45 de percurso (0,65 de varredura + 0,4 de subida + 1 de janela com o
+     carrossel rodando + 0,4 de saida). Ver widePhases() em
+     lib/characterDeck.ts. */
+  height: 345svh;
 }
 
 .character-stage {
@@ -305,13 +306,14 @@
      onde a saida E a caixa inteira indo de lado -- ver a media query no fim
      deste arquivo. */
   /* A subida e a saida do monte: a caixa INTEIRA, com as oito fotos paradas na
-     pose que tiverem. Na entrada ela chega de baixo com o monte da direita ja
-     formado; na saida leva o monte da esquerda por cima. Entre as duas, `--rise`
-     vale 1 e `--lift` vale 0, e isto e exatamente `translate(-50%, -50%)`.
+     pose que tiverem. No telefone ela chega de baixo com o monte da direita ja
+     formado e sai levando o da esquerda; no PC ela sobe e sai com o carrossel
+     montado, na pose em que o relogio estiver. Entre as duas, `--rise` vale 1
+     e `--lift` vale 0, e isto e exatamente `translate(-50%, -50%)`.
 
-     Os dois termos nao se sobrepoem no tempo (`--rise` satura antes de o reel
-     comecar, `--lift` so sai do zero depois que a ultima chega ao monte), entao
-     a soma nunca vale mais que um `--fly`. */
+     Os dois termos nao se sobrepoem no tempo (`--rise` satura antes de as
+     fotos comecarem a andar, `--lift` so sai do zero depois do reel ou da
+     janela do carrossel), entao a soma nunca vale mais que um `--fly`. */
   transform: translate(
     -50%,
     calc(-50% + (1 - var(--rise)) * var(--fly) - var(--lift) * var(--fly))
@@ -837,14 +839,25 @@
 
   /* A saida do telefone ERA a caixa inteira indo de lado --
      `translate(calc(-50% - var(--leave) * 120vw), -50%)` -- porque no arco nao
-     havia monte de onde sair. Saiu junto com o arco: agora as fotos entram e
-     saem uma a uma pelas duas pontas, como no desktop, e a caixa do deck fica
-     parada. A regra base ja e a certa.
+     havia monte de onde sair. Saiu junto com o arco; desde que o dedo passou a
+     arrastar as fotos, a caixa sobe e sai inteira pela regra base, como no
+     desktop.
 
      A sombra, essa, continua sendo so do desktop: o no 2527:1761 poe Layer blur
      nos cards do telefone e NENHUM drop shadow. */
   .character-card {
     box-shadow: none;
+  }
+
+  /* No telefone as fotos andam com o dedo de lado (lib/useCharacterDeck.ts).
+     `pan-y` entrega ao navegador so o gesto vertical, que continua rolando a
+     pagina, e deixa o horizontal para o arrasto -- sem ele o navegador
+     disputaria o gesto e cancelaria o arrasto no meio. Sem selecao de texto
+     porque o mesmo arrasto vale para o mouse numa janela estreita. */
+  .character-deck {
+    touch-action: pan-y;
+    -webkit-user-select: none;
+    user-select: none;
   }
 
   /* A legenda do telefone vive fora do card, no palco, entao nao ha o que

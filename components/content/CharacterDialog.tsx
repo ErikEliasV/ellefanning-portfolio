@@ -12,6 +12,11 @@ import "@/styles/close.css";
 // A caixa do card no instante do clique, em coordenadas de viewport
 // (`getBoundingClientRect()`), mais o raio que ele tinha ali. E dali que a foto
 // cresce ate virar o fundo da tela.
+// Quanto de roda para baixo, em px, fecha o modal; e quantos px vale uma linha
+// quando o navegador manda o delta em linhas (deltaMode 1).
+const WHEEL_EXIT = 40;
+const LINE_PX = 16;
+
 export type Origin = {
   top: number;
   left: number;
@@ -70,10 +75,35 @@ export function CharacterDialog({
       }
     }
 
+    // Rolar para BAIXO tambem sai, a pedido do dono do projeto: e o gesto que
+    // a pessoa ja estava fazendo para descer a pagina quando abriu a foto. Pede
+    // WHEEL_EXIT px juntos para baixo -- um tique de roda passa de uma vez, um
+    // trackpad junta alguns eventos -- para um tremor do trackpad nao fechar
+    // sozinho. Rolar para cima zera a conta e nao faz nada. A pagina continua
+    // travada pelo lockScroll, entao a roda nao mexe em nada por baixo.
+    let pull = 0;
+
+    function onWheel(event: WheelEvent) {
+      if (event.deltaY <= 0) {
+        pull = 0;
+        return;
+      }
+      const unit =
+        event.deltaMode === 1
+          ? LINE_PX
+          : event.deltaMode === 2
+            ? window.innerHeight
+            : 1;
+      pull += event.deltaY * unit;
+      if (pull >= WHEEL_EXIT) onClose();
+    }
+
     window.addEventListener("keydown", onKey);
+    window.addEventListener("wheel", onWheel, { passive: true });
     return () => {
       window.clearTimeout(kick);
       window.removeEventListener("keydown", onKey);
+      window.removeEventListener("wheel", onWheel);
       lockScroll(false);
       clearInert(inerted);
     };

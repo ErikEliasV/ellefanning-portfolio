@@ -1,15 +1,24 @@
 "use client";
 
+import gsap from "gsap";
 import { useEffect, useRef, useState } from "react";
 import {
   NARROW_QUERY,
-  cursor,
+  SPIN_REST,
+  carousel,
   deckGeometry,
   entryLockAt,
   pose,
+  release,
+  rubber,
+  spin,
+  stage,
   trackVh,
+  wrap,
+  type Spin,
 } from "@/lib/characterDeck";
 import { isReduced, onTick } from "@/lib/scroll";
+import { swipe as bindSwipe } from "@/lib/swipe";
 import { onViewport, smallViewportHeight } from "@/lib/viewport";
 
 // Degraus de meio pixel no desfoque do pe. `backdrop-filter: blur()` cujo raio
@@ -18,7 +27,20 @@ import { onViewport, smallViewportHeight } from "@/lib/viewport";
 // pela mesma razao.
 const HAZE_STEP = 0.5;
 
-export function useCharacterDeck(count: number) {
+// O maior passo que o relogio do carrossel aceita num quadro, em ms. Uma aba
+// que volta do fundo entrega um intervalo de minutos no primeiro quadro, e sem
+// o teto a travessia em curso terminaria num salto, de um quadro para o outro.
+const SPIN_STEP_MAX = 100;
+
+// O assentamento do deck do telefone depois da soltura. power3.out sai rapido e
+// pousa devagar, que e o que continua um peteleco sem tranco.
+const SNAP_S = 0.55;
+const SNAP_EASE = "power3.out";
+
+// `paused` e a pausa que vem de fora -- o modal aberto, que o palco conhece e o
+// hook nao. As outras duas (mouse na foto do centro, foco de teclado num card)
+// o hook escuta sozinho.
+export function useCharacterDeck(count: number, paused: boolean) {
   const track = useRef<HTMLDivElement>(null);
   const deck = useRef<HTMLDivElement>(null);
   const rail = useRef<HTMLDivElement>(null);
@@ -29,13 +51,32 @@ export function useCharacterDeck(count: number) {
   // que lib/useFilmStage.ts toma para o contador dele.
   const lastActive = useRef(0);
 
+  // O relogio do carrossel do PC e as tres razoes para ele esperar. Em refs,
+  // porque o loop de pintura le tudo a cada quadro e nada disso renderiza.
+  const clock = useRef<Spin>(SPIN_REST);
+  const hold = useRef({ hover: false, focus: false, paused: false });
+  // A posicao do deck do telefone, que o dedo arrasta e o gsap assenta. Num
+  // ref fora do efeito para sobreviver a uma remontagem dele.
+  const swipe = useRef({ u: 0 });
+
+  // Espelhado num efeito, e nao no corpo do componente, porque escrever em ref
+  // durante o render e leitura suja de estado concorrente.
   useEffect(() => {
-    // Declarada antes de paint() porque manda na composicao E no tempo: o
-    // perfil estreito tem o arco, o ciclo mais curto e nenhuma rampa.
+    hold.current.paused = paused;
+  }, [paused]);
+
+  useEffect(() => {
+    // Declarada antes de paint() porque manda na composicao E em quem move as
+    // fotos: o relogio no perfil largo, o dedo no estreito.
     const narrow = window.matchMedia(NARROW_QUERY);
+    const deckPos = swipe.current;
 
     let vh = 0;
     let cardH = 0;
+    // Quantos px de dedo andam um slot no telefone: `reach` alturas de card, o
+    // quanto a foto do centro anda ate o primeiro slot -- no fim de cada slot
+    // ela esta exatamente embaixo do dedo.
+    let slotPx = 1;
 
     // Tres leituras de layout, e so na medicao -- nunca por quadro.
     //
@@ -61,17 +102,20 @@ export function useCharacterDeck(count: number) {
       // caixa em si fica sempre do tamanho do hero.
       cardH = deckEl.offsetHeight;
 
-      const phone = narrow.matches;
-      const reduced = isReduced();
+      slotPx = deckGeometry(true).reach * cardH || 1;
 
-      trackEl.style.height = `${vh * trackVh(reduced, phone)}px`;
+      trackEl.style.height = `${vh * trackVh()}px`;
       // O alvo do link CHARACTERS do header, em px a partir do topo da trilha.
       // Ver `characterEntryTarget` em lib/useHeaderGlass.ts: ler a resposta
       // pronta e o que impede os dois lados de discordarem sobre qual vh vale.
-      trackEl.dataset.entry = String(vh * entryLockAt(reduced, phone));
+      trackEl.dataset.entry = String(vh * entryLockAt());
     }
 
-    function paint() {
+    // O instante do ultimo quadro do onTick, para o relogio do carrossel saber
+    // quanto tempo passou. As pinturas avulsas da medicao nao o tocam.
+    let last = 0;
+
+    function paint(now?: number) {
       const trackEl = track.current;
       const railEl = rail.current;
       if (!trackEl || !railEl || vh === 0) return;
@@ -79,7 +123,9 @@ export function useCharacterDeck(count: number) {
       const reduced = isReduced();
       const phone = narrow.matches;
       const p = -trackEl.getBoundingClientRect().top / vh;
-      const c = cursor(p, reduced, phone);
+      // O scroll so faz a moldura; quem passa as fotos e o dedo no telefone e o
+      // relogio no PC (ver "O tempo" em lib/characterDeck.ts).
+      const c = phone ? stage(p, deckPos.u) : carousel(p, clock.current);
 
       const set = (name: string, value: string) =>
         trackEl.style.setProperty(name, value);
@@ -104,7 +150,10 @@ export function useCharacterDeck(count: number) {
       for (let i = 0; i < count; i += 1) {
         const el = card(i);
         if (!el) continue;
-        const q = pose(i - c.u, k);
+        // No carrossel o `u` cresce sem limite, e o embrulho e o loop: a foto
+        // que afunda no monte da esquerda renasce no fundo do da direita. O
+        // deck do telefone tem pontas, e nao embrulha.
+        const q = pose(phone ? i - c.u : wrap(i - c.u), k);
 
         // A ORDEM e o assunto desta linha, e ela se le da direita para a
         // esquerda -- a ultima funcao e a primeira a ser aplicada.
@@ -146,6 +195,16 @@ export function useCharacterDeck(count: number) {
         lastActive.current = c.active;
         setActive(c.active);
       }
+
+      // O relogio anda depois da pintura, e so com o deck em cena: fora dela o
+      // carrossel espera onde parou, e quem volta a secao o encontra ali.
+      if (now === undefined) return;
+      const ms = last ? Math.min(now - last, SPIN_STEP_MAX) : 0;
+      last = now;
+      if (phone || c.rise <= 0 || c.lift >= 1) return;
+
+      const { hover, focus, paused: shut } = hold.current;
+      clock.current = spin(clock.current, ms, hover || focus || shut, reduced);
     }
 
     measure();
@@ -176,10 +235,104 @@ export function useCharacterDeck(count: number) {
     });
     if (deck.current) watchDeck.observe(deck.current);
 
+    // A pausa do mouse, lida pela GEOMETRIA e nao pelo alvo do evento: o
+    // carrossel move as fotos por baixo de um ponteiro parado, e nenhum
+    // pointerenter dispara quando e a foto que chega. Na trava, a foto do
+    // centro e exatamente a caixa do deck -- escala 1, giro 0, x 0 --, entao a
+    // pergunta e se o ponteiro esta dentro dela. Os laterais sao filhos do deck
+    // e borbulham ate aqui, e la fora a conta da falso por conta propria.
+    const deckEl = deck.current;
+    const railEl = rail.current;
+
+    const aim = (event: PointerEvent) => {
+      if (event.pointerType !== "mouse" || !deckEl) return;
+      const box = deckEl.getBoundingClientRect();
+      hold.current.hover =
+        event.clientX >= box.left &&
+        event.clientX <= box.right &&
+        event.clientY >= box.top &&
+        event.clientY <= box.bottom;
+    };
+
+    const away = () => {
+      hold.current.hover = false;
+    };
+
+    // E a do teclado: so o foco VISIVEL segura. O clique tambem foca o botao, e
+    // o modal devolve o foco ao card ao fechar; se isso contasse, o carrossel
+    // ficaria parado ate alguem clicar em outro lugar.
+    //
+    // No telefone o mesmo foco visivel traz a personagem para o centro: sem
+    // scroll passando as fotos, o Tab e o unico jeito de o teclado andar pelo
+    // deck. O toque tambem foca o botao no Chrome do Android, mas sem
+    // :focus-visible, entao tocar num card lateral abre ele sem arrastar o deck.
+    const focusIn = (event: FocusEvent) => {
+      const target = event.target;
+      const visible =
+        target instanceof Element && target.matches(":focus-visible");
+      hold.current.focus = visible;
+      if (!visible || !narrow.matches || !railEl) return;
+      const index = Array.prototype.indexOf.call(railEl.children, target);
+      if (index >= 0) settleOn(index);
+    };
+
+    const focusOut = () => {
+      hold.current.focus = false;
+    };
+
+    // O ARRASTO do telefone: o dedo de lado passa as fotos, a pedido do dono do
+    // projeto, no lugar do scroll que as passava. O dedo na vertical continua
+    // rolando a pagina -- e o `touch-action: pan-y` do deck no CSS que entrega
+    // ao navegador o gesto vertical e a este codigo so o horizontal.
+    //
+    // Enquanto o dedo arrasta, a posicao e a do dedo, com o elastico nas pontas
+    // (`rubber`); na soltura, `release` escolhe a foto e o gsap assenta nela. O
+    // que e toque e o que e arrasto quem decide e lib/swipe.ts.
+    function settleOn(target: number) {
+      gsap.killTweensOf(deckPos);
+      if (isReduced()) {
+        deckPos.u = target;
+        return;
+      }
+      gsap.to(deckPos, { u: target, duration: SNAP_S, ease: SNAP_EASE });
+    }
+
+    // O dedo em px vira `u` em slots: um slot por `slotPx`, e para a frente
+    // (u crescendo) e o dedo indo para a ESQUERDA, dai o sinal trocado.
+    let from = 0;
+    let raw = 0;
+    const unswipe = deckEl
+      ? bindSwipe(deckEl, {
+          can: () => narrow.matches && !hold.current.paused,
+          // Pega o deck onde ele estiver, mesmo no meio de um assentamento.
+          start: () => {
+            gsap.killTweensOf(deckPos);
+            from = deckPos.u;
+            raw = from;
+          },
+          move: (dx) => {
+            raw = from - dx / slotPx;
+            deckPos.u = rubber(raw);
+          },
+          end: (velocity) => settleOn(release(raw, -velocity / slotPx)),
+        })
+      : () => {};
+
+    deckEl?.addEventListener("pointermove", aim, { passive: true });
+    deckEl?.addEventListener("pointerleave", away, { passive: true });
+    railEl?.addEventListener("focusin", focusIn);
+    railEl?.addEventListener("focusout", focusOut);
+
     return () => {
       untick();
       unwatch();
       watchDeck.disconnect();
+      gsap.killTweensOf(deckPos);
+      deckEl?.removeEventListener("pointermove", aim);
+      deckEl?.removeEventListener("pointerleave", away);
+      unswipe();
+      railEl?.removeEventListener("focusin", focusIn);
+      railEl?.removeEventListener("focusout", focusOut);
     };
   }, [count]);
 

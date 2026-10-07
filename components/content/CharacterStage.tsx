@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import {
+  memo,
   useCallback,
   useEffect,
   useRef,
@@ -22,10 +23,86 @@ import { useCharacterDeck } from "@/lib/useCharacterDeck";
 const EXIT_MS = 900;
 const EXIT_MS_REDUCED = 120;
 
+// Um card do deck, memorizado. O carrossel do PC troca o indice vivo a cada
+// 1,2s, e a troca cai no meio da travessia -- o instante em que as fotos andam
+// mais rapido. Sem o memo, cada troca renderizava os oito cards e as 32
+// imagens de novo bem ali; com ele, so os dois cuja `live` mudou.
+const CharacterCard = memo(function CharacterCard({
+  character,
+  index,
+  live,
+  onOpen,
+}: {
+  character: Character;
+  index: number;
+  live: boolean;
+  onOpen: (index: number, event: MouseEvent<HTMLButtonElement>) => void;
+}) {
+  return (
+    <button
+      type="button"
+      className="character-card"
+      style={{ "--focus": character.focus ?? 0.5 } as CSSProperties}
+      data-live={live ? "" : undefined}
+      data-cursor={live ? "Open" : undefined}
+      aria-label={`${character.name} — ${character.film} (${character.year}), open details`}
+      onClick={(event) => onOpen(index, event)}
+    >
+      <Image
+        src={asset(character.still)}
+        alt=""
+        aria-hidden
+        fill
+        sizes="(min-width: 64rem) 36vw, 62vw"
+        priority={index === 0}
+        draggable={false}
+        className="character-card-img"
+      />
+      {/* O desfoque progressivo do pe. No no cada card lateral
+          leva um Layer blur progressivo -- 0 no topo, 18px na base no
+          desktop e 8,5 no telefone. CSS nao tem filtro progressivo.
+
+          Sao TRES camadas, e a contagem e o ponto. A primeira versao
+          usava uma so, borrada no raio cheio e cruzada com a nitida
+          por um gradiente de altura inteira: no meio do card viam-se
+          as DUAS a 50%, que e fantasma, nao desfoque -- foi o que o
+          dono do projeto viu e recusou. Com tres degraus, cada faixa
+          da altura mostra praticamente uma camada so, e o cruzamento
+          acontece entre raios vizinhos (0,3 e 0,62 do cheio), perto
+          demais um do outro para dobrar a imagem.
+
+          O `src` e o mesmo da copia nitida nas tres: a rede e a
+          decodificacao acontecem uma vez so. */}
+      {[1, 2, 3].map((step) => (
+        <Image
+          key={step}
+          src={asset(character.still)}
+          alt=""
+          aria-hidden
+          fill
+          sizes="(min-width: 64rem) 36vw, 62vw"
+          draggable={false}
+          className={`character-card-img character-card-haze character-card-haze-${step}`}
+        />
+      ))}
+      {live ? (
+        <span aria-hidden className="character-card-cue">Open</span>
+      ) : null}
+    </button>
+  );
+});
+
 export function CharacterStage({ characters }: { characters: readonly Character[] }) {
-  const { track, deck, rail, active } = useCharacterDeck(characters.length);
-  const now = characters[active];
   const [open, setOpen] = useState<number | null>(null);
+  // O carrossel do PC espera com o modal aberto, e durante a saida dele tambem
+  // (`open` so volta a null quando ela termina): a foto encolhe de volta para o
+  // retangulo de onde saiu, e se o carrossel tivesse andado ela pousaria no
+  // lugar de outra personagem.
+  const { track, deck, rail, active } = useCharacterDeck(
+    characters.length,
+    open !== null,
+  );
+  const now = characters[active];
   // "closing" mantem o CharacterDialog montado durante a saida -- sem ele o
   // desmonte e imediato e nao sobra tempo para a foto encolher de volta.
   const [closing, setClosing] = useState(false);
@@ -36,26 +113,33 @@ export function CharacterStage({ characters }: { characters: readonly Character[
   // disparar na montagem inicial.
   const wasOpen = useRef(false);
 
-  function openCharacter(index: number, event: MouseEvent<HTMLButtonElement>) {
-    window.clearTimeout(exitTimer.current);
-    trigger.current = event.currentTarget;
-    const rect = event.currentTarget.getBoundingClientRect();
-    // O raio vem lido do proprio card, e nao recalculado a partir da geometria:
-    // uma leitura so, no clique, e os dois lados nunca discordam sobre quanto
-    // ele media naquele instante.
-    const radius = Number.parseFloat(
-      window.getComputedStyle(event.currentTarget).borderTopLeftRadius,
-    );
-    setOrigin({
-      top: rect.top,
-      left: rect.left,
-      width: rect.width,
-      height: rect.height,
-      radius: Number.isFinite(radius) ? radius : 0,
-    });
-    setClosing(false);
-    setOpen(index);
-  }
+  // useCallback pela mesma razao do closeCharacter abaixo, agora do lado dos
+  // cards: eles sao memorizados, e uma funcao nova a cada render os faria
+  // renderizar de novo todos juntos. So le refs e setters, entao nao depende
+  // de nada.
+  const openCharacter = useCallback(
+    (index: number, event: MouseEvent<HTMLButtonElement>) => {
+      window.clearTimeout(exitTimer.current);
+      trigger.current = event.currentTarget;
+      const rect = event.currentTarget.getBoundingClientRect();
+      // O raio vem lido do proprio card, e nao recalculado a partir da geometria:
+      // uma leitura so, no clique, e os dois lados nunca discordam sobre quanto
+      // ele media naquele instante.
+      const radius = Number.parseFloat(
+        window.getComputedStyle(event.currentTarget).borderTopLeftRadius,
+      );
+      setOrigin({
+        top: rect.top,
+        left: rect.left,
+        width: rect.width,
+        height: rect.height,
+        radius: Number.isFinite(radius) ? radius : 0,
+      });
+      setClosing(false);
+      setOpen(index);
+    },
+    [],
+  );
 
   // useCallback, e nao uma funcao solta: CharacterDialog usa esta referencia
   // como dependencia do efeito que trava o foco e liga o scroll. Uma identidade
@@ -134,57 +218,13 @@ export function CharacterStage({ characters }: { characters: readonly Character[
         <div ref={deck} className="character-deck">
           <div ref={rail} className="character-rail">
             {characters.map((character, index) => (
-              <button
+              <CharacterCard
                 key={character.id}
-                type="button"
-                className="character-card"
-                style={{ "--focus": character.focus ?? 0.5 } as CSSProperties}
-                data-live={index === active ? "" : undefined}
-                data-cursor={index === active ? "Open" : undefined}
-                aria-label={`${character.name} — ${character.film} (${character.year}), open details`}
-                onClick={(event) => openCharacter(index, event)}
-              >
-                <Image
-                  src={asset(character.still)}
-                  alt=""
-                  aria-hidden
-                  fill
-                  sizes="(min-width: 64rem) 36vw, 62vw"
-                  priority={index === 0}
-                  draggable={false}
-                  className="character-card-img"
-                />
-                {/* O desfoque progressivo do pe. No no cada card lateral
-                    leva um Layer blur progressivo -- 0 no topo, 18px na base no
-                    desktop e 8,5 no telefone. CSS nao tem filtro progressivo.
-
-                    Sao TRES camadas, e a contagem e o ponto. A primeira versao
-                    usava uma so, borrada no raio cheio e cruzada com a nitida
-                    por um gradiente de altura inteira: no meio do card viam-se
-                    as DUAS a 50%, que e fantasma, nao desfoque -- foi o que o
-                    dono do projeto viu e recusou. Com tres degraus, cada faixa
-                    da altura mostra praticamente uma camada so, e o cruzamento
-                    acontece entre raios vizinhos (0,3 e 0,62 do cheio), perto
-                    demais um do outro para dobrar a imagem.
-
-                    O `src` e o mesmo da copia nitida nas tres: a rede e a
-                    decodificacao acontecem uma vez so. */}
-                {[1, 2, 3].map((step) => (
-                  <Image
-                    key={step}
-                    src={asset(character.still)}
-                    alt=""
-                    aria-hidden
-                    fill
-                    sizes="(min-width: 64rem) 36vw, 62vw"
-                    draggable={false}
-                    className={`character-card-img character-card-haze character-card-haze-${step}`}
-                  />
-                ))}
-                {index === active ? (
-                  <span aria-hidden className="character-card-cue">Open</span>
-                ) : null}
-              </button>
+                character={character}
+                index={index}
+                live={index === active}
+                onOpen={openCharacter}
+              />
             ))}
           </div>
 
