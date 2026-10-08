@@ -6,7 +6,7 @@ const WASH_ROSE = 0.82;
 const CONTRAST = 1.12;
 const LINE_PX = 2;
 const ROSE = new THREE.Color(0.859, 0.478, 0.592);
-const LINE_ROSE = new THREE.Color(0.914, 0.627, 0.71);
+const BACKDROP = new THREE.Color("#e07295");
 const MAX_DPR = 2;
 const MAX_ROWS = 220;
 
@@ -184,7 +184,7 @@ export function createCloud({
   mesh.frustumCulled = false;
   scene.add(mesh);
 
-  renderer.setClearColor(LINE_ROSE, 1);
+  renderer.setClearColor(BACKDROP, 1);
 
   let progress = 0;
   let clock = 0;
