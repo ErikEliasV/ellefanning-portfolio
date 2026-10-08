@@ -1,5 +1,11 @@
 "use client";
 
+const DESIGN_WIDTH = 1920;
+
+export function designScale(): number {
+  return Math.max(document.documentElement.clientWidth / DESIGN_WIDTH, 1);
+}
+
 export function smallViewportHeight(): number {
   const probe = document.createElement("div");
   probe.style.cssText =

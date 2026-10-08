@@ -9,6 +9,7 @@ import { asset } from "@/lib/asset";
 import { CURRENT_WORK } from "@/data/films";
 import { lineCascade } from "@/lib/reveal";
 import { isReduced } from "@/lib/scroll";
+import { designScale } from "@/lib/viewport";
 import { useNowTrailer } from "@/hooks/useNowTrailer";
 import "@/styles/now.css";
 
@@ -25,11 +26,15 @@ export function Now() {
     const media = node?.querySelector<HTMLElement>(".now-media");
     if (!node || !media) return;
 
-    const state = { p: 0 };
+    const state = { p: 0, corner: CORNER };
+
+    const fit = () => {
+      state.corner = CORNER * designScale();
+    };
 
     const seat = () => {
       const k = state.p * state.p * (3 - 2 * state.p);
-      const radius = Math.round(CORNER * (1 - k));
+      const radius = Math.round(state.corner * (1 - k));
       media.style.transform = `scale(${(SMALL + (1 - SMALL) * k).toFixed(4)})`;
       media.style.borderRadius = `${radius}px 0 ${radius}px 0`;
     };
@@ -44,9 +49,14 @@ export function Now() {
       end: "top 32%",
       invalidateOnRefresh: true,
       onUpdate: (self) => tl.progress(isReduced() ? 1 : self.progress),
-      onRefresh: (self) => tl.progress(isReduced() ? 1 : self.progress),
+      onRefresh: (self) => {
+        fit();
+        tl.progress(isReduced() ? 1 : self.progress);
+        seat();
+      },
     });
 
+    fit();
     tl.progress(isReduced() ? 1 : 0);
     seat();
 

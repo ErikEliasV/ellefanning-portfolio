@@ -1,7 +1,7 @@
 .bar {
-  --bar-w: 16px;
-  --bar-thumb: 8px;
-  --bar-thumb-hot: 10px;
+  --bar-w: calc(16 * var(--px));
+  --bar-thumb: calc(8 * var(--px));
+  --bar-thumb-hot: calc(10 * var(--px));
 
   position: fixed;
   top: 0;
