@@ -8,6 +8,7 @@ import { asset } from "@/lib/asset";
 import { isNarrow, phases, trackVh } from "@/lib/motion/filmStage";
 import { DROP_SPAN, gooPath } from "@/lib/motion/headerGoo";
 import { isLocked, isReduced, onTick, scrollTo } from "@/lib/scroll";
+import { designScale } from "@/lib/viewport";
 import { SECTIONS } from "@/data/sections";
 import type { Liquid, Media } from "@/lib/webgl/headerLiquid";
 import type { SectionId } from "@/data/sections";
@@ -107,6 +108,7 @@ export function useHeaderGlass() {
     side: 0,
     width: 0,
     dropW: 0,
+    unit: 1,
   });
 
   const at = useRef<SectionId | null>(null);
@@ -288,18 +290,18 @@ export function useHeaderGlass() {
 
       if (at.current) shut();
       if (held) return;
-      setHidden(down && y > HIDE_AFTER);
+      setHidden(down && y > HIDE_AFTER * designScale());
     };
 
     const release = (event: Event) => {
       if (event instanceof MouseEvent) pointerY = event.clientY;
-      if (pointerY > PEEK) held = false;
+      if (pointerY > PEEK * designScale()) held = false;
     };
 
     const peek = (event: PointerEvent) => {
       pointerY = event.clientY;
       if (isLocked()) return;
-      if (event.clientY > PEEK) return;
+      if (event.clientY > PEEK * designScale()) return;
       held = true;
       setHidden(false);
     };
@@ -393,6 +395,7 @@ export function useHeaderGlass() {
         side: metric(styles, "--hdr-wing") * SIDE_SHARE,
         width: node.getBoundingClientRect().width,
         dropW: metric(styles, "--hdr-bump-w"),
+        unit: designScale(),
       };
     };
 
@@ -416,19 +419,19 @@ export function useHeaderGlass() {
       node.style.setProperty("--mx", `${Math.round(lens.x)}px`);
       node.style.setProperty("--my", `${Math.round(lens.y)}px`);
 
-      const { bar, tall, lip, wing, roof, floor, side, width, dropW } =
+      const { bar, tall, lip, wing, roof, floor, side, width, dropW, unit } =
         box.current;
 
       if (!bar || !tall || !width) return;
 
       const { open, awake, tucked } = live.current;
       toReveal(open ? tall : bar);
-      toAmp(open ? OPEN_AMP : awake ? IDLE_AMP : 0);
+      toAmp((open ? OPEN_AMP : awake ? IDLE_AMP : 0) * unit);
       toPresence(tucked ? 0 : 1);
 
       jolt.current *= Math.exp(-step * JOLT_DECAY);
 
-      const bubble = (shape.amp + jolt.current * JOLT_AMP) * shape.presence;
+      const bubble = (shape.amp + jolt.current * JOLT_AMP * unit) * shape.presence;
 
       node.style.clipPath = gooPath({
         width,
@@ -436,7 +439,7 @@ export function useHeaderGlass() {
         lip,
         reveal: shape.reveal,
         amp: bubble,
-        reach: REACH,
+        reach: REACH * unit,
         time: clock,
         x: lens.x,
         y: lens.y,

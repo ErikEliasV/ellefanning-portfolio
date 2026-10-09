@@ -1,12 +1,13 @@
 import * as THREE from "three";
 
 import { BLOCKS_A, coarseCols, gridCols } from "@/lib/motion/heroGrid";
+import { designScale } from "@/lib/viewport";
 
 const WASH_ROSE = 0.82;
 const CONTRAST = 1.12;
 const LINE_PX = 2;
 const ROSE = new THREE.Color(0.859, 0.478, 0.592);
-const LINE_ROSE = new THREE.Color(0.914, 0.627, 0.71);
+const BACKDROP = new THREE.Color("#e07295");
 const MAX_DPR = 2;
 const MAX_ROWS = 220;
 
@@ -184,7 +185,7 @@ export function createCloud({
   mesh.frustumCulled = false;
   scene.add(mesh);
 
-  renderer.setClearColor(LINE_ROSE, 1);
+  renderer.setClearColor(BACKDROP, 1);
 
   let progress = 0;
   let clock = 0;
@@ -196,6 +197,7 @@ export function createCloud({
   let restCols = BLOCKS_A;
   let thickCols = coarseCols(BLOCKS_A);
   let seen = { w: 0, h: 0, dpr: 0 };
+  let line = LINE_PX;
   let atCol = -1;
   let atRow = -1;
 
@@ -238,6 +240,7 @@ export function createCloud({
     const height = Math.max(canvas.clientHeight, 1);
     if (width === seen.w && height === seen.h && dpr === seen.dpr) return;
     seen = { w: width, h: height, dpr };
+    line = LINE_PX * designScale();
 
     const aspect = width / height;
 
@@ -301,7 +304,7 @@ export function createCloud({
     gridRows = Math.max((cols / baseCols) * rows, 1);
     uniforms.uGrid.value.set(cols, gridRows);
 
-    uniforms.uGap.value = (2 * aspect * LINE_PX) / Math.max(canvas.clientWidth, 1);
+    uniforms.uGap.value = (2 * aspect * line) / Math.max(canvas.clientWidth, 1);
     uniforms.uTime.value = clock;
     uniforms.uPointer.value.set(atX, atY);
     uniforms.uPointerA.value = atA;

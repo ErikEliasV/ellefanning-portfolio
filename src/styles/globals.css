@@ -48,42 +48,42 @@
   --font-text: var(--font-nature), "Helvetica Neue", Arial, sans-serif;
   --font-editorial: var(--font-oskon), "Times New Roman", Georgia, serif;
 
-  --text-poster: clamp(64px, 11vw, 168px);
+  --text-poster: clamp(64px, 11vw, calc(168 * var(--px)));
   --text-poster--line-height: 0.86;
   --text-poster--letter-spacing: -0.01em;
-  --text-display-1: 88px;
+  --text-display-1: calc(88 * var(--px));
   --text-display-1--line-height: 0.92;
-  --text-display-2: 64px;
+  --text-display-2: calc(64 * var(--px));
   --text-display-2--line-height: 0.92;
-  --text-display-3: 44px;
+  --text-display-3: calc(44 * var(--px));
   --text-display-3--line-height: 0.92;
-  --text-display-4: 32px;
+  --text-display-4: calc(32 * var(--px));
   --text-display-4--line-height: 0.92;
-  --text-body: 15px;
+  --text-body: calc(15 * var(--px));
   --text-body--line-height: 1.55;
-  --text-body-sm: 13px;
+  --text-body-sm: calc(13 * var(--px));
   --text-body-sm--line-height: 1.55;
-  --text-label: 12px;
+  --text-label: calc(12 * var(--px));
   --text-label--line-height: 1.25;
-  --text-label-sm: 11px;
+  --text-label-sm: calc(11 * var(--px));
   --text-label-sm--line-height: 1.25;
-  --text-micro: 10px;
+  --text-micro: calc(10 * var(--px));
   --text-micro--line-height: 1.6;
 
   --tracking-label: 0.14em;
   --tracking-label-wide: 0.22em;
   --tracking-poster: -0.01em;
 
-  --spacing: 6px;
+  --spacing: calc(6 * var(--px));
 
-  --container-page: 1180px;
+  --container-page: calc(1180 * var(--px));
   --container-prose: 44ch;
 
   --radius-hair: 2px;
 
-  --shadow-offset-sm: 3px 3px 0 #131313;
-  --shadow-offset-md: 6px 6px 0 #131313;
-  --shadow-offset-accent: 6px 6px 0 #ffcc00;
+  --shadow-offset-sm: calc(3 * var(--px)) calc(3 * var(--px)) 0 #131313;
+  --shadow-offset-md: calc(6 * var(--px)) calc(6 * var(--px)) 0 #131313;
+  --shadow-offset-accent: calc(6 * var(--px)) calc(6 * var(--px)) 0 #ffcc00;
 
   --ease-flat: linear;
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
@@ -112,6 +112,7 @@
 }
 
 :root {
+  --px: 1px;
   --gutter-page: 22px;
 
   --safe-top: env(safe-area-inset-top, 0px);
@@ -119,7 +120,7 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
 
-  --tap: 44px;
+  --tap: calc(44 * var(--px));
 
   --type-sheet: clamp(34px, 11.2vw, 64px);
   --type-heading: clamp(28px, 7.4vw, 44px);
@@ -142,7 +143,13 @@
 
 @media (width >= 64rem) {
   :root {
-    --gutter-page: 40px;
+    --gutter-page: calc(40 * var(--px));
+  }
+}
+
+@media (width > 1920px) {
+  :root {
+    --px: calc(100vw / 1920);
   }
 }
 

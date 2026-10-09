@@ -1,20 +1,20 @@
 :root {
-  --pill-h: 38px;
+  --pill-h: calc(38 * var(--px));
 }
 
 .pill {
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: calc(6 * var(--px));
   min-height: var(--pill-h);
-  padding-right: 9px;
-  padding-left: 6px;
-  border-radius: 7px;
+  padding-right: calc(9 * var(--px));
+  padding-left: calc(6 * var(--px));
+  border-radius: calc(7 * var(--px));
   background-color: rgba(92, 92, 92, 0.55);
   font-family: var(--font-text);
   font-weight: 500;
-  font-size: 17px;
+  font-size: calc(17 * var(--px));
   line-height: 1;
   letter-spacing: 0.26em;
   text-transform: uppercase;
@@ -39,8 +39,8 @@
 .pill-note {
   display: block;
   flex-shrink: 0;
-  width: 17px;
-  height: 18px;
+  width: calc(17 * var(--px));
+  height: calc(18 * var(--px));
 }
 
 .pill-note img {
@@ -80,8 +80,8 @@
 
 .score {
   position: fixed;
-  bottom: clamp(16px, 1.6667vw, 28px);
-  left: clamp(16px, 2.0833vw, 40px);
+  bottom: clamp(16px, 1.6667vw, calc(28 * var(--px)));
+  left: clamp(16px, 2.0833vw, calc(40 * var(--px)));
   z-index: 90;
 }
 
