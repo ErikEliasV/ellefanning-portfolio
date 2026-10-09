@@ -137,6 +137,35 @@
   opacity: 1;
 }
 
+.cur-arrow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: calc(22 * var(--px));
+  height: calc(22 * var(--px));
+  margin: calc(-11 * var(--px)) 0 0 calc(-11 * var(--px));
+  color: var(--cur-mark);
+  opacity: 0;
+  will-change: transform;
+  transition:
+    opacity var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.cur-arrow svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.cur[data-live][data-icon="up"] .cur-dot {
+  opacity: 0;
+}
+
+.cur[data-live][data-icon="up"] .cur-arrow {
+  opacity: 1;
+}
+
 .cur-label {
   position: absolute;
   top: 0;

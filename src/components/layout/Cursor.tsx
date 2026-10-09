@@ -7,7 +7,7 @@ import "@/styles/cursor.css";
 const MID = BOX / 2;
 
 export function Cursor() {
-  const { shell, lens, body, outline, map, dot, label, fine } = useCursor();
+  const { shell, lens, body, outline, map, dot, arrow, label, fine } = useCursor();
 
   if (!fine) return null;
 
@@ -118,6 +118,18 @@ export function Cursor() {
       </span>
 
       <span ref={dot} className="cur-dot" />
+      <span ref={arrow} className="cur-arrow">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="square"
+        >
+          <path d="M12 20V5" />
+          <path d="M4.5 12.5 12 4.5l7.5 8" />
+        </svg>
+      </span>
       <span ref={label} className="cur-label" />
     </div>
   );
