@@ -103,7 +103,6 @@
 .footer-link {
   display: flex;
   align-items: center;
-  gap: 0.28em;
   min-height: calc(44 * var(--px));
   color: var(--color-paper-000);
   transition: color var(--duration-fast) var(--ease-out);
@@ -116,12 +115,6 @@
 .footer-link:focus-visible {
   outline: 2px solid var(--color-rose-400);
   outline-offset: 4px;
-}
-
-.footer-arrow {
-  flex: none;
-  width: 0.66em;
-  height: 0.66em;
 }
 
 .footer-end {

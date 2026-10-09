@@ -1,28 +1,19 @@
 "use client";
 
 import { useEffect } from "react";
+import type { MouseEvent } from "react";
 import { FooterMark } from "@/components/footer/FooterMark";
-import { BackToTop } from "@/components/footer/BackToTop";
 import { LINKS } from "@/data/links";
 import { quietFade } from "@/lib/reveal";
+import { scrollTo } from "@/lib/scroll";
 import { useFooterLantern } from "@/hooks/useFooterLantern";
 import "@/styles/footer.css";
 
-function ArrowUp() {
-  return (
-    <svg
-      aria-hidden
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="square"
-      className="footer-arrow"
-    >
-      <path d="M12 20V5" />
-      <path d="M4.5 12.5 12 4.5l7.5 8" />
-    </svg>
-  );
+function rise(event: MouseEvent<HTMLElement>) {
+  const target = event.target instanceof Element ? event.target : null;
+  if (target?.closest("a, button")) return;
+  if (window.getSelection()?.toString()) return;
+  scrollTo(0);
 }
 
 export function SiteFooter() {
@@ -42,6 +33,8 @@ export function SiteFooter() {
       ref={root}
       id="footer"
       data-cursor-skin="invert"
+      data-cursor-icon="up"
+      onClick={rise}
       className="site-footer grain relative overflow-hidden border-t border-ink-850 bg-ink-850 text-paper-000"
     >
       <span aria-hidden className="footer-glow" />
@@ -61,11 +54,6 @@ export function SiteFooter() {
             {link.label}
           </a>
         ))}
-
-        <BackToTop className="footer-link">
-          Back to top
-          <ArrowUp />
-        </BackToTop>
       </nav>
 
       <p className="footer-end">Fan project — not affiliated</p>
