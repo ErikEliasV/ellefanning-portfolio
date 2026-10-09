@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { dropPath, LENS, lensMap } from "@/lib/motion/cursorLens";
 import { isReduced, onTick } from "@/lib/scroll";
+import { designScale, onViewport } from "@/lib/viewport";
 
 const CHASE = 0.42;
 const CHASE_EASE = "power3";
@@ -47,6 +48,7 @@ export function useCursor() {
   const outline = useRef<SVGPathElement>(null);
   const map = useRef<SVGFEImageElement>(null);
   const dot = useRef<HTMLSpanElement>(null);
+  const arrow = useRef<HTMLSpanElement>(null);
   const label = useRef<HTMLSpanElement>(null);
   const [fine, setFine] = useState(false);
 
@@ -90,6 +92,7 @@ export function useCursor() {
     let pull = false;
     let down = false;
     let live = false;
+    let unit = designScale();
 
     const chase = { duration: CHASE, ease: CHASE_EASE };
     const toX = gsap.quickTo(box, "x", chase);
@@ -109,13 +112,13 @@ export function useCursor() {
 
     function girth() {
       if (!live) return 0;
-      return (hot ? HOT : IDLE) - (down ? PRESS : 0);
+      return ((hot ? HOT : IDLE) - (down ? PRESS : 0)) * unit;
     }
 
     function flow(dt: number) {
       const vx = (box.x - last.x) / dt;
       const vy = (box.y - last.y) / dt;
-      const speed = Math.hypot(vx, vy);
+      const speed = Math.hypot(vx, vy) / unit;
       last.x = box.x;
       last.y = box.y;
 
@@ -158,14 +161,15 @@ export function useCursor() {
         edge.setAttribute("d", d);
       }
 
+      const tip = `translate3d(${Math.round(point.x) - x}px, ${Math.round(point.y) - y}px, 0)`;
       const mark = dot.current;
-      if (mark) {
-        mark.style.transform = `translate3d(${Math.round(point.x) - x}px, ${Math.round(point.y) - y}px, 0)`;
-      }
+      if (mark) mark.style.transform = tip;
+      const head = arrow.current;
+      if (head) head.style.transform = tip;
 
       const tag = label.current;
       if (tag) {
-        const off = half + 8;
+        const off = half + 8 * unit;
         tag.style.transform = above
           ? `translate3d(${-half}px, calc(${-off}px - 100%), 0)`
           : `translate3d(${-half}px, ${off}px, 0)`;
@@ -251,6 +255,12 @@ export function useCursor() {
 
       const next = from?.closest(PICK);
       const hit = next instanceof HTMLElement ? next : null;
+
+      const zone = hit ? null : from?.closest("[data-cursor-icon]");
+      const icon = zone instanceof HTMLElement ? zone.dataset.cursorIcon : "";
+      if (icon) node.dataset.icon = icon;
+      else delete node.dataset.icon;
+
       retag(hit);
       if (hit === hot) return;
 
@@ -312,8 +322,14 @@ export function useCursor() {
     window.addEventListener("blur", hide);
     document.addEventListener("pointerleave", hide);
 
+    const unwatch = onViewport(() => {
+      unit = designScale();
+      wake();
+    });
+
     return () => {
       untick?.();
+      unwatch();
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerover", over);
       window.removeEventListener("pointerdown", press);
@@ -325,5 +341,5 @@ export function useCursor() {
     };
   }, [fine]);
 
-  return { shell, lens, body, outline, map, dot, label, fine };
+  return { shell, lens, body, outline, map, dot, arrow, label, fine };
 }

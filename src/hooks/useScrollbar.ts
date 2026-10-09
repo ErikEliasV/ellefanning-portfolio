@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 
 import { isLocked, scrollTo } from "@/lib/scroll";
+import { designScale } from "@/lib/viewport";
 
 const MIN_THUMB = 120;
 
@@ -38,7 +39,10 @@ export function useScrollbar() {
     setLive(true);
 
     const track = railEl.clientHeight;
-    const height = Math.max(MIN_THUMB, Math.round(track * (view / doc.scrollHeight)));
+    const height = Math.max(
+      Math.round(MIN_THUMB * designScale()),
+      Math.round(track * (view / doc.scrollHeight)),
+    );
     const travel = Math.max(track - height, 0);
     span.current = { max, travel };
 

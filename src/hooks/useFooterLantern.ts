@@ -4,6 +4,7 @@ import gsap from "gsap";
 import { useEffect, useRef } from "react";
 
 import { onTick } from "@/lib/scroll";
+import { designScale } from "@/lib/viewport";
 
 const OPEN_MIN = 140;
 const OPEN_VW = 0.16;
@@ -53,9 +54,10 @@ export function useFooterLantern() {
     }
 
     function radius() {
+      const unit = designScale();
       return Math.min(
-        Math.max(OPEN_MIN, window.innerWidth * OPEN_VW),
-        OPEN_MAX,
+        Math.max(OPEN_MIN * unit, window.innerWidth * OPEN_VW),
+        OPEN_MAX * unit,
       );
     }
 

@@ -53,27 +53,27 @@
 }
 
 :root {
-  --hdr-inset-x: clamp(14px, 2.9vw, 56px);
-  --hdr-top: calc(clamp(10px, 1.9vw, 36px) + var(--safe-top));
-  --hdr-h: clamp(44px, 4.1vw, 78px);
-  --hdr-pad-x: clamp(12px, 1.6vw, 30.7px);
-  --hdr-blur: 10.15px;
+  --hdr-inset-x: clamp(14px, 2.9vw, calc(56 * var(--px)));
+  --hdr-top: calc(clamp(10px, 1.9vw, calc(36 * var(--px))) + var(--safe-top));
+  --hdr-h: clamp(44px, 4.1vw, calc(78 * var(--px)));
+  --hdr-pad-x: clamp(12px, 1.6vw, calc(30.7 * var(--px)));
+  --hdr-blur: calc(10.15 * var(--px));
 }
 
 .hdr {
-  --hdr-open-h: clamp(280px, 28vw, 538px);
-  --hdr-lip: 48px;
-  --hdr-slack: 160px;
-  --hdr-wing: 44px;
-  --hdr-pad-y: clamp(7px, 0.72vw, 13.8px);
-  --hdr-type: clamp(13px, 1.66vw, 31.9px);
+  --hdr-open-h: clamp(280px, 28vw, calc(538 * var(--px)));
+  --hdr-lip: calc(48 * var(--px));
+  --hdr-slack: calc(160 * var(--px));
+  --hdr-wing: calc(44 * var(--px));
+  --hdr-pad-y: clamp(7px, 0.72vw, calc(13.8 * var(--px)));
+  --hdr-type: clamp(13px, 1.66vw, calc(31.9 * var(--px)));
   --hdr-lead: 1.592;
   --hdr-grow: 1.18;
   --hdr-reveal: var(--hdr-h);
   --hdr-edge: calc(var(--hdr-lip) + var(--hdr-reveal));
-  --hdr-hint: 6px;
-  --hdr-drop: 10px;
-  --hdr-bump-w: clamp(34px, 3vw, 58px);
+  --hdr-hint: calc(6 * var(--px));
+  --hdr-drop: calc(10 * var(--px));
+  --hdr-bump-w: clamp(34px, 3vw, calc(58 * var(--px)));
   --hdr-bump: 0px;
   --hdr-drop-x: 50%;
 
@@ -300,7 +300,7 @@
   right: 0;
   bottom: 0.14em;
   left: 0;
-  height: 2px;
+  height: calc(2 * var(--px));
   background-color: currentColor;
   transform-origin: bottom;
 }

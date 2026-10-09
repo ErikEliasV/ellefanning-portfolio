@@ -13,7 +13,7 @@
   container-type: inline-size;
   display: flex;
   flex-direction: column;
-  gap: clamp(56px, 6.09vw, 130px);
+  gap: clamp(56px, 6.09vw, calc(130 * var(--px)));
 }
 
 .footer-mark {
@@ -81,12 +81,12 @@
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   justify-items: start;
-  gap: clamp(12px, 3vw, 32px);
+  gap: clamp(12px, 3vw, calc(32 * var(--px)));
   padding-inline: calc(var(--gutter-page) + var(--safe-left))
     calc(var(--gutter-page) + var(--safe-right));
   font-family: var(--font-text);
   font-weight: 700;
-  font-size: clamp(17px, 4.8vw, 34px);
+  font-size: clamp(17px, 4.8vw, calc(34 * var(--px)));
   line-height: 1.25;
   text-transform: uppercase;
 }
@@ -96,15 +96,14 @@
     display: flex;
     justify-content: space-between;
     gap: 0;
-    font-size: clamp(24px, 3.27vw, 80px);
+    font-size: clamp(24px, 3.27vw, calc(80 * var(--px)));
   }
 }
 
 .footer-link {
   display: flex;
   align-items: center;
-  gap: 0.28em;
-  min-height: 44px;
+  min-height: calc(44 * var(--px));
   color: var(--color-paper-000);
   transition: color var(--duration-fast) var(--ease-out);
 }
@@ -118,19 +117,13 @@
   outline-offset: 4px;
 }
 
-.footer-arrow {
-  flex: none;
-  width: 0.66em;
-  height: 0.66em;
-}
-
 .footer-end {
   position: relative;
   z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: clamp(96px, 10.8vw, 220px);
+  min-height: clamp(96px, 10.8vw, calc(220 * var(--px)));
   margin: 0;
   padding-bottom: var(--safe-bottom);
   padding-inline: calc(var(--gutter-page) + var(--safe-left))

@@ -89,8 +89,8 @@
 
 .film-skip {
   position: absolute;
-  right: clamp(16px, 2.0833vw, 40px);
-  bottom: clamp(16px, 1.6667vw, 28px);
+  right: clamp(16px, 2.0833vw, calc(40 * var(--px)));
+  bottom: clamp(16px, 1.6667vw, calc(28 * var(--px)));
   z-index: 6;
   opacity: 0;
   visibility: hidden;
@@ -204,14 +204,14 @@
 
 .film-card-cue {
   position: absolute;
-  right: clamp(10px, 0.833vw, 16px);
-  bottom: clamp(10px, 0.833vw, 16px);
+  right: clamp(10px, 0.833vw, calc(16 * var(--px)));
+  bottom: clamp(10px, 0.833vw, calc(16 * var(--px)));
   z-index: 2;
   display: none;
   align-items: center;
-  min-height: 32px;
+  min-height: calc(32 * var(--px));
   border: 1px solid var(--color-rose-400);
-  padding-inline: 14px;
+  padding-inline: calc(14 * var(--px));
   background-color: var(--scrim-plate);
   font-family: var(--font-text);
   font-weight: 700;
@@ -269,7 +269,7 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  filter: blur(46px) brightness(0.42);
+  filter: blur(calc(46 * var(--px))) brightness(0.42);
   transition:
     top calc(var(--duration-modal) * 0.7) var(--ease-out),
     left calc(var(--duration-modal) * 0.7) var(--ease-out),

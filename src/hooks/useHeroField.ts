@@ -5,6 +5,7 @@ import { asset } from "@/lib/asset";
 import { pixel } from "@/lib/audio";
 import { coarseCols, gridCols } from "@/lib/motion/heroGrid";
 import { isReduced, onTick } from "@/lib/scroll";
+import { designScale } from "@/lib/viewport";
 
 export const HERO_FIELD = "/images/ellefanning-hero-field.webp";
 
@@ -229,7 +230,7 @@ export function useHeroField(off = false) {
       gl.uniform2f(uCanvas, width, height);
       gl.uniform1f(uTexRatio, ratio);
       gl.uniform1f(uCell, cell);
-      gl.uniform1f(uGap, (LINE_PX * dpr) / cell);
+      gl.uniform1f(uGap, (LINE_PX * designScale() * dpr) / cell);
       gl.uniform1f(uTime, clock);
       gl.uniform2f(uPointer, atX, atY);
       gl.uniform1f(uPointerA, atA);

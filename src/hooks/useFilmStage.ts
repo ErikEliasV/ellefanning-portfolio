@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Geometry } from "@/lib/motion/filmStage";
 import { CURTAIN_OUT, NARROW_QUERY, canSkip, cursor, depth, geometry, trackVh } from "@/lib/motion/filmStage";
 import { isReduced, onTick } from "@/lib/scroll";
-import { onViewport, smallViewportHeight } from "@/lib/viewport";
+import { designScale, onViewport, smallViewportHeight } from "@/lib/viewport";
 import { reelTick } from "@/lib/audio";
 
 const STRIDE = 80;
@@ -43,6 +43,7 @@ export function useFilmStage(count: number) {
     let cardW = 0;
     let cardH = 0;
     let splitMax = 0;
+    let unit = 1;
     let geo: Geometry = geometry(narrow.matches);
 
     function paint() {
@@ -78,7 +79,7 @@ export function useFilmStage(count: number) {
       else delete trackEl.dataset.skip;
 
       const shift = c.u * pitch;
-      const notch = Math.floor(shift / STRIDE);
+      const notch = Math.floor(shift / (STRIDE * unit));
       if (notch !== lastNotch.current) {
         lastNotch.current = notch;
         reelTick(notch, c.u / (count - 1), TRAVEL_EMPHASIS);
@@ -105,7 +106,7 @@ export function useFilmStage(count: number) {
           ` scale(${d.scale.toFixed(4)})`;
 
         const grade: string[] = [];
-        if (!reduced && d.blur >= 0.1) grade.push(`blur(${d.blur.toFixed(2)}px)`);
+        if (!reduced && d.blur >= 0.1) grade.push(`blur(${(d.blur * unit).toFixed(2)}px)`);
         if (d.fade >= 0.01) grade.push(`saturate(${(1 - d.fade).toFixed(3)})`);
         card.style.filter = grade.join(" ");
       }
@@ -181,6 +182,7 @@ export function useFilmStage(count: number) {
       const vw = window.innerWidth;
       const g = geometry(narrow.matches);
       geo = g;
+      unit = designScale();
 
       vh = smallViewportHeight();
       pitch = g.pitch * (g.axis === "y" ? vh : vw);
