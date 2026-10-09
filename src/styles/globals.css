@@ -177,6 +177,15 @@
     line-height: 1.55;
   }
 
+  img,
+  picture,
+  video,
+  canvas {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+
   ::selection {
     background-color: var(--color-rose-400);
     color: var(--color-ink-900);
