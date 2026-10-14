@@ -4,7 +4,7 @@ import gsap from "gsap";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { MouseEvent } from "react";
 
-import { asset } from "@/lib/asset";
+import { clipSrc, warmClips } from "@/lib/clips";
 import { isNarrow, phases, trackVh } from "@/lib/motion/filmStage";
 import { DROP_SPAN, gooPath } from "@/lib/motion/headerGoo";
 import { isLocked, isReduced, onTick, scrollTo } from "@/lib/scroll";
@@ -38,6 +38,7 @@ const ROOF_SHARE = 0.85;
 const FLOOR_SHARE = 0.9;
 const SIDE_SHARE = 0.85;
 const RIDE_S = 1.6;
+const WARM_MS = 1200;
 
 type Feed = { media: Media; focus: number; push: number };
 
@@ -242,6 +243,23 @@ export function useHeaderGlass() {
     query.addEventListener("change", read);
 
     return () => query.removeEventListener("change", read);
+  }, []);
+
+  useEffect(() => {
+    if (!window.matchMedia("(pointer: fine)").matches) return;
+
+    let wait = 0;
+    const start = () => {
+      wait = window.setTimeout(() => void warmClips(), WARM_MS);
+    };
+
+    if (document.readyState === "complete") start();
+    else window.addEventListener("load", start, { once: true });
+
+    return () => {
+      window.removeEventListener("load", start);
+      window.clearTimeout(wait);
+    };
   }, []);
 
   useEffect(() => {
@@ -571,7 +589,7 @@ export function useHeaderGlass() {
 
     if (tape.dataset.for !== section.id) {
       tape.dataset.for = section.id;
-      tape.src = asset(section.clip);
+      tape.src = clipSrc(section.clip);
       tape.preload = "auto";
       tape.load();
     }
